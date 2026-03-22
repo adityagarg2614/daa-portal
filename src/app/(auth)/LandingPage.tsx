@@ -1,6 +1,8 @@
 import Link from "next/link";
 import styles from "./LandingPage.module.css";
-
+import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { ArrowRightIcon } from "lucide-react";
 export default function LandingPage() {
     return (
         <div className={styles.root}>
@@ -29,8 +31,12 @@ export default function LandingPage() {
                     </div>
 
                     <div className={styles.navLinks}>
-                        <Link href="/sign-in" className={styles.navLink}>Sign In</Link>
-                        <Link href="/sign-up" className={`${styles.btnPrimary} ${styles.btnSm}`}>Get Started</Link>
+                        <SignInButton mode="modal">
+                            <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
+                                <span>Get Started</span>
+                                <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                            </button>
+                        </SignInButton>
                     </div>
                 </div>
             </nav>
@@ -55,12 +61,12 @@ export default function LandingPage() {
                     </p>
 
                     <div className={styles.ctaGroup}>
-                        <Link href="/sign-up" className={styles.btnPrimary}>
-                            Get Started Free
-                        </Link>
-                        <Link href="/sign-in" className={styles.btnOutline}>
-                            Sign In
-                        </Link>
+                        <SignInButton mode="modal">
+                            <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
+                                <span>Get Started</span>
+                                <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                            </button>
+                        </SignInButton>
                     </div>
                 </section>
 
