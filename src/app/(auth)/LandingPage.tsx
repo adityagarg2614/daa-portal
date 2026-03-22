@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { SignInModalButton } from "../../components/SignInModalButton";
 import styles from "./LandingPage.module.css";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
-import { ArrowRightIcon } from "lucide-react";
+
+
 export default function LandingPage() {
     return (
         <div className={styles.root}>
@@ -31,14 +31,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className={styles.navLinks}>
-                        <SignInButton mode="modal">
-                            <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-                                <span className="flex items-center gap-2">
-                                    Get Started
-                                    <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
-                                </span>
-                            </button>
-                        </SignInButton>
+                        <SignInModalButton className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2" />
                     </div>
                 </div>
             </nav>
@@ -63,14 +56,7 @@ export default function LandingPage() {
                     </p>
 
                     <div className={styles.ctaGroup}>
-                        <SignInButton mode="modal">
-                            <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-                                <span className="flex items-center gap-2">
-                                    Get Started
-                                    <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
-                                </span>
-                            </button>
-                        </SignInButton>
+                        <SignInModalButton className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2" />
                     </div>
                 </section>
 

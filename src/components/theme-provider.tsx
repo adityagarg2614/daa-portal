@@ -10,9 +10,7 @@ export function ThemeProvider({
     return (
         <NextThemesProvider
             {...props}
-            // next-themes injects an inline script to prevent FOUC.
-            // scriptProps suppresses the React 19 "script tag" console warning.
-            scriptProps={{ "data-cfasync": "false" }}
+            scriptProps={{ async: true }}
         >
             {children}
         </NextThemesProvider>
