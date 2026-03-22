@@ -15,11 +15,9 @@ export default clerkMiddleware(async (auth, req) => {
     // Allow public routes without auth
     if (isPublicRoute(req)) return;
 
-    // Require sign-in for non-public routes
+    // Redirect to home (unauthenticated landing) for non-public routes
     if (!userId) {
-        const signInUrl = new URL("/sign-in", req.url);
-        signInUrl.searchParams.set("redirect_url", req.url);
-        return NextResponse.redirect(signInUrl);
+        return NextResponse.redirect(new URL("/", req.url));
     }
 
     // Force onboarding if not complete

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { SignInModalButton } from "../../components/SignInModalButton";
 import styles from "./LandingPage.module.css";
+import { Sparkles } from "lucide-react";
+
 
 
 export default function LandingPage() {
@@ -14,23 +16,27 @@ export default function LandingPage() {
             <div className={`${styles.orb} ${styles.orb2}`} aria-hidden="true" />
 
             {/* ─── Nav ─── */}
-            <nav className={styles.nav}>
-                <div className={styles.navInner}>
-                    <div className={styles.logo}>
-                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                            <circle cx="14" cy="14" r="13" stroke="url(#lg)" strokeWidth="2" />
-                            <path d="M8 14h4l2-4 2 8 2-4h2" stroke="url(#lg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <defs>
-                                <linearGradient id="lg" x1="0" y1="0" x2="28" y2="28">
-                                    <stop stopColor="#818cf8" />
-                                    <stop offset="1" stopColor="#38bdf8" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <span className={styles.logoText}>Algo-Grade</span>
-                    </div>
+            <nav className="bg-background/80 backdrop-blur-md border-b border-primary/20 sticky top-0 z-50 shadow-lg">
+                <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
+                    <Link
+                        href="/"
+                        className="flex text-2xl items-center gap-3 hover:scale-105 font-bold text-primary transition-transform duration-200"
+                    >
+                        <div className="size-10 rounded-xl bg-linear-to-br from-primary via-secondary to-accent p-2 text-white flex items-center justify-center shadow-lg">
+                            <Sparkles />
+                        </div>
 
-                    <div className={styles.navLinks}>
+                        <div className="flex flex-col">
+                            <span className="font-black text-xl bg-linear-to-r from-blue-50 via-blue-900 to-blue-50 bg-clip-text text-transparent font-mono tracking-wider">
+                                Algo-Grade
+                            </span>
+                            <span className="text-xs text-muted-foreground font-medium -mt-1">
+                                Code Together
+                            </span>
+                        </div>
+                    </Link>
+
+                    <div className="flex items-center gap-4">
                         <SignInModalButton className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2" />
                     </div>
                 </div>

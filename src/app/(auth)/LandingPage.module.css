@@ -40,55 +40,7 @@
     bottom: -100px; right: -100px;
 }
 
-/* ── Nav ── */
-.nav {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background: rgba(7,11,20,0.75);
-    border-bottom: 1px solid rgba(129,140,248,0.1);
-}
-.navInner {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 24px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: inherit;
-}
-.logoText {
-    font-size: 1.15rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #818cf8, #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.02em;
-}
-.navLinks {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.navLink {
-    color: #94a3b8;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-.navLink:hover { color: #e2e8f0; }
-
-/* ── Buttons ── */
+/* ── Hero ── */
 .btnPrimary {
     display: inline-flex;
     align-items: center;
