@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import styles from "./page.module.css";
 
 export default function OnboardingPage() {
     const { user, isLoaded } = useUser();
@@ -64,43 +65,53 @@ export default function OnboardingPage() {
     if (!isLoaded) return null;
 
     return (
-        <main style={{ padding: 24, maxWidth: 520 }}>
-            <h1>Complete Your Profile</h1>
+        <div className={styles.root}>
+            {/* Background elements consistent with Landing Page */}
+            <div className={styles.bgGrid} aria-hidden="true" />
+            <div className={`${styles.orb} ${styles.orb1}`} aria-hidden="true" />
+            <div className={`${styles.orb} ${styles.orb2}`} aria-hidden="true" />
 
-            {rollNo ? (
-                <p style={{ marginTop: 8, color: "#64748b" }}>
-                    Detected roll number: <strong style={{ color: "#818cf8" }}>{rollNo}</strong>
-                </p>
-            ) : (
-                <p style={{ marginTop: 8, color: "#f87171" }}>
-                    ⚠️ Sign in with your IIITDMJ email to continue.
-                </p>
-            )}
+            <main className={`${styles.container}`}>
+                <h1 className={styles.title}>Complete Your Profile</h1>
+                <p className={styles.subtitle}>Let's get you set up for the Algo-Grade portal.</p>
 
-            <form onSubmit={handleSubmit} style={{ marginTop: 20 }}>
-                <label style={{ display: "block" }}>
-                    Full Name
-                    <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Aditya Garg"
-                        required
-                        style={{ display: "block", width: "100%", padding: 10, marginTop: 6 }}
-                    />
-                </label>
-
-                {error && (
-                    <p style={{ color: "red", marginTop: 10 }}>{error}</p>
+                {rollNo ? (
+                    <div className={styles.info}>
+                        Detected roll number: <strong className={styles.rollHighlight}>{rollNo}</strong>
+                    </div>
+                ) : (
+                    <div className={styles.errorText}>
+                        ⚠️ Sign in with your IIITDMJ email to continue.
+                    </div>
                 )}
 
-                <button
-                    type="submit"
-                    disabled={loading || !rollNo}
-                    style={{ marginTop: 16, padding: 10 }}
-                >
-                    {loading ? "Saving..." : "Save & Continue"}
-                </button>
-            </form>
-        </main>
+                <form onSubmit={handleSubmit} className={styles.form}>
+                    <div className="space-y-2">
+                        <label className={styles.label}>
+                            Full Name
+                        </label>
+                        <input
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. Aditya Garg"
+                            required
+                            className={styles.input}
+                        />
+                    </div>
+
+                    {error && (
+                        <p className={`${styles.errorText} mt-4`}>{error}</p>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className={styles.button}
+                    >
+                        {loading ? "Saving..." : "Save & Continue"}
+                    </button>
+                </form>
+            </main>
+        </div>
     );
 }
