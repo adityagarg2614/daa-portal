@@ -33,8 +33,10 @@ export default function LandingPage() {
                     <div className={styles.navLinks}>
                         <SignInButton mode="modal">
                             <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-                                <span>Get Started</span>
-                                <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                                <span className="flex items-center gap-2">
+                                    Get Started
+                                    <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                                </span>
                             </button>
                         </SignInButton>
                     </div>
@@ -63,8 +65,10 @@ export default function LandingPage() {
                     <div className={styles.ctaGroup}>
                         <SignInButton mode="modal">
                             <button className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-                                <span>Get Started</span>
-                                <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                                <span className="flex items-center gap-2">
+                                    Get Started
+                                    <ArrowRightIcon className="size-4 group-hover:translate-x-1 transition-transform duration-200" />
+                                </span>
                             </button>
                         </SignInButton>
                     </div>
