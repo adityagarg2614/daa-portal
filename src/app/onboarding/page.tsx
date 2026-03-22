@@ -105,7 +105,7 @@ export default function OnboardingPage() {
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !rollNo}
                         className={styles.button}
                     >
                         {loading ? "Saving..." : "Save & Continue"}
