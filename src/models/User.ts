@@ -1,6 +1,17 @@
-import mongoose from 'mongoose'
+import mongoose, { Schema, Document, trusted } from 'mongoose';
 
-const userSchema = new mongoose.Schema({
+
+
+export interface User extends Document {
+    clerkId: string;
+    name: string;
+    email: string;
+    rollNo: string;
+    role: string;
+
+}
+
+const UserSchema: Schema<User> = new Schema({
     clerkId: {
         type: String,
         required: true,
@@ -24,17 +35,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["student", "admin"],
         default: "student",
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
-    },
-})
+    }
+},
+    { timestamps: true }
+)
 
-const User = mongoose.models.User || mongoose.model("User", userSchema)
+const UserModel = (mongoose.models.User as mongoose.Model<User>) || mongoose.model<User>("User", UserSchema)
 
-export default User
+export default UserModel

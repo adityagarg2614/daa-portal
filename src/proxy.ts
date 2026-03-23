@@ -7,32 +7,47 @@ const isPublicRoute = createRouteMatcher([
     "/sign-up(.*)",
 ]);
 
-const isOnboardingRoute = createRouteMatcher(["/onboarding(.*)"]);
+const isOnboardingRoute = createRouteMatcher([
+    "/onboarding(.*)",
+]);
+
+const isIgnoredRoute = createRouteMatcher([
+    "/api/inngest(.*)",
+]);
 
 export default clerkMiddleware(async (auth, req) => {
+    // Let Inngest pass through untouched
+    if (isIgnoredRoute(req)) {
+        return NextResponse.next();
+    }
+
     const { userId, sessionClaims } = await auth();
 
-    // Allow public routes without auth
-    if (isPublicRoute(req)) return;
+    // Allow public routes
+    if (isPublicRoute(req)) {
+        return NextResponse.next();
+    }
 
-    // Redirect to home (unauthenticated landing) for non-public routes
+    // Redirect unauthenticated users
     if (!userId) {
         return NextResponse.redirect(new URL("/", req.url));
     }
 
-    // Force onboarding if not complete
-    const metadata = (sessionClaims?.metadata as any) || {};
+    // Force onboarding if incomplete
+    const metadata = (sessionClaims?.metadata as Record<string, any>) || {};
     const onboardingComplete = metadata?.onboardingComplete === true;
     const rollNo = metadata?.rollNo;
 
-    if (!onboardingComplete || !rollNo) {
-        // avoid redirect loop if already on onboarding
-        if (!isOnboardingRoute(req)) {
-            return NextResponse.redirect(new URL("/onboarding", req.url));
-        }
+    if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req)) {
+        return NextResponse.redirect(new URL("/onboarding", req.url));
     }
+
+    return NextResponse.next();
 });
 
 export const config = {
-    matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+    matcher: [
+        "/((?!_next|.*\\..*).*)",
+        "/(api|trpc)(.*)",
+    ],
 };
