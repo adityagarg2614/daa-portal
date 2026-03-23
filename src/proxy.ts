@@ -57,6 +57,11 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(new URL("/onboarding", req.url));
     }
 
+    // Redirect onboarded users away from onboarding page
+    if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api")) {
+        return NextResponse.redirect(new URL("/home", req.url));
+    }
+
     return NextResponse.next();
 });
 
