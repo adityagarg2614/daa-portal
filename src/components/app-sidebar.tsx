@@ -51,7 +51,7 @@ const data = {
         },
         {
           title: "My Submissions",
-          url: "#",
+          url: "/submission",
         },
         {
           title: "Results",
