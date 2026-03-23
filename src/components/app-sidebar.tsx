@@ -45,7 +45,7 @@ const data = {
       items: [
         {
           title: "Assignments",
-          url: "#",
+          url: "/assignment",
         },
         {
           title: "My Submissions",
