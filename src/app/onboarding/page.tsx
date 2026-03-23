@@ -52,8 +52,8 @@ export default function OnboardingPage() {
                 name: name.trim(),
                 rollNo,
             });
-            router.push("/home");
-            router.refresh();
+            // Force a full reload to ensure middleware catches the new session metadata
+            window.location.href = "/home";
         } catch (err: unknown) {
             const axiosErr = err as { response?: { data?: { message?: string } } };
             setError(axiosErr?.response?.data?.message || "Something went wrong");

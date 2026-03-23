@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
 
 const isOnboardingRoute = createRouteMatcher([
     "/onboarding(.*)",
+    "/api/onboarding(.*)",
 ]);
 
 const isIgnoredRoute = createRouteMatcher([
