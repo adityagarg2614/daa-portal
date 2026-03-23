@@ -2,14 +2,15 @@
 
 import { Sparkles, LayoutDashboard, Bell } from "lucide-react";
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 interface NavbarProps {
     name?: string;
 }
 
 export default function Navbar({ name }: NavbarProps) {
-    const firstName = name ? name.split(' ')[0] : 'User';
+    const { isLoaded } = useUser();
+    const firstName = isLoaded && name ? name.split(' ')[0] : '...';
 
     return (
         <nav className="bg-background/40 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.1)]">

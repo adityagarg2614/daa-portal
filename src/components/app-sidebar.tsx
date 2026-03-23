@@ -16,6 +16,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import Link from "next/link"
 
 // This is sample data.
 const data = {
@@ -88,12 +89,12 @@ const data = {
 
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
 
   const userData = {
-    name: user?.fullName || user?.username || "Guest",
-    email: user?.primaryEmailAddress?.emailAddress || "",
-    avatar: user?.imageUrl || "/avatars/shadcn.jpg",
+    name: isLoaded ? (user?.fullName || user?.username || "User") : "Loading...",
+    email: isLoaded ? (user?.primaryEmailAddress?.emailAddress || "") : "",
+    avatar: isLoaded ? (user?.imageUrl || "/avatars/shadcn.jpg") : "/avatars/shadcn.jpg",
   }
 
   return (
@@ -102,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link href="/home">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <GalleryVerticalEndIcon className="size-4" />
                 </div>
@@ -110,7 +111,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="font-semibold">DAA Portal</span>
                   <span className="">v1.0.0</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
