@@ -51,12 +51,21 @@ export async function POST(req: Request) {
             );
         }
 
+        // Determine role: default to student, but check if already set to admin or if in admin list
+        // You can add admin emails here or manage them via Clerk dashboard
+        const adminEmails = ["admin@iiitdmj.ac.in"]; // Example admin email
+        let role = clerkUser.publicMetadata.role as string || "student";
+        
+        if (adminEmails.includes(primaryEmail.toLowerCase())) {
+            role = "admin";
+        }
+
         await client.users.updateUser(userId, {
             publicMetadata: {
                 rollNo: rollNo.toLowerCase(),
                 name,
                 onboardingComplete: true,
-                role: "student",
+                role: role,
             },
         });
 
