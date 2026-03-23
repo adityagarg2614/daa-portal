@@ -1,0 +1,125 @@
+"use client"
+
+import * as React from "react"
+
+import { NavMain } from "@/components/nav-main"
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+
+// This is sample data.
+const data = {
+  user: {
+    name: "shadcn",
+    email: "m@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+
+  navMain: [
+    {
+      title: "Overview",
+      url: "#",
+      icon: (
+        <TerminalSquareIcon
+        />
+      ),
+      isActive: true,
+      items: [
+        {
+          title: "Dashboard",
+          url: "/home",
+        },
+      ],
+    },
+    {
+      title: "Academic",
+      url: "#",
+      icon: (
+        <BotIcon
+        />
+      ),
+      items: [
+        {
+          title: "Assignments",
+          url: "#",
+        },
+        {
+          title: "My Submissions",
+          url: "#",
+        },
+        {
+          title: "Results",
+          url: "#",
+        },
+        {
+          title: "Attendance",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Updates",
+      url: "#",
+      icon: (
+        <BookOpenIcon
+        />
+      ),
+      items: [
+        {
+          title: "Announcements",
+          url: "#",
+        },
+        {
+          title: "Events",
+          url: "#",
+        },
+        {
+          title: "Notifications",
+          url: "#",
+        },
+      ],
+    },
+
+  ],
+
+}
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="#">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <GalleryVerticalEndIcon className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-semibold">DAA Portal</span>
+                  <span className="">v1.0.0</span>
+                </div>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={data.navMain} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

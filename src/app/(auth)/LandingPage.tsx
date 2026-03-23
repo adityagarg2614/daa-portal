@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SignInModalButton } from "../../components/SignInModalButton";
 import styles from "./LandingPage.module.css";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Bell } from "lucide-react";
 
 
 
@@ -16,28 +16,31 @@ export default function LandingPage() {
             <div className={`${styles.orb} ${styles.orb2}`} aria-hidden="true" />
 
             {/* ─── Nav ─── */}
-            <nav className="bg-background/80 backdrop-blur-md border-b border-primary/20 sticky top-0 z-50 shadow-lg">
-                <div className="max-w-7xl mx-auto p-4 flex items-center justify-between">
+            <nav className="bg-background/40 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 shadow-[0_4px_30px_rgba(0,0,0,0.1)] w-full">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                     <Link
                         href="/"
-                        className="flex text-2xl items-center gap-3 hover:scale-105 font-bold text-primary transition-transform duration-200"
+                        className="flex items-center gap-3 group transition-all duration-300"
                     >
-                        <div className="size-10 rounded-xl bg-linear-to-br from-primary via-secondary to-accent p-2 text-white flex items-center justify-center shadow-lg">
-                            <Sparkles />
+                        <div className="size-10 rounded-xl bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 p-2 text-white flex items-center justify-center shadow-lg group-hover:shadow-indigo-500/25 group-hover:scale-110 transition-all">
+                            <Sparkles className="size-6 animate-pulse" />
                         </div>
 
-                        <div className="flex flex-col">
-                            <span className="font-black text-xl bg-linear-to-r from-blue-50 via-blue-900 to-blue-50 bg-clip-text text-transparent font-mono tracking-wider">
+                        <div className="flex flex-col font-sans">
+                            <span className="font-bold text-xl bg-linear-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent tracking-tight">
                                 Algo-Grade
                             </span>
-                            <span className="text-xs text-muted-foreground font-medium -mt-1">
+                            <span className="text-[10px] text-indigo-300/60 font-medium uppercase tracking-[0.2em] -mt-1 group-hover:text-indigo-300 transition-colors">
                                 Code Together
                             </span>
                         </div>
                     </Link>
 
-                    <div className="flex items-center gap-4">
-                        <SignInModalButton className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2" />
+                    <div className="flex items-center gap-6">
+
+                        <div className="flex items-center gap-3 pl-2">
+                            <SignInModalButton className="group px-6 py-3 bg-linear-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2" />
+                        </div>
                     </div>
                 </div>
             </nav>
