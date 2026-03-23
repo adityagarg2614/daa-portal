@@ -36,10 +36,24 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Force onboarding if incomplete
     const metadata = (sessionClaims?.metadata as Record<string, any>) || {};
-    const onboardingComplete = metadata?.onboardingComplete === true;
-    const rollNo = metadata?.rollNo;
+    let onboardingComplete = metadata?.onboardingComplete === true;
+    let rollNo = metadata?.rollNo;
 
     if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req)) {
+        // Fallback: Check Clerk directly if the session token is stale
+        // This makes sure the redirect after onboarding works on the first try
+        try {
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            const client = await clerkClient();
+            const freshUser = await client.users.getUser(userId);
+
+            if (freshUser.publicMetadata.onboardingComplete === true && freshUser.publicMetadata.rollNo) {
+                return NextResponse.next();
+            }
+        } catch (error) {
+            console.error("[Middleware] Fallback metadata check failed:", error);
+        }
+
         return NextResponse.redirect(new URL("/onboarding", req.url));
     }
 
