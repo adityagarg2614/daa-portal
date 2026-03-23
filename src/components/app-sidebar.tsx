@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useUser } from "@clerk/nextjs"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -18,12 +19,6 @@ import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIco
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-
   navMain: [
     {
       title: "Overview",
@@ -92,8 +87,15 @@ const data = {
   ],
 
 }
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+
+  const userData = {
+    name: user?.fullName || user?.username || "Guest",
+    email: user?.primaryEmailAddress?.emailAddress || "",
+    avatar: user?.imageUrl || "/avatars/shadcn.jpg",
+  }
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -117,7 +119,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
