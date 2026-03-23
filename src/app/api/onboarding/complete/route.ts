@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { connectDB } from "@/lib/db";
+import UserModel from "@/models/User";
 
 export async function POST(req: Request) {
     try {
@@ -60,6 +62,7 @@ export async function POST(req: Request) {
             role = "admin";
         }
 
+        // 1. Update Clerk Metadata
         await client.users.updateUser(userId, {
             publicMetadata: {
                 rollNo: rollNo.toLowerCase(),
@@ -68,6 +71,20 @@ export async function POST(req: Request) {
                 role: role,
             },
         });
+
+        // 2. Sync to MongoDB Immediately
+        await connectDB();
+        await UserModel.findOneAndUpdate(
+            { clerkId: userId },
+            {
+                clerkId: userId,
+                name,
+                email: primaryEmail,
+                rollNo: rollNo.toLowerCase(),
+                role: role,
+            },
+            { upsert: true, new: true }
+        );
 
         return NextResponse.json({ message: "Onboarding completed" });
     } catch (error) {
