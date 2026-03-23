@@ -16,6 +16,10 @@ const isIgnoredRoute = createRouteMatcher([
     "/api/inngest(.*)",
 ]);
 
+const isAdminRoute = createRouteMatcher([
+    "/admin(.*)",
+]);
+
 export default clerkMiddleware(async (auth, req) => {
     // Let Inngest pass through untouched
     if (isIgnoredRoute(req)) {
@@ -59,6 +63,12 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Redirect onboarded users away from onboarding page
     if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api")) {
+        return NextResponse.redirect(new URL("/home", req.url));
+    }
+
+    // Protect admin routes
+    const role = metadata?.role;
+    if (isAdminRoute(req) && role !== "admin") {
         return NextResponse.redirect(new URL("/home", req.url));
     }
 

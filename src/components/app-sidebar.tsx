@@ -1,4 +1,5 @@
 "use client"
+import { usePathname } from "next/navigation"
 
 import * as React from "react"
 import { useUser } from "@clerk/nextjs"
@@ -90,6 +91,7 @@ const data = {
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isLoaded } = useUser()
+  const pathname = usePathname()
 
   const userData = {
     name: isLoaded ? (user?.fullName || user?.username || "User") : "Loading...",
