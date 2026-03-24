@@ -93,11 +93,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isLoaded } = useUser()
   const pathname = usePathname()
 
+  const metadata = user?.publicMetadata as Record<string, any>;
+  const role = metadata?.role || "student";
+  const homeUrl = role === "admin" ? "/admin" : "/home";
+
   const userData = {
     name: isLoaded ? (user?.fullName || user?.username || "User") : "Loading...",
     email: isLoaded ? (user?.primaryEmailAddress?.emailAddress || "") : "",
     avatar: isLoaded ? (user?.imageUrl || "/avatars/shadcn.jpg") : "/avatars/shadcn.jpg",
   }
+
+  // Filter or adjust navigation items based on role if needed
+  const navigationItems = role === "admin" 
+    ? [
+        {
+          title: "Admin Control",
+          url: "#",
+          icon: <TerminalSquareIcon />,
+          isActive: true,
+          items: [
+            { title: "Admin Dashboard", url: "/admin" },
+            { title: "Manage Users", url: "/admin/users" },
+          ],
+        },
+        ...data.navMain.filter(item => item.title !== "Overview")
+      ]
+    : data.navMain;
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -105,7 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/home">
+              <Link href={homeUrl}>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <GalleryVerticalEndIcon className="size-4" />
                 </div>
@@ -119,7 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navigationItems} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />

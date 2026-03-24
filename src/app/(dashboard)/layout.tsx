@@ -1,31 +1,42 @@
-'use client'
 
-import { useUser } from "@clerk/nextjs";
-import Navbar from "@/components/Navbar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { connectDB } from "@/lib/db";
+import UserModel from "@/models/User";
+import DashboardLayoutClient from "./DashboardLayoutClient";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser();
+  const { userId } = await auth();
+
+  if (!userId) {
+    redirect("/");
+  }
+
+  await connectDB();
+  const dbUser = await UserModel.findOne({ clerkId: userId });
+
+  if (!dbUser) {
+    // Sync Clerk metadata to reflect that user is not onboarded
+    const client = await clerkClient();
+    await client.users.updateUser(userId, {
+      publicMetadata: { onboardingComplete: false }
+    });
+
+    // User deleted from DB but Clerk session persists
+    redirect("/onboarding");
+  }
+
+  const user = await currentUser();
   const metadata = user?.publicMetadata as Record<string, any>;
   const name = metadata?.name;
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <Navbar name={name} />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="flex items-center gap-2 py-4">
-            <SidebarTrigger />
-          </div>
-          {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <DashboardLayoutClient name={name}>
+      {children}
+    </DashboardLayoutClient>
   );
 }

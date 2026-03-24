@@ -62,7 +62,22 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Redirect onboarded users away from onboarding page
-    if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api")) {
+    if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api") && onboardingComplete && rollNo) {
+        // Double-check with fresh data from Clerk to handle stale session tokens
+        // This prevents a loop if the user was recently deleted from the DB but the token still has the old metadata
+        try {
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            const client = await clerkClient();
+            const freshUser = await client.users.getUser(userId);
+
+            if (freshUser.publicMetadata.onboardingComplete !== true || !freshUser.publicMetadata.rollNo) {
+                // Token is stale, the user actually needs to re-onboard
+                return NextResponse.next();
+            }
+        } catch (error) {
+            console.error("[Middleware] Stale token check failed:", error);
+        }
+
         return NextResponse.redirect(new URL("/home", req.url));
     }
 
