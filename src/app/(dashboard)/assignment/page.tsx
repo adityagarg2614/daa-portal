@@ -1,86 +1,49 @@
 'use client'
 
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
+import axios from "axios"
 import { BookOpen, Clock3, CheckCircle2, CalendarDays, Search } from "lucide-react"
 
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
 
 type Assignment = {
-    id: number
+    _id: string
     title: string
-    subject: string
+    description: string
     totalProblems: number
     totalMarks: number
     publishAt: string
     dueAt: string
     status: AssignmentStatus
-    marks?: string
+    problems?: any[]
 }
 
 export default function AssignmentPage() {
     const [search, setSearch] = useState("")
     const [activeTab, setActiveTab] = useState<"All" | AssignmentStatus>("All")
+    const [assignments, setAssignments] = useState<Assignment[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const assignments: Assignment[] = [
-        {
-            id: 1,
-            title: "DAA Lab Assignment 4",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 5,
-            totalMarks: 20,
-            publishAt: "23 Mar 2026, 10:00 AM",
-            dueAt: "24 Mar 2026, 11:59 PM",
-            status: "Active",
-        },
-        {
-            id: 2,
-            title: "Greedy Algorithms Practice",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 4,
-            totalMarks: 15,
-            publishAt: "25 Mar 2026, 09:00 AM",
-            dueAt: "26 Mar 2026, 11:59 PM",
-            status: "Upcoming",
-        },
-        {
-            id: 3,
-            title: "Searching and Sorting",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 5,
-            totalMarks: 20,
-            publishAt: "18 Mar 2026, 10:00 AM",
-            dueAt: "19 Mar 2026, 11:59 PM",
-            status: "Completed",
-            marks: "18/20",
-        },
-        {
-            id: 4,
-            title: "Recursion and Backtracking",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 6,
-            totalMarks: 25,
-            publishAt: "14 Mar 2026, 10:00 AM",
-            dueAt: "15 Mar 2026, 11:59 PM",
-            status: "Expired",
-            marks: "22/25",
-        },
-        {
-            id: 5,
-            title: "Dynamic Programming Basics",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 5,
-            totalMarks: 20,
-            publishAt: "28 Mar 2026, 09:00 AM",
-            dueAt: "29 Mar 2026, 11:59 PM",
-            status: "Upcoming",
-        },
-    ]
+    useEffect(() => {
+        const fetchAssignments = async () => {
+            try {
+                const res = await axios.get("/api/student/assignments")
+                setAssignments(res.data.assignments || [])
+            } catch (error) {
+                console.error("Error fetching assignments:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchAssignments()
+    }, [])
 
     const filteredAssignments = useMemo(() => {
         return assignments.filter((assignment) => {
             const matchesSearch =
                 assignment.title.toLowerCase().includes(search.toLowerCase()) ||
-                assignment.subject.toLowerCase().includes(search.toLowerCase())
+                assignment.description.toLowerCase().includes(search.toLowerCase())
 
             const matchesTab = activeTab === "All" ? true : assignment.status === activeTab
 
@@ -165,9 +128,9 @@ export default function AssignmentPage() {
                 <div className="rounded-2xl border bg-background p-5 shadow-sm">
                     <div className="flex items-start justify-between">
                         <div>
-                            <p className="text-sm text-muted-foreground">Completed</p>
+                            <p className="text-sm text-muted-foreground">Expired</p>
                             <h2 className="mt-2 text-2xl font-bold">
-                                {assignments.filter((a) => a.status === "Completed").length}
+                                {assignments.filter((a) => a.status === "Expired").length}
                             </h2>
                         </div>
                         <div className="rounded-xl bg-muted p-2">
@@ -206,75 +169,75 @@ export default function AssignmentPage() {
                 ))}
             </div>
 
-            <div className="grid gap-4">
-                {filteredAssignments.length > 0 ? (
-                    filteredAssignments.map((assignment) => (
-                        <div
-                            key={assignment.id}
-                            className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
-                        >
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="space-y-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h2 className="text-lg font-semibold">{assignment.title}</h2>
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                                assignment.status
-                                            )}`}
-                                        >
-                                            {assignment.status}
-                                        </span>
+            {loading ? (
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                    <p className="text-sm text-muted-foreground">Loading assignments...</p>
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {filteredAssignments.length > 0 ? (
+                        filteredAssignments.map((assignment) => (
+                            <div
+                                key={assignment._id}
+                                className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
+                            >
+                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                    <div className="space-y-3">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <h2 className="text-lg font-semibold">{assignment.title}</h2>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
+                                                    assignment.status
+                                                )}`}
+                                            >
+                                                {assignment.status}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-sm text-muted-foreground">{assignment.description}</p>
+
+                                        <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
+                                            <div>
+                                                <span className="font-medium text-foreground">Problems:</span>{" "}
+                                                {assignment.totalProblems}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-foreground">Total Marks:</span>{" "}
+                                                {assignment.totalMarks}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-foreground">Published:</span>{" "}
+                                                {new Date(assignment.publishAt).toLocaleString()}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-foreground">Due:</span>{" "}
+                                                {new Date(assignment.dueAt).toLocaleString()}
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <p className="text-sm text-muted-foreground">{assignment.subject}</p>
-
-                                    <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
-                                        <div>
-                                            <span className="font-medium text-foreground">Problems:</span>{" "}
-                                            {assignment.totalProblems}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Total Marks:</span>{" "}
-                                            {assignment.totalMarks}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Published:</span>{" "}
-                                            {assignment.publishAt}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Due:</span>{" "}
-                                            {assignment.dueAt}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-                                    {assignment.marks ? (
-                                        <div className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold">
-                                            Score: {assignment.marks}
-                                        </div>
-                                    ) : (
+                                    <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
                                         <div className="rounded-xl bg-muted px-4 py-2 text-sm text-muted-foreground">
-                                            Not evaluated yet
+                                            Ready to attempt
                                         </div>
-                                    )}
 
-                                    <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                                        View Assignment
-                                    </button>
+                                        <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                                            View Assignment
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
+                            <h3 className="text-lg font-semibold">No assignments found</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Try changing the search or filter to find assignments.
+                            </p>
                         </div>
-                    ))
-                ) : (
-                    <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
-                        <h3 className="text-lg font-semibold">No assignments found</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Try changing the search or filter to find assignments.
-                        </p>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
