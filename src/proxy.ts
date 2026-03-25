@@ -5,6 +5,9 @@ const isPublicRoute = createRouteMatcher([
     "/",
     "/sign-in(.*)",
     "/sign-up(.*)",
+    "/api/admin/problems(.*)",
+    "/api/student/assignments(.*)",
+    "/api/admin/assignments(.*)",
 ]);
 
 const isOnboardingRoute = createRouteMatcher([
