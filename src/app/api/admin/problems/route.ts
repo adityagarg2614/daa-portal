@@ -17,6 +17,7 @@ export async function POST(req: Request) {
             difficulty,
             tags,
             marks,
+            starterCode,
             examples,
             testCases,
             createdBy,
@@ -45,6 +46,13 @@ export async function POST(req: Request) {
             difficulty: difficulty || "Easy",
             tags: tags || [],
             marks: marks || 10,
+            starterCode: starterCode || {
+                cpp: "",
+                java: "",
+                python: "",
+                javascript: "",
+            },
+
             examples: examples || [],
             testCases: testCases || [],
             createdBy: createdBy || null,
