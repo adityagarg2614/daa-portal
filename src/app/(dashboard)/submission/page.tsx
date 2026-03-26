@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
+import axios from "axios"
 import {
     FileCode2,
     CheckCircle2,
@@ -9,64 +10,55 @@ import {
     FileText,
 } from "lucide-react"
 
-type SubmissionStatus = "Not Attempted" | "Attempted" | "Submitted" | "Evaluated"
+type SubmissionStatus = "Attempted" | "Submitted" | "Evaluated"
 
 type Submission = {
-    id: number
-    assignmentTitle: string
-    subject: string
-    problems: number
+    _id: string
+    assignmentId: {
+        _id: string
+        title: string
+        dueAt?: string
+    }
+    problemId: {
+        _id: string
+        title: string
+    }
+    code: string
+    language: string
     status: SubmissionStatus
-    score?: string
+    score?: number
     submittedAt?: string
-    dueAt: string
 }
 
 export default function SubmissionPage() {
     const [search, setSearch] = useState("")
     const [activeTab, setActiveTab] = useState<"All" | SubmissionStatus>("All")
+    const [submissions, setSubmissions] = useState<Submission[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const submissions: Submission[] = [
-        {
-            id: 1,
-            assignmentTitle: "DAA Lab Assignment 1",
-            subject: "Design and Analysis of Algorithms",
-            problems: 5,
-            status: "Evaluated",
-            score: "18/20",
-            submittedAt: "18 Mar 2026, 10:30 AM",
-            dueAt: "18 Mar 2026, 11:59 PM",
-        },
-        {
-            id: 2,
-            assignmentTitle: "Searching and Sorting",
-            subject: "Design and Analysis of Algorithms",
-            problems: 4,
-            status: "Submitted",
-            submittedAt: "20 Mar 2026, 09:45 AM",
-            dueAt: "20 Mar 2026, 11:59 PM",
-        },
-        {
-            id: 3,
-            assignmentTitle: "Greedy Algorithms Practice",
-            subject: "Design and Analysis of Algorithms",
-            problems: 5,
-            status: "Attempted",
-            dueAt: "25 Mar 2026, 11:59 PM",
-        },
-        {
-            id: 4,
-            assignmentTitle: "Dynamic Programming Basics",
-            subject: "Design and Analysis of Algorithms",
-            problems: 6,
-            status: "Not Attempted",
-            dueAt: "28 Mar 2026, 11:59 PM",
-        },
-    ]
+    useEffect(() => {
+        const fetchSubmissions = async () => {
+            try {
+                const userRes = await axios.get("/api/users/me")
+                const dbUserId = userRes.data.user._id
+
+                const submissionsRes = await axios.get(
+                    `/api/student/submissions?userId=${dbUserId}`
+                )
+
+                setSubmissions(submissionsRes.data.submissions || [])
+            } catch (error) {
+                console.error("Error fetching submissions:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchSubmissions()
+    }, [])
 
     const tabs: Array<"All" | SubmissionStatus> = [
         "All",
-        "Not Attempted",
         "Attempted",
         "Submitted",
         "Evaluated",
@@ -74,9 +66,12 @@ export default function SubmissionPage() {
 
     const filteredSubmissions = useMemo(() => {
         return submissions.filter((item) => {
+            const assignmentTitle = item.assignmentId?.title || ""
+            const problemTitle = item.problemId?.title || ""
+
             const matchesSearch =
-                item.assignmentTitle.toLowerCase().includes(search.toLowerCase()) ||
-                item.subject.toLowerCase().includes(search.toLowerCase())
+                assignmentTitle.toLowerCase().includes(search.toLowerCase()) ||
+                problemTitle.toLowerCase().includes(search.toLowerCase())
 
             const matchesTab = activeTab === "All" ? true : item.status === activeTab
 
@@ -86,8 +81,6 @@ export default function SubmissionPage() {
 
     const getStatusClasses = (status: SubmissionStatus) => {
         switch (status) {
-            case "Not Attempted":
-                return "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400"
             case "Attempted":
                 return "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
             case "Submitted":
@@ -106,7 +99,7 @@ export default function SubmissionPage() {
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">My Submissions</h1>
                         <p className="mt-2 text-sm text-muted-foreground">
-                            Track all your attempted, submitted, and evaluated assignments here.
+                            Track all your submitted and evaluated problem solutions here.
                         </p>
                     </div>
 
@@ -123,7 +116,7 @@ export default function SubmissionPage() {
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border bg-background p-5 shadow-sm">
                     <div className="flex items-start justify-between">
                         <div>
@@ -132,20 +125,6 @@ export default function SubmissionPage() {
                         </div>
                         <div className="rounded-xl bg-muted p-2">
                             <FileText className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Attempted</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {submissions.filter((s) => s.status === "Attempted").length}
-                            </h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <FileCode2 className="h-5 w-5" />
                         </div>
                     </div>
                 </div>
@@ -194,71 +173,79 @@ export default function SubmissionPage() {
                 ))}
             </div>
 
-            <div className="grid gap-4">
-                {filteredSubmissions.length > 0 ? (
-                    filteredSubmissions.map((submission) => (
-                        <div
-                            key={submission.id}
-                            className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
-                        >
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="space-y-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h2 className="text-lg font-semibold">{submission.assignmentTitle}</h2>
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                                submission.status
-                                            )}`}
-                                        >
-                                            {submission.status}
-                                        </span>
+            {loading ? (
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                    <p className="text-sm text-muted-foreground">Loading submissions...</p>
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {filteredSubmissions.length > 0 ? (
+                        filteredSubmissions.map((submission) => (
+                            <div
+                                key={submission._id}
+                                className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
+                            >
+                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                                    <div className="space-y-3">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <h2 className="text-lg font-semibold">
+                                                {submission.assignmentId?.title}
+                                            </h2>
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
+                                                    submission.status
+                                                )}`}
+                                            >
+                                                {submission.status}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-sm text-muted-foreground">
+                                            Problem: {submission.problemId?.title}
+                                        </p>
+
+                                        <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
+                                            <div>
+                                                <span className="font-medium text-foreground">Language:</span>{" "}
+                                                {submission.language}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-foreground">Submitted At:</span>{" "}
+                                                {submission.submittedAt
+                                                    ? new Date(submission.submittedAt).toLocaleString()
+                                                    : "N/A"}
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-foreground">Due Date:</span>{" "}
+                                                {submission.assignmentId?.dueAt
+                                                    ? new Date(submission.assignmentId.dueAt).toLocaleString()
+                                                    : "N/A"}
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <p className="text-sm text-muted-foreground">{submission.subject}</p>
-
-                                    <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
-                                        <div>
-                                            <span className="font-medium text-foreground">Problems:</span>{" "}
-                                            {submission.problems}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Due Date:</span>{" "}
-                                            {submission.dueAt}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Submitted At:</span>{" "}
-                                            {submission.submittedAt || "Not submitted yet"}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-                                    {submission.score ? (
+                                    <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
                                         <div className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold">
-                                            Score: {submission.score}
+                                            Score: {submission.score ?? 0}
                                         </div>
-                                    ) : (
-                                        <div className="rounded-xl bg-muted px-4 py-2 text-sm text-muted-foreground">
-                                            No score available
-                                        </div>
-                                    )}
 
-                                    <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                                        View Details
-                                    </button>
+                                        <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                                            View Details
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
+                            <h3 className="text-lg font-semibold">No submissions found</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                Your submission records will appear here once you submit a problem.
+                            </p>
                         </div>
-                    ))
-                ) : (
-                    <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
-                        <h3 className="text-lg font-semibold">No submissions found</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Your submission records will appear here once you start attempting assignments.
-                        </p>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

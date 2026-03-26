@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
     "/api/admin/problems(.*)",
     "/api/student/assignments(.*)",
     "/api/admin/assignments(.*)",
+    "/api/student/submissions(.*)",
 ]);
 
 const isOnboardingRoute = createRouteMatcher([

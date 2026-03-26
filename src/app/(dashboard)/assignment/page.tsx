@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { BookOpen, Clock3, CheckCircle2, CalendarDays, Search } from "lucide-react"
-
+import Link from "next/link"
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
 
 type Assignment = {
@@ -160,8 +160,8 @@ export default function AssignmentPage() {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`rounded-full px-4 py-2 text-sm font-medium transition ${activeTab === tab
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
                             }`}
                     >
                         {tab}
@@ -221,9 +221,12 @@ export default function AssignmentPage() {
                                             Ready to attempt
                                         </div>
 
-                                        <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                                        <Link
+                                            href={`/assignment/${assignment._id}`}
+                                            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                                        >
                                             View Assignment
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
