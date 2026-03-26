@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Assignment from "@/models/Assignment";
-
+import Problem from "@/models/Problem";
 
 export async function GET() {
     try {
         await connectDB();
 
         const assignments = await Assignment.find()
-            .populate("problemIds")
+            .populate({ path: "problemIds", model: Problem })
             .sort({ publishAt: -1 });
 
         const now = new Date();
