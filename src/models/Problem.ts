@@ -25,6 +25,12 @@ export interface IProblem extends Document {
     createdBy?: string;
     createdAt: Date;
     updatedAt: Date;
+    starterCode: {
+        cpp: string;
+        java: string;
+        python: string;
+        javascript: string;
+    };
 }
 
 const ExampleSchema = new Schema<IExample>(
@@ -92,6 +98,12 @@ const ProblemSchema = new Schema<IProblem>(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: false,
+        },
+        starterCode: {
+            cpp: { type: String, default: "" },
+            java: { type: String, default: "" },
+            python: { type: String, default: "" },
+            javascript: { type: String, default: "" },
         },
     },
     { timestamps: true }
