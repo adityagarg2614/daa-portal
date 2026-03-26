@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -14,6 +15,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { ChevronRightIcon } from "lucide-react"
 import Link from "next/link"
@@ -34,6 +36,16 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const { state, setOpen } = useSidebar()
+  const [openCollapsible, setOpenCollapsible] = React.useState<string | null>(null)
+
+  const handleCollapsibleClick = (e: React.MouseEvent, title: string, hasItems: boolean) => {
+    if (state === "collapsed" && hasItems) {
+      e.preventDefault()
+      setOpen(true)
+      setOpenCollapsible(title)
+    }
+  }
 
   return (
     <SidebarGroup>
@@ -44,11 +56,22 @@ export function NavMain({
             key={item.title}
             asChild
             defaultOpen={item.isActive}
+            open={openCollapsible === item.title}
+            onOpenChange={(open) => {
+              if (open) {
+                setOpenCollapsible(item.title)
+              } else {
+                setOpenCollapsible(null)
+              }
+            }}
             className="group/collapsible"
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  onClick={(e) => handleCollapsibleClick(e, item.title, !!item.items?.length)}
+                >
                   {item.icon}
                   <span>{item.title}</span>
                   <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />

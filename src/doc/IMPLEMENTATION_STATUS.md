@@ -11,6 +11,7 @@ All phases completed! The sidebar and navbar refactor is now complete with:
 - User name and roll number badge in navbar
 - Consolidated "Algo-Grade" branding in sidebar header
 - Full-width sidebar footer with User Profile and Log Out options
+- **Inter font** configured throughout the project (like animate-ui.com)
 
 ---
 
@@ -127,7 +128,28 @@ All phases completed! The sidebar and navbar refactor is now complete with:
 
 ---
 
-### Phase 8: Testing & Verification ⏳
+### Phase 8: Typography & Fonts ✅
+**Files**: `/src/app/layout.tsx`, `/src/app/globals.css`
+
+**Completed**:
+- [x] Configured Inter font with all weights (100-900)
+- [x] Added `display: swap` for better performance
+- [x] Removed unused Geist fonts
+- [x] Updated CSS to use Inter as default font family
+- [x] Added tight letter-spacing for headings (-0.025em)
+- [x] Configured Tailwind theme to use Inter
+
+**Current State**:
+```tsx
+- Font Family: Inter (like animate-ui.com)
+- Weights: 100, 200, 300, 400, 500, 600, 700, 800, 900
+- Headings: 600 weight, -0.025em letter-spacing
+- Mono: IBM Plex Mono (for code)
+```
+
+---
+
+### Phase 9: Testing & Verification ⏳
 **Status**: Not started
 
 **Pending**:
@@ -138,15 +160,37 @@ All phases completed! The sidebar and navbar refactor is now complete with:
 
 ---
 
+### Phase 10: Sidebar Collapsed State Fixes ✅
+**Files**: `/src/components/Navbar.tsx`, `/src/components/nav-main.tsx`
+
+**Completed**:
+- [x] Fixed sidebar trigger alignment (flush left when collapsed)
+- [x] Added auto-expand when clicking parent folders while collapsed
+- [x] Parent folder dropdown opens automatically after expand
+- [x] Added React state to track open collapsible items
+
+**Current State**:
+```tsx
+- Sidebar trigger: -ml-1 class for flush left alignment
+- Clicking parent folder while collapsed:
+  1. Expands sidebar
+  2. Opens the parent folder dropdown automatically
+- Collapsible state tracked with openCollapsible state
+```
+
+---
+
 ## Files Modified
 
 | File | Status | Changes |
 |------|--------|---------|
-| `/src/components/Navbar.tsx` | ✅ Complete | Slim navbar, sidebar trigger, user info |
+| `/src/components/Navbar.tsx` | ✅ Complete | Slim navbar, sidebar trigger, user info, trigger alignment fix |
 | `/src/components/app-sidebar.tsx` | ✅ Complete | New branding, removed userData |
 | `/src/components/nav-user.tsx` | ✅ Complete | Custom dropdown with User Profile + Log Out |
+| `/src/components/nav-main.tsx` | ✅ Complete | Collapsible auto-open when sidebar collapsed |
 | `/src/app/(dashboard)/DashboardLayoutClient.tsx` | ✅ Complete | Removed trigger, added rollNo prop |
-| `/src/app/(dashboard)/layout.tsx` | ✅ Complete | Added rollNo metadata |
+| `/src/app/(dashboard)/layout.tsx` | ✅ Complete | Added rollNo metadata, Inter font config |
+| `/src/app/globals.css` | ✅ Complete | Inter font as default, heading styles |
 
 ---
 
@@ -158,7 +202,7 @@ All phases completed! The sidebar and navbar refactor is now complete with:
 
 ## Next Steps
 
-1. Complete testing checklist (Phase 8)
+1. Complete testing checklist (Phase 9)
 2. Run linter and fix any new warnings
 3. Commit changes with descriptive message
 
@@ -172,3 +216,8 @@ All phases completed! The sidebar and navbar refactor is now complete with:
 - User info (name + roll) now visible in navbar for quick reference
 - Sidebar footer now has full-width button with custom dropdown
 - Two dropdown options: User Profile (opens Clerk modal), Log Out (signs out)
+- **Inter font** configured with all weights (100-900) for beautiful typography
+- Headings use 600 weight with tight letter-spacing (-0.025em)
+- Font display swap for better performance
+- **Sidebar trigger flush left** when collapsed (-ml-1 class)
+- **Parent folders auto-expand** sidebar and open dropdown when clicked while collapsed

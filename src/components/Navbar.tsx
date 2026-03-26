@@ -1,6 +1,7 @@
 'use client'
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface NavbarProps {
     name?: string;
@@ -8,10 +9,13 @@ interface NavbarProps {
 }
 
 export default function Navbar({ name, rollNo }: NavbarProps) {
+    const { state } = useSidebar()
+    const isCollapsed = state === "collapsed"
+
     return (
         <nav className="bg-background/40 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
-                <SidebarTrigger />
+                <SidebarTrigger className={isCollapsed ? "-ml-2" : ""} />
 
                 {name && (
                     <div className="flex items-center gap-2">
