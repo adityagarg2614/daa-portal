@@ -16,7 +16,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from "lucide-react"
+import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -91,33 +91,26 @@ const data = {
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isLoaded } = useUser()
-  const pathname = usePathname()
 
   const metadata = user?.publicMetadata as Record<string, any>;
   const role = metadata?.role || "student";
   const homeUrl = role === "admin" ? "/admin" : "/home";
 
-  const userData = {
-    name: isLoaded ? (user?.fullName || user?.username || "User") : "Loading...",
-    email: isLoaded ? (user?.primaryEmailAddress?.emailAddress || "") : "",
-    avatar: isLoaded ? (user?.imageUrl || "/avatars/shadcn.jpg") : "/avatars/shadcn.jpg",
-  }
-
   // Filter or adjust navigation items based on role if needed
-  const navigationItems = role === "admin" 
+  const navigationItems = role === "admin"
     ? [
-        {
-          title: "Admin Control",
-          url: "#",
-          icon: <TerminalSquareIcon />,
-          isActive: true,
-          items: [
-            { title: "Admin Dashboard", url: "/admin" },
-            { title: "Manage Users", url: "/admin/users" },
-          ],
-        },
-        ...data.navMain.filter(item => item.title !== "Overview")
-      ]
+      {
+        title: "Admin Control",
+        url: "#",
+        icon: <TerminalSquareIcon />,
+        isActive: true,
+        items: [
+          { title: "Admin Dashboard", url: "/admin" },
+          { title: "Manage Users", url: "/admin/users" },
+        ],
+      },
+      ...data.navMain.filter(item => item.title !== "Overview")
+    ]
     : data.navMain;
 
   return (
@@ -127,12 +120,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href={homeUrl}>
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <GalleryVerticalEndIcon className="size-4" />
+                <div className="size-8 rounded-lg bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 p-1.5 text-white flex items-center justify-center shadow-lg">
+                  <Sparkles className="size-5" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">DAA Portal</span>
-                  <span className="">v1.0.0</span>
+                  <span className="font-semibold">Algo-Grade</span>
+                  <span className="text-[10px] text-muted-foreground">Code Together</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -143,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navigationItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userData} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
