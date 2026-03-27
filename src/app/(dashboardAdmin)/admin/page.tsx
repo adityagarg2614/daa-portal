@@ -12,6 +12,33 @@ import {
 } from "lucide-react"
 
 export default function AdminDashboardHomePage() {
+
+    const [stats, setStats] = React.useState({
+        totalProblems: 0,
+        totalAssignments: 0,
+        totalSubmissions: 0,
+        activeAssignments: 0,
+    });
+
+    const [recentProblems, setRecentProblems] = React.useState([]);
+    const [recentAssignments, setRecentAssignments] = React.useState([]);
+    const [recentSubmissions, setRecentSubmissions] = React.useState([]);
+
+    React.useEffect(() => {
+        fetch('/api/admin/dashboard')
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.success) {
+                    setStats(data.stats);
+                    setRecentProblems(data.recentProblems);
+                    setRecentAssignments(data.recentAssignments);
+                    setRecentSubmissions(data.recentSubmissions);
+                }
+            });
+    }, []);
+
+
+
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
