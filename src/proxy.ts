@@ -86,10 +86,10 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Protect admin routes
-    const role = metadata?.role;
-    if (isAdminRoute(req) && role !== "admin") {
-        return NextResponse.redirect(new URL("/home", req.url));
-    }
+    // const role = metadata?.role;
+    // if (isAdminRoute(req) && role !== "admin") {
+    //     return NextResponse.redirect(new URL("/home", req.url));
+    // }
 
     return NextResponse.next();
 });
