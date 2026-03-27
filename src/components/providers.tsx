@@ -3,6 +3,7 @@
 import { ClerkProvider } from "@clerk/nextjs"
 import React from "react"
 import { ThemeProvider } from "./theme-provider"
+import { Toaster } from "sonner"
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     return (
@@ -14,6 +15,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 disableTransitionOnChange
             >
                 {children}
+                <Toaster position="top-right" richColors />
             </ThemeProvider>
         </ClerkProvider>
     )

@@ -1,10 +1,13 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { ArrowRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 /**
  * Opens the Clerk sign-in modal on click.
+ * If user is already signed in, redirects to dashboard.
  * Styled to match LandingPage btnPrimary by default.
  */
 export function SignInModalButton({ className, style, children }: {
@@ -13,6 +16,23 @@ export function SignInModalButton({ className, style, children }: {
     children?: React.ReactNode;
 }) {
     const { openSignIn } = useClerk();
+    const { isSignedIn, isLoaded } = useUser();
+    const router = useRouter();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    const handleClick = () => {
+        if (isLoaded && isSignedIn) {
+            // User is already signed in, redirect to dashboard
+            router.push("/dashboard");
+        } else {
+            // Open sign-in modal
+            openSignIn();
+        }
+    };
 
     const defaultStyle: React.CSSProperties = {
         display: "inline-flex",
@@ -34,7 +54,7 @@ export function SignInModalButton({ className, style, children }: {
 
     return (
         <button
-            onClick={() => openSignIn()}
+            onClick={handleClick}
             className={className}
             style={className ? style : defaultStyle}
             onMouseEnter={(e) => {
