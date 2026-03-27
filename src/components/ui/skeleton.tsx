@@ -250,6 +250,48 @@ function PageHeaderSkeleton() {
   )
 }
 
+/**
+ * AssignmentDetailSkeleton - Loading skeleton for assignment detail page
+ * Used in /assignment/[id] page
+ */
+function AssignmentDetailSkeleton() {
+  return (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
+      {/* Header Skeleton */}
+      <div className="rounded-2xl border bg-background p-8 shadow-sm">
+        <div className="flex items-start gap-4">
+          <Skeleton className="h-14 w-14 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-7 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+        <Skeleton className="mt-6 h-2 w-full" />
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+      </div>
+
+      {/* Problem Card Skeleton */}
+      <div className="rounded-2xl border bg-background p-6 shadow-sm">
+        <div className="mb-6 space-y-2">
+          <Skeleton className="h-6 w-1/2" />
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="mb-4 h-4 w-full" />
+        <Skeleton className="mb-4 h-4 w-2/3" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    </div>
+  )
+}
+
 export {
   Skeleton,
   StatsCardSkeleton,
@@ -261,4 +303,5 @@ export {
   InfoCardSkeleton,
   ListSkeleton,
   PageHeaderSkeleton,
+  AssignmentDetailSkeleton,
 }
