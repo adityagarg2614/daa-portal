@@ -2,6 +2,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useSidebar } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface NavbarProps {
     name?: string;
@@ -27,6 +28,8 @@ export default function Navbar({ name, rollNo }: NavbarProps) {
                         )}
                     </div>
                 )}
+
+                <ThemeToggle />
             </div>
         </nav>
     );

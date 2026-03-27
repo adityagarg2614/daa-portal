@@ -32,9 +32,9 @@ export default async function DashboardLayout({
   }
 
   const user = await currentUser();
-  const metadata = user?.publicMetadata as Record<string, any>;
-  const name = metadata?.name;
-  const rollNo = metadata?.rollNo;
+  const metadata = user?.publicMetadata as Record<string, unknown>;
+  const name = metadata?.name as string | undefined;
+  const rollNo = metadata?.rollNo as string | undefined;
 
   return (
     <DashboardLayoutClient name={name} rollNo={rollNo}>

@@ -142,3 +142,108 @@
     letter-spacing: -0.025em;
   }
 }
+
+@layer utilities {
+
+  /* Icon Animations */
+  .icon-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .icon-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  .icon-bounce {
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  .icon-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  .icon-hover-scale {
+    transition: transform 0.2s ease;
+  }
+
+  .icon-hover-scale:hover {
+    transform: scale(1.1);
+  }
+
+  .icon-hover-rotate {
+    transition: transform 0.3s ease;
+  }
+
+  .icon-hover-rotate:hover {
+    transform: rotate(15deg);
+  }
+
+  .icon-hover-wiggle {
+    transition: transform 0.2s ease;
+  }
+
+  .icon-hover-wiggle:hover {
+    transform: rotate(-10deg) scale(1.05);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-5px);
+  }
+
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

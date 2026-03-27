@@ -3,7 +3,6 @@
 import { useClerk, useUser } from "@clerk/nextjs";
 import { ArrowRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 
 /**
  * Opens the Clerk sign-in modal on click.
@@ -16,13 +15,8 @@ export function SignInModalButton({ className, style, children }: {
     children?: React.ReactNode;
 }) {
     const { openSignIn } = useClerk();
-    const { isSignedIn, isLoaded } = useUser();
+    const { isLoaded, isSignedIn } = useUser();
     const router = useRouter();
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
 
     const handleClick = () => {
         if (isLoaded && isSignedIn) {

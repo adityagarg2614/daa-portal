@@ -43,9 +43,9 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Force onboarding if incomplete
-    const metadata = (sessionClaims?.metadata as Record<string, any>) || {};
-    let onboardingComplete = metadata?.onboardingComplete === true;
-    let rollNo = metadata?.rollNo;
+    const metadata = (sessionClaims?.metadata as Record<string, unknown>) || {};
+    const onboardingComplete = (metadata?.onboardingComplete as boolean) === true;
+    const rollNo = metadata?.rollNo as string | undefined;
 
     if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req)) {
         // Fallback: Check Clerk directly if the session token is stale

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SignInModalButton } from "../../components/SignInModalButton";
 import styles from "./LandingPage.module.css";
-import { Sparkles, Bell } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 
 

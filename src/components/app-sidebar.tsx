@@ -1,5 +1,4 @@
 "use client"
-import { usePathname } from "next/navigation"
 
 import * as React from "react"
 import { useUser } from "@clerk/nextjs"
@@ -92,8 +91,8 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, isLoaded } = useUser()
 
-  const metadata = user?.publicMetadata as Record<string, any>;
-  const role = metadata?.role || "student";
+  const metadata = user?.publicMetadata as Record<string, unknown>;
+  const role = (metadata?.role as string) || "student";
   const homeUrl = role === "admin" ? "/admin" : "/home";
 
   // Filter or adjust navigation items based on role if needed

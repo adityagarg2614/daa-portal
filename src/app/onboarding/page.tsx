@@ -73,7 +73,7 @@ export default function OnboardingPage() {
 
             <main className={`${styles.container}`}>
                 <h1 className={styles.title}>Complete Your Profile</h1>
-                <p className={styles.subtitle}>Let's get you set up for the Algo-Grade portal.</p>
+                <p className={styles.subtitle}>Let&apos;s get you set up for the Algo-Grade portal.</p>
 
                 {rollNo ? (
                     <div className={styles.info}>

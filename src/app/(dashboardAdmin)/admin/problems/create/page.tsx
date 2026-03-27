@@ -2,6 +2,29 @@
 
 import axios from "axios"
 import React, { useState } from "react"
+import {
+    Code2,
+    FileText,
+    Plus,
+    X,
+    CheckCircle2,
+    Loader2,
+    Send,
+    Trash2,
+    BookOpen,
+    Sparkles,
+} from "lucide-react"
+import { FormField } from "@/components/ui/form-field"
+import { Alert } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 type Example = {
     input: string
@@ -38,6 +61,22 @@ export default function CreateProblemPage() {
 
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("")
+    const [messageType, setMessageType] = useState<"success" | "error" | "info">(
+        "info"
+    )
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+    const [pendingSubmission, setPendingSubmission] = useState<null | {
+        title: string
+        slug: string
+        description: string
+        difficulty: string
+        marks: number
+        tags: string[]
+        constraints: string[]
+        examples: Example[]
+        testCases: TestCase[]
+        starterCode: typeof starterCode
+    }>(null)
 
     const handleConstraintChange = (index: number, value: string) => {
         const updated = [...constraints]
@@ -103,33 +142,51 @@ export default function CreateProblemPage() {
         e.preventDefault()
         setMessage("")
 
+        // Validate required fields
+        if (!title || !slug || !description || !marks) {
+            setMessage("Please fill all required fields")
+            setMessageType("error")
+            return
+        }
+
+        // Show confirmation dialog before submitting
+        setPendingSubmission({
+            title,
+            slug,
+            description,
+            difficulty,
+            marks,
+            tags: tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean),
+            constraints: constraints.filter(Boolean),
+            examples: examples.filter(
+                (example) => example.input.trim() && example.output.trim()
+            ),
+            testCases: testCases.filter(
+                (testCase) => testCase.input.trim() && testCase.output.trim()
+            ),
+            starterCode,
+        })
+        setShowConfirmDialog(true)
+    }
+
+    const confirmSubmission = async () => {
+        if (!pendingSubmission) return
+
         try {
             setLoading(true)
+            setShowConfirmDialog(false)
+            setPendingSubmission(null)
+            setMessage("")
 
-            const payload = {
-                title,
-                slug,
-                description,
-                difficulty,
-                marks,
-                tags: tags
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
-                constraints: constraints.filter(Boolean),
-                examples: examples.filter(
-                    (example) => example.input.trim() && example.output.trim()
-                ),
-                testCases: testCases.filter(
-                    (testCase) => testCase.input.trim() && testCase.output.trim()
-                ),
-                starterCode,
-            }
-
-            const res = await axios.post("/api/admin/problems", payload)
+            const res = await axios.post("/api/admin/problems", pendingSubmission)
 
             setMessage(res.data.message || "Problem created successfully")
+            setMessageType("success")
 
+            // Reset form
             setTitle("")
             setSlug("")
             setDescription("")
@@ -145,107 +202,202 @@ export default function CreateProblemPage() {
                 python: "",
                 javascript: "",
             })
-        } catch (error: any) {
-            setMessage(error?.response?.data?.message || "Failed to create problem")
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error && 'response' in error
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+                    : "Failed to create problem"
+            setMessage(errorMessage || "Failed to create problem")
+            setMessageType("error")
         } finally {
             setLoading(false)
         }
     }
 
+    const dismissMessage = () => {
+        setMessage("")
+    }
+
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            <div className="rounded-2xl border bg-background p-6 shadow-sm">
-                <h1 className="text-2xl font-bold tracking-tight">Create Problem</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Add a new reusable problem to the problem bank.
-                </p>
+            {/* Enhanced Header */}
+            <div
+                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
+                role="banner"
+            >
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
+                            aria-hidden="true"
+                        >
+                            <Code2 className="h-6 w-6 icon-bounce" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
+                                Create Problem
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                Add a new reusable problem to the problem bank
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {/* Decorative background elements */}
+                <div
+                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                    aria-hidden="true"
+                />
+                <div
+                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                    aria-hidden="true"
+                />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="rounded-2xl border bg-background p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold">Basic Details</h2>
+            <form onSubmit={handleSubmit} className="space-y-6" aria-labelledby="page-heading">
+                {/* Basic Details Section */}
+                <div
+                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    role="region"
+                    aria-labelledby="basic-details-heading"
+                >
+                    <div className="mb-4 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                        <h2 id="basic-details-heading" className="text-lg font-semibold">
+                            Basic Details
+                        </h2>
+                    </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Title</label>
+                        <FormField
+                            label="Title"
+                            required
+                            hint="Enter a descriptive title for the problem"
+                        >
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Enter problem title"
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                placeholder="e.g. Two Sum"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
                                 required
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Slug</label>
+                        <FormField
+                            label="Slug"
+                            required
+                            hint="URL-friendly identifier (e.g., two-sum)"
+                        >
                             <input
                                 value={slug}
                                 onChange={(e) => setSlug(e.target.value)}
                                 placeholder="e.g. two-sum"
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
                                 required
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Difficulty</label>
-                            <select
-                                value={difficulty}
-                                onChange={(e) => setDifficulty(e.target.value)}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                            >
-                                <option value="Easy">Easy</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Hard">Hard</option>
-                            </select>
-                        </div>
+                        <FormField
+                            label="Difficulty"
+                            required
+                            hint="Select the problem difficulty level"
+                        >
+                            <Select value={difficulty} onValueChange={setDifficulty}>
+                                <SelectTrigger className="gap-2">
+                                    <SelectValue placeholder="Select difficulty" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="easy">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                                            Easy
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="medium">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+                                            Medium
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="hard">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-red-500" />
+                                            Hard
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Marks</label>
+                        <FormField
+                            label="Marks"
+                            required
+                            hint="Points awarded for solving this problem"
+                        >
                             <input
                                 type="number"
                                 value={marks}
                                 onChange={(e) => setMarks(Number(e.target.value))}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
                                 required
+                                min="1"
                             />
-                        </div>
+                        </FormField>
                     </div>
 
-                    <div className="mt-4">
-                        <label className="mb-2 block text-sm font-medium">Tags</label>
+                    <FormField
+                        label="Tags"
+                        hint="Comma-separated tags (e.g., Array, Hash Map, DP)"
+                        className="mt-4"
+                    >
                         <input
                             value={tags}
                             onChange={(e) => setTags(e.target.value)}
                             placeholder="Array, Hash Map, DP"
-                            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                            className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
                         />
-                    </div>
+                    </FormField>
 
-                    <div className="mt-4">
-                        <label className="mb-2 block text-sm font-medium">Description</label>
+                    <FormField
+                        label="Description"
+                        required
+                        className="mt-4"
+                        hint="Provide detailed problem statement and instructions"
+                    >
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Enter full problem description"
                             rows={6}
-                            className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                            className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none"
                             required
                         />
-                    </div>
+                    </FormField>
                 </div>
 
-                <div className="rounded-2xl border bg-background p-6 shadow-sm">
+                {/* Constraints Section */}
+                <div
+                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    role="region"
+                    aria-labelledby="constraints-heading"
+                >
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Constraints</h2>
-                        <button
+                        <div className="flex items-center gap-2">
+                            <BookOpen className="h-5 w-5 text-primary" />
+                            <h2 id="constraints-heading" className="text-lg font-semibold">
+                                Constraints
+                            </h2>
+                        </div>
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={addConstraint}
-                            className="rounded-lg border px-3 py-2 text-sm"
+                            className="gap-2"
                         >
+                            <Plus className="h-4 w-4 icon-hover-scale" />
                             Add Constraint
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="space-y-3">
@@ -255,191 +407,316 @@ export default function CreateProblemPage() {
                                     value={constraint}
                                     onChange={(e) => handleConstraintChange(index, e.target.value)}
                                     placeholder={`Constraint ${index + 1}`}
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
                                 />
-                                <button
+                                <Button
                                     type="button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => removeConstraint(index)}
-                                    className="rounded-lg border px-3 py-2 text-sm"
+                                    className="shrink-0"
+                                    aria-label="Remove constraint"
                                 >
-                                    Remove
-                                </button>
+                                    <X className="h-4 w-4 icon-hover-scale" />
+                                </Button>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="rounded-2xl border bg-background p-6 shadow-sm">
+                {/* Examples Section */}
+                <div
+                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    role="region"
+                    aria-labelledby="examples-heading"
+                >
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Examples</h2>
-                        <button
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            <h2 id="examples-heading" className="text-lg font-semibold">
+                                Examples
+                            </h2>
+                        </div>
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={addExample}
-                            className="rounded-lg border px-3 py-2 text-sm"
+                            className="gap-2"
                         >
+                            <Plus className="h-4 w-4 icon-hover-scale" />
                             Add Example
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="space-y-4">
                         {examples.map((example, index) => (
-                            <div key={index} className="rounded-xl border p-4 space-y-3">
-                                <input
-                                    value={example.input}
-                                    onChange={(e) =>
-                                        handleExampleChange(index, "input", e.target.value)
-                                    }
-                                    placeholder="Input"
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                                />
-                                <input
-                                    value={example.output}
-                                    onChange={(e) =>
-                                        handleExampleChange(index, "output", e.target.value)
-                                    }
-                                    placeholder="Output"
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                                />
-                                <textarea
-                                    value={example.explanation}
-                                    onChange={(e) =>
-                                        handleExampleChange(index, "explanation", e.target.value)
-                                    }
-                                    placeholder="Explanation"
-                                    rows={3}
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeExample(index)}
-                                    className="rounded-lg border px-3 py-2 text-sm"
-                                >
-                                    Remove Example
-                                </button>
+                            <div
+                                key={index}
+                                className="rounded-xl border bg-muted/30 p-4 space-y-3"
+                            >
+                                <FormField label={`Example ${index + 1} Input`}>
+                                    <input
+                                        value={example.input}
+                                        onChange={(e) =>
+                                            handleExampleChange(index, "input", e.target.value)
+                                        }
+                                        placeholder="Input"
+                                        className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
+                                    />
+                                </FormField>
+
+                                <FormField label={`Example ${index + 1} Output`}>
+                                    <input
+                                        value={example.output}
+                                        onChange={(e) =>
+                                            handleExampleChange(index, "output", e.target.value)
+                                        }
+                                        placeholder="Output"
+                                        className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
+                                    />
+                                </FormField>
+
+                                <FormField label={`Example ${index + 1} Explanation`}>
+                                    <textarea
+                                        value={example.explanation}
+                                        onChange={(e) =>
+                                            handleExampleChange(index, "explanation", e.target.value)
+                                        }
+                                        placeholder="Explanation"
+                                        rows={3}
+                                        className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none"
+                                    />
+                                </FormField>
+
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeExample(index)}
+                                        className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        Remove Example
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="rounded-2xl border bg-background p-6 shadow-sm">
+                {/* Test Cases Section */}
+                <div
+                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    role="region"
+                    aria-labelledby="test-cases-heading"
+                >
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Test Cases</h2>
-                        <button
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-primary" />
+                            <h2 id="test-cases-heading" className="text-lg font-semibold">
+                                Test Cases
+                            </h2>
+                        </div>
+                        <Button
                             type="button"
+                            variant="outline"
+                            size="sm"
                             onClick={addTestCase}
-                            className="rounded-lg border px-3 py-2 text-sm"
+                            className="gap-2"
                         >
+                            <Plus className="h-4 w-4 icon-hover-scale" />
                             Add Test Case
-                        </button>
+                        </Button>
                     </div>
 
                     <div className="space-y-4">
                         {testCases.map((testCase, index) => (
-                            <div key={index} className="rounded-xl border p-4 space-y-3">
-                                <textarea
-                                    value={testCase.input}
-                                    onChange={(e) =>
-                                        handleTestCaseChange(index, "input", e.target.value)
-                                    }
-                                    placeholder="Test input"
-                                    rows={3}
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                                />
-                                <textarea
-                                    value={testCase.output}
-                                    onChange={(e) =>
-                                        handleTestCaseChange(index, "output", e.target.value)
-                                    }
-                                    placeholder="Expected output"
-                                    rows={3}
-                                    className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
-                                />
+                            <div
+                                key={index}
+                                className="rounded-xl border bg-muted/30 p-4 space-y-3"
+                            >
+                                <FormField label={`Test Case ${index + 1} Input`}>
+                                    <textarea
+                                        value={testCase.input}
+                                        onChange={(e) =>
+                                            handleTestCaseChange(index, "input", e.target.value)
+                                        }
+                                        placeholder="Test input"
+                                        rows={3}
+                                        className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none"
+                                    />
+                                </FormField>
 
-                                <label className="flex items-center gap-2 text-sm">
+                                <FormField label={`Test Case ${index + 1} Expected Output`}>
+                                    <textarea
+                                        value={testCase.output}
+                                        onChange={(e) =>
+                                            handleTestCaseChange(index, "output", e.target.value)
+                                        }
+                                        placeholder="Expected output"
+                                        rows={3}
+                                        className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none"
+                                    />
+                                </FormField>
+
+                                <div className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
+                                        id={`hidden-${index}`}
                                         checked={testCase.isHidden}
                                         onChange={(e) =>
                                             handleTestCaseChange(index, "isHidden", e.target.checked)
                                         }
+                                        className="h-4 w-4 rounded border-gray-300"
                                     />
-                                    Hidden Test Case
-                                </label>
+                                    <label
+                                        htmlFor={`hidden-${index}`}
+                                        className="text-sm font-medium"
+                                    >
+                                        Hidden Test Case (not shown to students)
+                                    </label>
+                                </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => removeTestCase(index)}
-                                    className="rounded-lg border px-3 py-2 text-sm"
-                                >
-                                    Remove Test Case
-                                </button>
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeTestCase(index)}
+                                        className="gap-2 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                        Remove Test Case
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="rounded-2xl border bg-background p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold">Starter Code</h2>
+                {/* Starter Code Section */}
+                <div
+                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    role="region"
+                    aria-labelledby="starter-code-heading"
+                >
+                    <div className="mb-4 flex items-center gap-2">
+                        <Code2 className="h-5 w-5 text-primary" />
+                        <h2 id="starter-code-heading" className="text-lg font-semibold">
+                            Starter Code
+                        </h2>
+                    </div>
 
                     <div className="space-y-4">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">C++</label>
+                        <FormField
+                            label="C++"
+                            hint="Provide starter code template for C++"
+                        >
                             <textarea
                                 value={starterCode.cpp}
                                 onChange={(e) => handleStarterCodeChange("cpp", e.target.value)}
                                 rows={8}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none font-mono"
+                                placeholder="// C++ starter code"
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Java</label>
+                        <FormField
+                            label="Java"
+                            hint="Provide starter code template for Java"
+                        >
                             <textarea
                                 value={starterCode.java}
                                 onChange={(e) => handleStarterCodeChange("java", e.target.value)}
                                 rows={8}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none font-mono"
+                                placeholder="// Java starter code"
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Python</label>
+                        <FormField
+                            label="Python"
+                            hint="Provide starter code template for Python"
+                        >
                             <textarea
                                 value={starterCode.python}
                                 onChange={(e) => handleStarterCodeChange("python", e.target.value)}
                                 rows={8}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none font-mono"
+                                placeholder="# Python starter code"
                             />
-                        </div>
+                        </FormField>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">JavaScript</label>
+                        <FormField
+                            label="JavaScript"
+                            hint="Provide starter code template for JavaScript"
+                        >
                             <textarea
                                 value={starterCode.javascript}
                                 onChange={(e) =>
                                     handleStarterCodeChange("javascript", e.target.value)
                                 }
                                 rows={8}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none"
+                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all resize-none font-mono"
+                                placeholder="// JavaScript starter code"
                             />
-                        </div>
+                        </FormField>
                     </div>
                 </div>
 
+                {/* Message Alert */}
                 {message && (
-                    <div className="rounded-xl border bg-background px-4 py-3 text-sm">
+                    <Alert
+                        variant={messageType}
+                        onDismiss={dismissMessage}
+                        role="status"
+                        aria-live="polite"
+                    >
                         {message}
-                    </div>
+                    </Alert>
                 )}
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="rounded-xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
-                >
-                    {loading ? "Creating Problem..." : "Create Problem"}
-                </button>
+                {/* Submit Button */}
+                <div className="flex items-center gap-4">
+                    <Button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full md:w-auto min-w-[200px] gap-2"
+                        size="lg"
+                        aria-label="Create problem"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="h-4 w-4 icon-spin" />
+                                <span>Creating Problem...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Send className="h-4 w-4 icon-hover-scale" />
+                                <span>Create Problem</span>
+                            </>
+                        )}
+                    </Button>
+                </div>
             </form>
+
+            {/* Confirmation Dialog */}
+            <ConfirmationDialog
+                open={showConfirmDialog}
+                onOpenChange={setShowConfirmDialog}
+                onConfirm={confirmSubmission}
+                title="Confirm Problem Creation"
+                description={
+                    pendingSubmission
+                        ? `You are about to create "${pendingSubmission.title}" (${pendingSubmission.slug}) with ${pendingSubmission.examples.length} example(s) and ${pendingSubmission.testCases.length} test case(s).`
+                        : "Are you sure you want to create this problem?"
+                }
+                confirmText="Create Problem"
+                cancelText="Cancel"
+                variant="default"
+            />
         </div>
     )
 }

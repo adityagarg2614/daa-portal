@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { BookOpen, Clock3, CheckCircle2, CalendarDays, Search } from "lucide-react"
 import Link from "next/link"
-import { toast } from "sonner"
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
 
 type Assignment = {
@@ -16,7 +15,7 @@ type Assignment = {
     publishAt: string
     dueAt: string
     status: AssignmentStatus
-    problems?: any[]
+    problems?: unknown[]
 }
 
 export default function AssignmentPage() {

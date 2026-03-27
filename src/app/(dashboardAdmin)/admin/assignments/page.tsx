@@ -3,7 +3,22 @@
 import axios from "axios"
 import Link from "next/link"
 import React, { useEffect, useMemo, useState } from "react"
-import { BookOpen, CalendarDays, Clock3, FileText, Search } from "lucide-react"
+import {
+    BookOpen,
+    CalendarDays,
+    Clock3,
+    FileText,
+    Search,
+    X,
+    Plus,
+    Award,
+    CheckCircle2,
+    AlertCircle,
+    ArrowRight,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 type Assignment = {
     _id: string
@@ -73,53 +88,57 @@ export default function AdminAssignmentsPage() {
         "Expired",
     ]
 
-    const getStatusClasses = (status: AssignmentStatus) => {
+    const getStatusIcon = (status: AssignmentStatus) => {
         switch (status) {
             case "Active":
-                return "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                return Clock3
             case "Upcoming":
-                return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                return CalendarDays
             case "Expired":
-                return "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+                return AlertCircle
             default:
-                return "bg-muted text-muted-foreground"
+                return FileText
         }
     }
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            <div className="rounded-2xl border bg-background p-6 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Assignments</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            View and manage all created assignments.
-                        </p>
-                    </div>
-
-                    <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
-                        <div className="relative w-full lg:w-80">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Search assignments..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
-                            />
-                        </div>
-
-                        <Link
-                            href="/admin/assignments/create"
-                            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+            {/* Enhanced Header */}
+            <div
+                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
+                role="banner"
+            >
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
+                            aria-hidden="true"
                         >
-                            Create Assignment
-                        </Link>
+                            <FileText className="h-6 w-6 icon-bounce" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
+                                Assignments
+                            </h1>
+                            <p className="text-sm text-muted-foreground">
+                                View and manage all created assignments
+                            </p>
+                        </div>
                     </div>
                 </div>
+                {/* Decorative background elements */}
+                <div
+                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                    aria-hidden="true"
+                />
+                <div
+                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                    aria-hidden="true"
+                />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Assignment statistics">
                 <div className="rounded-2xl border bg-background p-5 shadow-sm">
                     <div className="flex items-start justify-between">
                         <div>
@@ -175,50 +194,126 @@ export default function AdminAssignmentsPage() {
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${activeTab === tab
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
+            {/* Search and Actions Bar */}
+            <div
+                className="rounded-2xl border bg-background p-6 shadow-sm"
+                role="search"
+                aria-label="Assignment search and filters"
+            >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {tabs.map((tab) => {
+                            const isActive = activeTab === tab
+                            return (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={cn(
+                                        "rounded-full px-4 py-2 text-sm font-medium transition-all",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground shadow-md"
+                                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    )}
+                                    aria-pressed={isActive}
+                                >
+                                    {tab}
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
+                        <div className="relative w-full lg:w-80">
+                            <Search
+                                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground icon-pulse"
+                                aria-hidden="true"
+                            />
+                            <input
+                                type="text"
+                                placeholder="Search assignments..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
+                                aria-label="Search assignments"
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-muted transition-colors"
+                                    aria-label="Clear search"
+                                >
+                                    <X className="h-4 w-4 icon-hover-scale" />
+                                </button>
+                            )}
+                        </div>
+
+                        <Link
+                            href="/admin/assignments/create"
+                            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 hover:shadow-md"
+                        >
+                            <Plus className="mr-2 h-4 w-4 icon-hover-scale" />
+                            Create Assignment
+                        </Link>
+                    </div>
+                </div>
             </div>
 
+            {/* Assignments List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading assignments">
                     <p className="text-sm text-muted-foreground">Loading assignments...</p>
                 </div>
             ) : (
-                <div className="grid gap-4">
+                <div
+                    className="grid gap-4"
+                    role="list"
+                    aria-label="Assignments list"
+                    aria-live="polite"
+                >
                     {filteredAssignments.length > 0 ? (
                         filteredAssignments.map((assignment) => {
                             const status = getComputedStatus(assignment)
+                            const StatusIcon = getStatusIcon(status)
 
                             return (
                                 <div
                                     key={assignment._id}
-                                    className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
+                                    role="listitem"
+                                    className="group relative overflow-hidden rounded-2xl border bg-background p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/50"
                                 >
+                                    {/* Status indicator bar */}
+                                    <div
+                                        className={cn(
+                                            "absolute -left-1 top-0 bottom-0 w-1",
+                                            status === "Active" && "bg-green-500",
+                                            status === "Upcoming" && "bg-blue-500",
+                                            status === "Expired" && "bg-red-500"
+                                        )}
+                                        aria-hidden="true"
+                                    />
+
                                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 flex-1">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <h2 className="text-lg font-semibold">{assignment.title}</h2>
-                                                <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                                        status
-                                                    )}`}
+                                                <Badge
+                                                    variant={
+                                                        status === "Active"
+                                                            ? "secondary"
+                                                            : status === "Upcoming"
+                                                                ? "default"
+                                                                : "destructive"
+                                                    }
+                                                    className="gap-1"
                                                 >
+                                                    <StatusIcon className="h-3 w-3" />
                                                     {status}
-                                                </span>
-                                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                                                </Badge>
+                                                <Badge variant="outline" className="gap-1">
+                                                    <Award className="h-3 w-3" />
                                                     {assignment.totalMarks} Marks
-                                                </span>
+                                                </Badge>
                                             </div>
 
                                             <p className="text-sm text-muted-foreground line-clamp-2">
@@ -226,20 +321,24 @@ export default function AdminAssignmentsPage() {
                                             </p>
 
                                             <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
-                                                <div>
+                                                <div className="flex items-center gap-2">
+                                                    <FileText className="h-4 w-4" />
                                                     <span className="font-medium text-foreground">Problems:</span>{" "}
                                                     {assignment.totalProblems}
                                                 </div>
-                                                <div>
+                                                <div className="flex items-center gap-2">
+                                                    <CalendarDays className="h-4 w-4" />
                                                     <span className="font-medium text-foreground">Publish:</span>{" "}
                                                     {new Date(assignment.publishAt).toLocaleString()}
                                                 </div>
-                                                <div>
+                                                <div className="flex items-center gap-2">
+                                                    <Clock3 className="h-4 w-4" />
                                                     <span className="font-medium text-foreground">Due:</span>{" "}
                                                     {new Date(assignment.dueAt).toLocaleString()}
                                                 </div>
-                                                <div>
-                                                    <span className="font-medium text-foreground">Selected Problems:</span>{" "}
+                                                <div className="flex items-center gap-2">
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                    <span className="font-medium text-foreground">Selected:</span>{" "}
                                                     {assignment.problemIds?.length || assignment.totalProblems}
                                                 </div>
                                             </div>
@@ -250,20 +349,33 @@ export default function AdminAssignmentsPage() {
                                                 Ready to manage
                                             </div>
 
-                                            <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                                            <Button className="gap-2">
                                                 View Details
-                                            </button>
+                                                <ArrowRight className="h-4 w-4 icon-hover-scale" />
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
                             )
                         })
                     ) : (
-                        <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
+                        <div
+                            className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm"
+                            role="status"
+                            aria-label="No assignments found"
+                        >
+                            <Search className="mx-auto mb-3 h-12 w-12 opacity-50" />
                             <h3 className="text-lg font-semibold">No assignments found</h3>
                             <p className="mt-2 text-sm text-muted-foreground">
                                 Create a new assignment or change the search/filter.
                             </p>
+                            <Link
+                                href="/admin/assignments/create"
+                                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Create Assignment
+                            </Link>
                         </div>
                     )}
                 </div>

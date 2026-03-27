@@ -85,47 +85,6 @@ export default function SingleAssignmentPage() {
     const [autoSubmitting, setAutoSubmitting] = useState(false)
     const [previousAccessStatus, setPreviousAccessStatus] = useState<"not-published" | "active" | "expired">("active")
 
-    const handleAutoSubmit = async (assignment: Assignment, userId: string, currentSubmissionState: SubmissionState) => {
-        if (autoSubmitting) return // Prevent duplicate submissions
-
-        setAutoSubmitting(true)
-
-        try {
-            // Get all problems and submit any code that exists
-            const submissionPromises = assignment.problems.map((problem) => {
-                const currentState = currentSubmissionState[problem._id]
-                const codeToSubmit = currentState?.code || problem.starterCode?.cpp || ""
-
-                return axios.post("/api/student/submissions", {
-                    assignmentId: assignment._id,
-                    problemId: problem._id,
-                    userId: userId,
-                    code: codeToSubmit,
-                    language: currentState?.language || "cpp",
-                })
-            })
-
-            await Promise.all(submissionPromises)
-
-            // Show toast and redirect
-            toast.success("Assignment submitted successfully", {
-                description: "Your code has been automatically submitted.",
-            })
-
-            // Redirect to assignment list page
-            router.push("/assignment")
-        } catch (error) {
-            console.error("Auto-submit failed:", error)
-            toast.error("Auto-submit failed", {
-                description: "Please contact support if you believe this is an error.",
-            })
-            // Still redirect even if auto-submit fails
-            router.push("/assignment")
-        } finally {
-            setAutoSubmitting(false)
-        }
-    }
-
     // Memoized version of handleAutoSubmit for use in useCallback
     const handleAutoSubmitMemo = useCallback(async (currentAssignment: Assignment, currentUserId: string, currentState: SubmissionState) => {
         if (autoSubmitting) return
@@ -408,14 +367,17 @@ export default function SingleAssignmentPage() {
                     message: "Submission saved successfully",
                 },
             }))
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage =
+                error instanceof Error && 'response' in error
+                    ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+                    : "Failed to save submission"
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     loading: false,
-                    message:
-                        error?.response?.data?.message || "Failed to save submission",
+                    message: errorMessage || "Failed to save submission",
                 },
             }))
         }
