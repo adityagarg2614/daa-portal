@@ -61,7 +61,7 @@ export default function CreateProblemPage() {
 
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState("")
-    const [messageType, setMessageType] = useState<"success" | "error" | "info">(
+    const [messageType, setMessageType] = useState<"success" | "destructive" | "info">(
         "info"
     )
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -145,7 +145,7 @@ export default function CreateProblemPage() {
         // Validate required fields
         if (!title || !slug || !description || !marks) {
             setMessage("Please fill all required fields")
-            setMessageType("error")
+            setMessageType("destructive")
             return
         }
 
@@ -208,7 +208,7 @@ export default function CreateProblemPage() {
                     ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
                     : "Failed to create problem"
             setMessage(errorMessage || "Failed to create problem")
-            setMessageType("error")
+            setMessageType("destructive")
         } finally {
             setLoading(false)
         }

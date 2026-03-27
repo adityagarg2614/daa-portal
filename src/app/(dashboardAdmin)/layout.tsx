@@ -37,7 +37,7 @@ export default async function DashboardLayout({
   const rollNo = metadata?.rollNo as string | undefined;
 
   return (
-    <DashboardLayoutClient name={name} rollNo={rollNo}>
+    <DashboardLayoutClient name={name}>
       {children}
     </DashboardLayoutClient>
   );

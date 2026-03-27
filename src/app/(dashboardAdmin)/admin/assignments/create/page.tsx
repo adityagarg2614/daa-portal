@@ -57,7 +57,7 @@ export default function CreateAssignmentPage() {
     const [loadingProblems, setLoadingProblems] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [message, setMessage] = useState("")
-    const [messageType, setMessageType] = useState<"success" | "error" | "info">(
+    const [messageType, setMessageType] = useState<"success" | "destructive" | "info">(
         "info"
     )
     const [search, setSearch] = useState("")
@@ -79,7 +79,7 @@ export default function CreateAssignmentPage() {
             } catch (error) {
                 console.error("Error fetching problems:", error)
                 setMessage("Failed to load problems")
-                setMessageType("error")
+                setMessageType("destructive")
             } finally {
                 setLoadingProblems(false)
             }
@@ -155,13 +155,13 @@ export default function CreateAssignmentPage() {
 
         if (!title || !description || !publishAt || !dueAt) {
             setMessage("Please fill all assignment details")
-            setMessageType("error")
+            setMessageType("destructive")
             return
         }
 
         if (selectedProblemIds.length === 0) {
             setMessage("Please select at least one problem")
-            setMessageType("error")
+            setMessageType("destructive")
             return
         }
 
@@ -202,7 +202,7 @@ export default function CreateAssignmentPage() {
                     ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
                     : "Failed to create assignment"
             setMessage(errorMessage || "Failed to create assignment")
-            setMessageType("error")
+            setMessageType("destructive")
         } finally {
             setSubmitting(false)
         }

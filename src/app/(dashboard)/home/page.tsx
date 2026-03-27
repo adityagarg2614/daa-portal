@@ -9,7 +9,14 @@ import {
     Bell,
     CalendarCheck,
     Clock,
+    ArrowRight,
 } from "lucide-react"
+import Link from "next/link"
+import { StatsCard } from "@/components/ui/stats-card"
+import { InfoCard } from "@/components/ui/info-card"
+import { SectionHeader } from "@/components/ui/section-header"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default function HomePage() {
     const { user } = useUser()
@@ -83,54 +90,59 @@ export default function HomePage() {
         "Make sure to submit before the deadline to avoid zero marks.",
     ]
 
+    const getStatusClasses = (status: string) => {
+        switch (status) {
+            case "Active":
+                return "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+            case "Upcoming":
+                return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+            default:
+                return "bg-muted text-muted-foreground"
+        }
+    }
+
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            <div className="rounded-2xl border bg-background p-6 shadow-sm">
-                <h1 className="text-2xl font-bold tracking-tight">
-                    Welcome back, {user?.firstName || "Student"} 👋
-                </h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Here is an overview of your assignments, submissions, and recent updates.
-                </p>
+            {/* Enhanced Header */}
+            <SectionHeader
+                title={`Welcome back, ${user?.firstName || "Student"} 👋`}
+                description="Here is an overview of your assignments, submissions, and recent updates"
+            />
+
+            {/* Stats Grid */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Statistics">
+                {stats.map((item) => (
+                    <StatsCard
+                        key={item.title}
+                        icon={item.icon}
+                        title={item.title}
+                        value={item.value}
+                        subtitle={item.subtitle}
+                    />
+                ))}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {stats.map((item) => {
-                    const Icon = item.icon
-                    return (
-                        <div
-                            key={item.title}
-                            className="rounded-2xl border bg-background p-5 shadow-sm"
-                        >
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">{item.title}</p>
-                                    <h2 className="mt-2 text-2xl font-bold">{item.value}</h2>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        {item.subtitle}
-                                    </p>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <Icon className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-                    )
-                })}
-            </div>
-
+            {/* Main Content Grid */}
             <div className="grid gap-4 xl:grid-cols-3">
-                <div className="xl:col-span-2 rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Upcoming Assignments</h2>
-                        <span className="text-sm text-muted-foreground">View all</span>
-                    </div>
-
+                {/* Upcoming Assignments */}
+                <InfoCard
+                    title="Upcoming Assignments"
+                    icon={BookOpen}
+                    className="xl:col-span-2"
+                    action={
+                        <Link
+                            href="/assignment"
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    }
+                >
                     <div className="space-y-3">
                         {upcomingAssignments.map((assignment, index) => (
                             <div
                                 key={index}
-                                className="flex items-center justify-between rounded-xl border p-4"
+                                className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
                             >
                                 <div>
                                     <h3 className="font-medium">{assignment.title}</h3>
@@ -138,20 +150,21 @@ export default function HomePage() {
                                         Due: {assignment.due}
                                     </p>
                                 </div>
-                                <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                                <Badge
+                                    variant={assignment.status === "Active" ? "secondary" : "outline"}
+                                    className={cn(
+                                        getStatusClasses(assignment.status)
+                                    )}
+                                >
                                     {assignment.status}
-                                </span>
+                                </Badge>
                             </div>
                         ))}
                     </div>
-                </div>
+                </InfoCard>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="mb-4 flex items-center gap-2">
-                        <CalendarCheck className="h-5 w-5" />
-                        <h2 className="text-lg font-semibold">Attendance</h2>
-                    </div>
-
+                {/* Attendance */}
+                <InfoCard title="Attendance" icon={CalendarCheck}>
                     <div className="space-y-3">
                         <div className="rounded-xl border p-4">
                             <p className="text-sm text-muted-foreground">Current Attendance</p>
@@ -164,21 +177,29 @@ export default function HomePage() {
                             </p>
                         </div>
                     </div>
-                </div>
+                </InfoCard>
             </div>
 
+            {/* Bottom Grid */}
             <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Recent Results</h2>
-                        <span className="text-sm text-muted-foreground">Latest submissions</span>
-                    </div>
-
+                {/* Recent Results */}
+                <InfoCard
+                    title="Recent Results"
+                    icon={Trophy}
+                    action={
+                        <Link
+                            href="/results"
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    }
+                >
                     <div className="space-y-3">
                         {recentSubmissions.map((submission, index) => (
                             <div
                                 key={index}
-                                className="flex items-center justify-between rounded-xl border p-4"
+                                className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
                             >
                                 <div>
                                     <h3 className="font-medium">{submission.title}</h3>
@@ -192,23 +213,75 @@ export default function HomePage() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </InfoCard>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="mb-4 flex items-center gap-2">
-                        <Bell className="h-5 w-5" />
-                        <h2 className="text-lg font-semibold">Announcements</h2>
-                    </div>
-
+                {/* Announcements */}
+                <InfoCard title="Announcements" icon={Bell}>
                     <div className="space-y-3">
                         {announcements.map((item, index) => (
-                            <div key={index} className="rounded-xl border p-4">
+                            <div
+                                key={index}
+                                className="rounded-xl border bg-muted/30 p-4 transition-all hover:shadow-sm"
+                            >
                                 <p className="text-sm">{item}</p>
                             </div>
                         ))}
                     </div>
-                </div>
+                </InfoCard>
             </div>
+
+            {/* Quick Actions */}
+            <InfoCard title="Quick Actions">
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Link
+                        href="/assignment"
+                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
+                    >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                            <BookOpen className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold">View Assignments</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Browse all your assignments
+                            </p>
+                        </div>
+                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </Link>
+
+                    <Link
+                        href="/submission"
+                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
+                    >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                            <ClipboardCheck className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold">My Submissions</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Track your submissions
+                            </p>
+                        </div>
+                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </Link>
+
+                    <Link
+                        href="/results"
+                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
+                    >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                            <Trophy className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-semibold">View Results</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Check your grades
+                            </p>
+                        </div>
+                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                    </Link>
+                </div>
+            </InfoCard>
         </div>
     )
 }

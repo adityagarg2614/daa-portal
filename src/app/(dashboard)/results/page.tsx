@@ -3,12 +3,16 @@
 import React, { useMemo, useState } from "react"
 import {
     Trophy,
-    Search,
-    CheckCircle2,
     BarChart3,
     FileSpreadsheet,
     TrendingUp,
 } from "lucide-react"
+import { SectionHeader } from "@/components/ui/section-header"
+import { StatsCard } from "@/components/ui/stats-card"
+import { SearchBar } from "@/components/ui/search-bar"
+import { FilterTabs } from "@/components/ui/filter-tabs"
+import { EmptyState } from "@/components/ui/empty-state"
+import { ResultCard } from "@/components/ui/result-card"
 
 type ResultStatus = "Excellent" | "Good" | "Average" | "Needs Improvement"
 
@@ -95,179 +99,84 @@ export default function ResultsPage() {
         })
     }, [results, search, activeTab])
 
-    const getStatusClasses = (status: ResultStatus) => {
-        switch (status) {
-            case "Excellent":
-                return "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-            case "Good":
-                return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
-            case "Average":
-                return "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
-            case "Needs Improvement":
-                return "bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400"
-            default:
-                return "bg-muted text-muted-foreground"
-        }
-    }
-
     const averagePercentage = Math.round(
         results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length
     )
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            <div className="rounded-2xl border bg-background p-6 shadow-sm">
+            {/* Enhanced Header */}
+            <SectionHeader
+                title="Results"
+                description="View your evaluated assignment scores and overall performance"
+                icon={Trophy}
+            />
+
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Result statistics">
+                <StatsCard
+                    icon={FileSpreadsheet}
+                    title="Total Results"
+                    value={results.length}
+                />
+                <StatsCard
+                    icon={BarChart3}
+                    title="Average Score"
+                    value={`${averagePercentage}%`}
+                />
+                <StatsCard
+                    icon={Trophy}
+                    title="Excellent Results"
+                    value={results.filter((r) => r.status === "Excellent").length}
+                />
+                <StatsCard
+                    icon={TrendingUp}
+                    title="Improvement Needed"
+                    value={results.filter((r) => r.status === "Needs Improvement").length}
+                />
+            </div>
+
+            {/* Search and Filters */}
+            <div
+                className="rounded-2xl border bg-background p-6 shadow-sm"
+                role="search"
+                aria-label="Result search and filters"
+            >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Results</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            View your evaluated assignment scores and overall performance.
-                        </p>
-                    </div>
-
-                    <div className="relative w-full lg:w-80">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                            type="text"
-                            placeholder="Search results..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
-                        />
-                    </div>
+                    <FilterTabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
+                    <SearchBar
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Search results..."
+                        ariaLabel="Search results"
+                    />
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Results</p>
-                            <h2 className="mt-2 text-2xl font-bold">{results.length}</h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <FileSpreadsheet className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Average Score</p>
-                            <h2 className="mt-2 text-2xl font-bold">{averagePercentage}%</h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <BarChart3 className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Excellent Results</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {results.filter((r) => r.status === "Excellent").length}
-                            </h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <Trophy className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Improvement Needed</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {results.filter((r) => r.status === "Needs Improvement").length}
-                            </h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <TrendingUp className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${activeTab === tab
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
-            <div className="grid gap-4">
+            {/* Results List */}
+            <div
+                className="grid gap-4"
+                role="list"
+                aria-label="Results list"
+                aria-live="polite"
+            >
                 {filteredResults.length > 0 ? (
                     filteredResults.map((result) => (
-                        <div
+                        <ResultCard
                             key={result.id}
-                            className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
-                        >
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="space-y-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h2 className="text-lg font-semibold">{result.assignmentTitle}</h2>
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                                result.status
-                                            )}`}
-                                        >
-                                            {result.status}
-                                        </span>
-                                    </div>
-
-                                    <p className="text-sm text-muted-foreground">{result.subject}</p>
-
-                                    <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
-                                        <div>
-                                            <span className="font-medium text-foreground">Problems:</span>{" "}
-                                            {result.totalProblems}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Marks:</span>{" "}
-                                            {result.obtainedMarks}/{result.totalMarks}
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Percentage:</span>{" "}
-                                            {result.percentage}%
-                                        </div>
-                                        <div>
-                                            <span className="font-medium text-foreground">Evaluated:</span>{" "}
-                                            {result.evaluatedAt}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-                                    <div className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold">
-                                        Score: {result.obtainedMarks}/{result.totalMarks}
-                                    </div>
-
-                                    <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                                        View Detailed Result
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                            result={result}
+                            actionLabel="View Detailed Result"
+                        />
                     ))
                 ) : (
-                    <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
-                        <h3 className="text-lg font-semibold">No results found</h3>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Your evaluated assignment results will appear here.
-                        </p>
-                    </div>
+                    <EmptyState
+                        title="No results found"
+                        description="Your evaluated assignment results will appear here."
+                    />
                 )}
             </div>
         </div>

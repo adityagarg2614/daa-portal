@@ -6,9 +6,14 @@ import {
     FileCode2,
     CheckCircle2,
     Clock3,
-    Search,
     FileText,
 } from "lucide-react"
+import { SectionHeader } from "@/components/ui/section-header"
+import { StatsCard } from "@/components/ui/stats-card"
+import { SearchBar } from "@/components/ui/search-bar"
+import { FilterTabs } from "@/components/ui/filter-tabs"
+import { EmptyState } from "@/components/ui/empty-state"
+import { SubmissionCard } from "@/components/ui/submission-card"
 
 type SubmissionStatus = "Attempted" | "Submitted" | "Evaluated"
 
@@ -79,170 +84,98 @@ export default function SubmissionPage() {
         })
     }, [search, activeTab, submissions])
 
-    const getStatusClasses = (status: SubmissionStatus) => {
+    const getStatusIcon = (status: SubmissionStatus) => {
         switch (status) {
             case "Attempted":
-                return "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
+                return Clock3
             case "Submitted":
-                return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                return FileCode2
             case "Evaluated":
-                return "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                return CheckCircle2
             default:
-                return "bg-muted text-muted-foreground"
+                return FileText
         }
     }
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            <div className="rounded-2xl border bg-background p-6 shadow-sm">
+            {/* Enhanced Header */}
+            <SectionHeader
+                title="My Submissions"
+                description="Track all your submitted and evaluated problem solutions here"
+                icon={FileCode2}
+            />
+
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-3" role="region" aria-label="Submission statistics">
+                <StatsCard
+                    icon={FileText}
+                    title="Total Records"
+                    value={submissions.length}
+                />
+                <StatsCard
+                    icon={Clock3}
+                    title="Submitted"
+                    value={submissions.filter((s) => s.status === "Submitted").length}
+                />
+                <StatsCard
+                    icon={CheckCircle2}
+                    title="Evaluated"
+                    value={submissions.filter((s) => s.status === "Evaluated").length}
+                />
+            </div>
+
+            {/* Search and Filters */}
+            <div
+                className="rounded-2xl border bg-background p-6 shadow-sm"
+                role="search"
+                aria-label="Submission search and filters"
+            >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">My Submissions</h1>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                            Track all your submitted and evaluated problem solutions here.
-                        </p>
-                    </div>
-
-                    <div className="relative w-full lg:w-80">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <input
-                            type="text"
-                            placeholder="Search submissions..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="h-11 w-full rounded-xl border bg-background pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
-                        />
-                    </div>
+                    <FilterTabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
+                    <SearchBar
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Search submissions..."
+                        ariaLabel="Search submissions"
+                    />
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Records</p>
-                            <h2 className="mt-2 text-2xl font-bold">{submissions.length}</h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <FileText className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Submitted</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {submissions.filter((s) => s.status === "Submitted").length}
-                            </h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <Clock3 className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Evaluated</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {submissions.filter((s) => s.status === "Evaluated").length}
-                            </h2>
-                        </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <CheckCircle2 className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${activeTab === tab
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
+            {/* Submissions List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading submissions">
                     <p className="text-sm text-muted-foreground">Loading submissions...</p>
                 </div>
             ) : (
-                <div className="grid gap-4">
+                <div
+                    className="grid gap-4"
+                    role="list"
+                    aria-label="Submissions list"
+                    aria-live="polite"
+                >
                     {filteredSubmissions.length > 0 ? (
-                        filteredSubmissions.map((submission) => (
-                            <div
-                                key={submission._id}
-                                className="rounded-2xl border bg-background p-5 shadow-sm transition hover:shadow-md"
-                            >
-                                <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                                    <div className="space-y-3">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h2 className="text-lg font-semibold">
-                                                {submission.assignmentId?.title}
-                                            </h2>
-                                            <span
-                                                className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClasses(
-                                                    submission.status
-                                                )}`}
-                                            >
-                                                {submission.status}
-                                            </span>
-                                        </div>
+                        filteredSubmissions.map((submission) => {
+                            const StatusIcon = getStatusIcon(submission.status)
 
-                                        <p className="text-sm text-muted-foreground">
-                                            Problem: {submission.problemId?.title}
-                                        </p>
-
-                                        <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
-                                            <div>
-                                                <span className="font-medium text-foreground">Language:</span>{" "}
-                                                {submission.language}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium text-foreground">Submitted At:</span>{" "}
-                                                {submission.submittedAt
-                                                    ? new Date(submission.submittedAt).toLocaleString()
-                                                    : "N/A"}
-                                            </div>
-                                            <div>
-                                                <span className="font-medium text-foreground">Due Date:</span>{" "}
-                                                {submission.assignmentId?.dueAt
-                                                    ? new Date(submission.assignmentId.dueAt).toLocaleString()
-                                                    : "N/A"}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-                                        <div className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold">
-                                            Score: {submission.score ?? 0}
-                                        </div>
-
-                                        <button className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
-                                            View Details
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
+                            return (
+                                <SubmissionCard
+                                    key={submission._id}
+                                    submission={submission}
+                                    statusIcon={StatusIcon}
+                                    actionLabel="View Details"
+                                />
+                            )
+                        })
                     ) : (
-                        <div className="rounded-2xl border border-dashed bg-background p-10 text-center shadow-sm">
-                            <h3 className="text-lg font-semibold">No submissions found</h3>
-                            <p className="mt-2 text-sm text-muted-foreground">
-                                Your submission records will appear here once you submit a problem.
-                            </p>
-                        </div>
+                        <EmptyState
+                            title="No submissions found"
+                            description="Your submission records will appear here once you submit a problem."
+                        />
                     )}
                 </div>
             )}
