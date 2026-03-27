@@ -3,7 +3,7 @@
 import { CodeEditor } from "@/components/editor/code-editor"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import { CalendarDays, Clock3 } from "lucide-react"
 
@@ -83,7 +83,7 @@ export default function SingleAssignmentPage() {
     const [submissionState, setSubmissionState] = useState<SubmissionState>({})
     const [accessStatus, setAccessStatus] = useState<"not-published" | "active" | "expired">("active")
     const [autoSubmitting, setAutoSubmitting] = useState(false)
-    const [hasCheckedAccess, setHasCheckedAccess] = useState(false)
+    const [previousAccessStatus, setPreviousAccessStatus] = useState<"not-published" | "active" | "expired">("active")
 
     const handleAutoSubmit = async (assignment: Assignment, userId: string, currentSubmissionState: SubmissionState) => {
         if (autoSubmitting) return // Prevent duplicate submissions
@@ -126,6 +126,73 @@ export default function SingleAssignmentPage() {
         }
     }
 
+    // Memoized version of handleAutoSubmit for use in useCallback
+    const handleAutoSubmitMemo = useCallback(async (currentAssignment: Assignment, currentUserId: string, currentState: SubmissionState) => {
+        if (autoSubmitting) return
+
+        setAutoSubmitting(true)
+
+        try {
+            const submissionPromises = currentAssignment.problems.map((problem) => {
+                const problemState = currentState[problem._id]
+                const codeToSubmit = problemState?.code || problem.starterCode?.cpp || ""
+
+                return axios.post("/api/student/submissions", {
+                    assignmentId: currentAssignment._id,
+                    problemId: problem._id,
+                    userId: currentUserId,
+                    code: codeToSubmit,
+                    language: problemState?.language || "cpp",
+                })
+            })
+
+            await Promise.all(submissionPromises)
+
+            toast.success("Assignment submitted successfully", {
+                description: "Your code has been automatically submitted.",
+            })
+
+            router.push("/assignment")
+        } catch (error) {
+            console.error("Auto-submit failed:", error)
+            toast.error("Auto-submit failed", {
+                description: "Please contact support if you believe this is an error.",
+            })
+            router.push("/assignment")
+        } finally {
+            setAutoSubmitting(false)
+        }
+    }, [autoSubmitting, router])
+
+    // Function to check and update access status in real-time
+    const checkAccessStatus = useCallback(() => {
+        if (!assignment || !dbUserId) return
+
+        const now = new Date()
+        const publishDate = new Date(assignment.publishAt)
+        const dueDate = new Date(assignment.dueAt)
+
+        let newStatus: "not-published" | "active" | "expired" = "active"
+
+        if (now < publishDate) {
+            newStatus = "not-published"
+        } else if (now > dueDate) {
+            newStatus = "expired"
+        }
+
+        // Only trigger actions if status actually changed
+        if (newStatus !== accessStatus) {
+            setPreviousAccessStatus(accessStatus)
+            setAccessStatus(newStatus)
+
+            // Trigger auto-submit if transitioning from active to expired
+            if (newStatus === "expired" && accessStatus === "active") {
+                handleAutoSubmitMemo(assignment, dbUserId, submissionState)
+            }
+        }
+    }, [assignment, accessStatus, dbUserId, submissionState, handleAutoSubmitMemo])
+
+    // Initial data fetch
     useEffect(() => {
         const fetchAssignmentAndUser = async () => {
             try {
@@ -140,7 +207,7 @@ export default function SingleAssignmentPage() {
                 setAssignment(fetchedAssignment)
                 setDbUserId(fetchedUserId)
 
-                // Check access status based on publish and due dates
+                // Set initial access status (will be monitored by real-time checker)
                 const now = new Date()
                 const publishDate = new Date(fetchedAssignment.publishAt)
                 const dueDate = new Date(fetchedAssignment.dueAt)
@@ -149,8 +216,8 @@ export default function SingleAssignmentPage() {
                     setAccessStatus("not-published")
                 } else if (now > dueDate) {
                     setAccessStatus("expired")
-                    // Auto-submit any unsaved code and redirect
-                    await handleAutoSubmit(fetchedAssignment, fetchedUserId, submissionState)
+                    // If already expired on page load, auto-submit immediately
+                    await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionState)
                     return
                 } else {
                     setAccessStatus("active")
@@ -198,6 +265,20 @@ export default function SingleAssignmentPage() {
             fetchAssignmentAndUser()
         }
     }, [id])
+
+    // Real-time access status checker - runs every second
+    useEffect(() => {
+        if (!assignment) return
+
+        // Check immediately on mount
+        checkAccessStatus()
+
+        // Set up interval to check every second
+        const interval = setInterval(checkAccessStatus, 1000)
+
+        // Cleanup on unmount
+        return () => clearInterval(interval)
+    }, [assignment, checkAccessStatus])
 
     const getDifficultyClasses = (difficulty: string) => {
         switch (difficulty) {
