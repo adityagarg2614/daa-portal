@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation"
 import React, { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import { CalendarDays, Clock3 } from "lucide-react"
+import { RotateCCWIcon } from "@/components/ui/rotate-ccw"
 
 type Example = {
     input: string
@@ -589,9 +590,11 @@ export default function SingleAssignmentPage() {
                                             <label className="block text-sm font-medium">Your Code</label>
                                             <button
                                                 onClick={() => handleResetCode(problem._id, problem.starterCode)}
-                                                className="text-xs font-medium text-primary hover:underline"
+                                                className="inline-flex items-center gap-1.5 rounded-md border border-muted bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                title="Reset to starter code"
                                             >
-                                                Reset to Starter Code
+                                                <RotateCCWIcon size={14} />
+                                                <span>Reset</span>
                                             </button>
                                         </div>
                                         <CodeEditor
