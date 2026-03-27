@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { BookOpen, Clock3, CheckCircle2, CalendarDays, Search } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
 
 type Assignment = {
@@ -72,6 +73,10 @@ export default function AssignmentPage() {
             default:
                 return "bg-muted text-muted-foreground"
         }
+    }
+
+    const canViewAssignment = (status: AssignmentStatus): boolean => {
+        return status === "Active" || status === "Completed"
     }
 
     return (
@@ -218,15 +223,25 @@ export default function AssignmentPage() {
 
                                     <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
                                         <div className="rounded-xl bg-muted px-4 py-2 text-sm text-muted-foreground">
-                                            Ready to attempt
+                                            {canViewAssignment(assignment.status) ? "Ready to attempt" : "Not available yet"}
                                         </div>
 
-                                        <Link
-                                            href={`/assignment/${assignment._id}`}
-                                            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-                                        >
-                                            View Assignment
-                                        </Link>
+                                        {canViewAssignment(assignment.status) ? (
+                                            <Link
+                                                href={`/assignment/${assignment._id}`}
+                                                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                                            >
+                                                View Assignment
+                                            </Link>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                className="rounded-xl bg-muted px-4 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-50"
+                                                title={assignment.status === "Upcoming" ? "Available after publish date" : "Assignment has expired"}
+                                            >
+                                                View Assignment
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

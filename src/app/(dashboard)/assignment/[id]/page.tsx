@@ -2,8 +2,10 @@
 
 import { CodeEditor } from "@/components/editor/code-editor"
 import axios from "axios"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import React, { useEffect, useState } from "react"
+import { toast } from "sonner"
+import { CalendarDays, Clock3 } from "lucide-react"
 
 type Example = {
     input: string
@@ -72,12 +74,57 @@ const FALLBACK_STARTER_CODE = {
 
 export default function SingleAssignmentPage() {
     const params = useParams()
+    const router = useRouter()
     const id = params.id as string
 
     const [assignment, setAssignment] = useState<Assignment | null>(null)
     const [loading, setLoading] = useState(true)
     const [dbUserId, setDbUserId] = useState("")
     const [submissionState, setSubmissionState] = useState<SubmissionState>({})
+    const [accessStatus, setAccessStatus] = useState<"not-published" | "active" | "expired">("active")
+    const [autoSubmitting, setAutoSubmitting] = useState(false)
+    const [hasCheckedAccess, setHasCheckedAccess] = useState(false)
+
+    const handleAutoSubmit = async (assignment: Assignment, userId: string, currentSubmissionState: SubmissionState) => {
+        if (autoSubmitting) return // Prevent duplicate submissions
+
+        setAutoSubmitting(true)
+
+        try {
+            // Get all problems and submit any code that exists
+            const submissionPromises = assignment.problems.map((problem) => {
+                const currentState = currentSubmissionState[problem._id]
+                const codeToSubmit = currentState?.code || problem.starterCode?.cpp || ""
+
+                return axios.post("/api/student/submissions", {
+                    assignmentId: assignment._id,
+                    problemId: problem._id,
+                    userId: userId,
+                    code: codeToSubmit,
+                    language: currentState?.language || "cpp",
+                })
+            })
+
+            await Promise.all(submissionPromises)
+
+            // Show toast and redirect
+            toast.success("Assignment submitted successfully", {
+                description: "Your code has been automatically submitted.",
+            })
+
+            // Redirect to assignment list page
+            router.push("/assignment")
+        } catch (error) {
+            console.error("Auto-submit failed:", error)
+            toast.error("Auto-submit failed", {
+                description: "Please contact support if you believe this is an error.",
+            })
+            // Still redirect even if auto-submit fails
+            router.push("/assignment")
+        } finally {
+            setAutoSubmitting(false)
+        }
+    }
 
     useEffect(() => {
         const fetchAssignmentAndUser = async () => {
@@ -92,6 +139,22 @@ export default function SingleAssignmentPage() {
 
                 setAssignment(fetchedAssignment)
                 setDbUserId(fetchedUserId)
+
+                // Check access status based on publish and due dates
+                const now = new Date()
+                const publishDate = new Date(fetchedAssignment.publishAt)
+                const dueDate = new Date(fetchedAssignment.dueAt)
+
+                if (now < publishDate) {
+                    setAccessStatus("not-published")
+                } else if (now > dueDate) {
+                    setAccessStatus("expired")
+                    // Auto-submit any unsaved code and redirect
+                    await handleAutoSubmit(fetchedAssignment, fetchedUserId, submissionState)
+                    return
+                } else {
+                    setAccessStatus("active")
+                }
 
                 const submissionsRes = await axios.get(
                     `/api/student/submissions/by-assignment/${id}?userId=${fetchedUserId}`
@@ -211,6 +274,20 @@ export default function SingleAssignmentPage() {
     }
 
     const handleSubmitSolution = async (problemId: string) => {
+        // Prevent submission if assignment is not active
+        if (accessStatus !== "active") {
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    message: accessStatus === "not-published"
+                        ? "Assignment is not yet available for submission"
+                        : "Assignment deadline has passed",
+                },
+            }))
+            return
+        }
+
         const current = submissionState[problemId]
 
         if (!current?.code.trim()) {
@@ -278,6 +355,45 @@ export default function SingleAssignmentPage() {
             <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
                 <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
                     <h2 className="text-lg font-semibold">Assignment not found</h2>
+                </div>
+            </div>
+        )
+    }
+
+    if (accessStatus === "not-published") {
+        const publishDate = new Date(assignment.publishAt)
+        return (
+            <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                    <CalendarDays className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h2 className="mt-4 text-lg font-semibold">Assignment Not Yet Available</h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        This assignment will be available on{" "}
+                        <span className="font-medium text-foreground">
+                            {publishDate.toLocaleString()}
+                        </span>
+                    </p>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                        Please check back later to view and submit your solutions.
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
+    if (accessStatus === "expired" || autoSubmitting) {
+        return (
+            <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
+                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
+                    <Clock3 className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h2 className="mt-4 text-lg font-semibold">
+                        {autoSubmitting ? "Submitting your assignment..." : "Assignment Deadline Passed"}
+                    </h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {autoSubmitting
+                            ? "Please wait while we submit your code."
+                            : "Redirecting you to the assignments page..."}
+                    </p>
                 </div>
             </div>
         )
