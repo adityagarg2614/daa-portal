@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useEffect } from "react"
+import axios from "axios"
 import {
     Trophy,
     BarChart3,
@@ -13,6 +14,11 @@ import { SearchBar } from "@/components/ui/search-bar"
 import { FilterTabs } from "@/components/ui/filter-tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import { ResultCard } from "@/components/ui/result-card"
+import {
+    StatsCardSkeleton,
+    ResultCardSkeleton,
+    PageHeaderSkeleton,
+} from "@/components/ui/skeleton"
 
 type ResultStatus = "Excellent" | "Good" | "Average" | "Needs Improvement"
 
@@ -31,53 +37,71 @@ type Result = {
 export default function ResultsPage() {
     const [search, setSearch] = useState("")
     const [activeTab, setActiveTab] = useState<"All" | ResultStatus>("All")
+    const [results, setResults] = useState<Result[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const results: Result[] = [
-        {
-            id: 1,
-            assignmentTitle: "DAA Lab Assignment 1",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 5,
-            obtainedMarks: 18,
-            totalMarks: 20,
-            percentage: 90,
-            evaluatedAt: "18 Mar 2026, 01:20 PM",
-            status: "Excellent",
-        },
-        {
-            id: 2,
-            assignmentTitle: "Searching and Sorting",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 4,
-            obtainedMarks: 14,
-            totalMarks: 20,
-            percentage: 70,
-            evaluatedAt: "20 Mar 2026, 02:10 PM",
-            status: "Good",
-        },
-        {
-            id: 3,
-            assignmentTitle: "Recursion and Backtracking",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 6,
-            obtainedMarks: 11,
-            totalMarks: 20,
-            percentage: 55,
-            evaluatedAt: "22 Mar 2026, 04:15 PM",
-            status: "Average",
-        },
-        {
-            id: 4,
-            assignmentTitle: "Greedy Algorithms Practice",
-            subject: "Design and Analysis of Algorithms",
-            totalProblems: 5,
-            obtainedMarks: 7,
-            totalMarks: 20,
-            percentage: 35,
-            evaluatedAt: "23 Mar 2026, 10:00 AM",
-            status: "Needs Improvement",
-        },
-    ]
+    // TODO: Replace with actual API call when backend is ready
+    useEffect(() => {
+        const fetchResults = async () => {
+            try {
+                // Replace with: const res = await axios.get("/api/student/results")
+                // For now, using dummy data
+                const dummyResults: Result[] = [
+                    {
+                        id: 1,
+                        assignmentTitle: "DAA Lab Assignment 1",
+                        subject: "Design and Analysis of Algorithms",
+                        totalProblems: 5,
+                        obtainedMarks: 18,
+                        totalMarks: 20,
+                        percentage: 90,
+                        evaluatedAt: "18 Mar 2026, 01:20 PM",
+                        status: "Excellent",
+                    },
+                    {
+                        id: 2,
+                        assignmentTitle: "Searching and Sorting",
+                        subject: "Design and Analysis of Algorithms",
+                        totalProblems: 4,
+                        obtainedMarks: 14,
+                        totalMarks: 20,
+                        percentage: 70,
+                        evaluatedAt: "20 Mar 2026, 02:10 PM",
+                        status: "Good",
+                    },
+                    {
+                        id: 3,
+                        assignmentTitle: "Recursion and Backtracking",
+                        subject: "Design and Analysis of Algorithms",
+                        totalProblems: 6,
+                        obtainedMarks: 11,
+                        totalMarks: 20,
+                        percentage: 55,
+                        evaluatedAt: "22 Mar 2026, 04:15 PM",
+                        status: "Average",
+                    },
+                    {
+                        id: 4,
+                        assignmentTitle: "Greedy Algorithms Practice",
+                        subject: "Design and Analysis of Algorithms",
+                        totalProblems: 5,
+                        obtainedMarks: 7,
+                        totalMarks: 20,
+                        percentage: 35,
+                        evaluatedAt: "23 Mar 2026, 10:00 AM",
+                        status: "Needs Improvement",
+                    },
+                ]
+                setResults(dummyResults)
+            } catch (error) {
+                console.error("Error fetching results:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchResults()
+    }, [])
 
     const tabs: Array<"All" | ResultStatus> = [
         "All",
@@ -99,41 +123,58 @@ export default function ResultsPage() {
         })
     }, [results, search, activeTab])
 
-    const averagePercentage = Math.round(
-        results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length
-    )
+    const averagePercentage = results.length > 0
+        ? Math.round(
+            results.reduce((acc, curr) => acc + curr.percentage, 0) / results.length
+        )
+        : 0
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <SectionHeader
-                title="Results"
-                description="View your evaluated assignment scores and overall performance"
-                icon={Trophy}
-            />
+            {loading ? (
+                <PageHeaderSkeleton />
+            ) : (
+                <SectionHeader
+                    title="Results"
+                    description="View your evaluated assignment scores and overall performance"
+                    icon={Trophy}
+                />
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Result statistics">
-                <StatsCard
-                    icon={FileSpreadsheet}
-                    title="Total Results"
-                    value={results.length}
-                />
-                <StatsCard
-                    icon={BarChart3}
-                    title="Average Score"
-                    value={`${averagePercentage}%`}
-                />
-                <StatsCard
-                    icon={Trophy}
-                    title="Excellent Results"
-                    value={results.filter((r) => r.status === "Excellent").length}
-                />
-                <StatsCard
-                    icon={TrendingUp}
-                    title="Improvement Needed"
-                    value={results.filter((r) => r.status === "Needs Improvement").length}
-                />
+                {loading ? (
+                    <>
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatsCard
+                            icon={FileSpreadsheet}
+                            title="Total Results"
+                            value={results.length}
+                        />
+                        <StatsCard
+                            icon={BarChart3}
+                            title="Average Score"
+                            value={`${averagePercentage}%`}
+                        />
+                        <StatsCard
+                            icon={Trophy}
+                            title="Excellent Results"
+                            value={results.filter((r) => r.status === "Excellent").length}
+                        />
+                        <StatsCard
+                            icon={TrendingUp}
+                            title="Improvement Needed"
+                            value={results.filter((r) => r.status === "Needs Improvement").length}
+                        />
+                    </>
+                )}
             </div>
 
             {/* Search and Filters */}
@@ -158,27 +199,29 @@ export default function ResultsPage() {
             </div>
 
             {/* Results List */}
-            <div
-                className="grid gap-4"
-                role="list"
-                aria-label="Results list"
-                aria-live="polite"
-            >
-                {filteredResults.length > 0 ? (
-                    filteredResults.map((result) => (
+            {loading ? (
+                <div className="grid gap-4" role="status" aria-label="Loading results">
+                    <ResultCardSkeleton />
+                    <ResultCardSkeleton />
+                    <ResultCardSkeleton />
+                    <ResultCardSkeleton />
+                </div>
+            ) : filteredResults.length > 0 ? (
+                <div className="grid gap-4" role="list" aria-label="Results list" aria-live="polite">
+                    {filteredResults.map((result) => (
                         <ResultCard
                             key={result.id}
                             result={result}
                             actionLabel="View Detailed Result"
                         />
-                    ))
-                ) : (
-                    <EmptyState
-                        title="No results found"
-                        description="Your evaluated assignment results will appear here."
-                    />
-                )}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <EmptyState
+                    title="No results found"
+                    description="Your evaluated assignment results will appear here."
+                />
+            )}
         </div>
     )
 }

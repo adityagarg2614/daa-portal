@@ -9,6 +9,11 @@ import { SearchBar } from "@/components/ui/search-bar"
 import { FilterTabs } from "@/components/ui/filter-tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import { AssignmentCard } from "@/components/ui/assignment-card"
+import {
+    StatsCardSkeleton,
+    AssignmentCardSkeleton,
+    PageHeaderSkeleton,
+} from "@/components/ui/skeleton"
 
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
 
@@ -87,34 +92,49 @@ export default function AssignmentPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <SectionHeader
-                title="Assignments"
-                description="View all your active, upcoming, completed, and expired assignments in one place"
-                icon={BookOpen}
-            />
+            {loading ? (
+                <PageHeaderSkeleton />
+            ) : (
+                <SectionHeader
+                    title="Assignments"
+                    description="View all your active, upcoming, completed, and expired assignments in one place"
+                    icon={BookOpen}
+                />
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Assignment statistics">
-                <StatsCard
-                    icon={BookOpen}
-                    title="Total Assignments"
-                    value={assignments.length}
-                />
-                <StatsCard
-                    icon={Clock3}
-                    title="Active"
-                    value={assignments.filter((a) => a.status === "Active").length}
-                />
-                <StatsCard
-                    icon={CheckCircle2}
-                    title="Completed"
-                    value={assignments.filter((a) => a.status === "Completed").length}
-                />
-                <StatsCard
-                    icon={CalendarDays}
-                    title="Upcoming"
-                    value={assignments.filter((a) => a.status === "Upcoming").length}
-                />
+                {loading ? (
+                    <>
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatsCard
+                            icon={BookOpen}
+                            title="Total Assignments"
+                            value={assignments.length}
+                        />
+                        <StatsCard
+                            icon={Clock3}
+                            title="Active"
+                            value={assignments.filter((a) => a.status === "Active").length}
+                        />
+                        <StatsCard
+                            icon={CheckCircle2}
+                            title="Completed"
+                            value={assignments.filter((a) => a.status === "Completed").length}
+                        />
+                        <StatsCard
+                            icon={CalendarDays}
+                            title="Upcoming"
+                            value={assignments.filter((a) => a.status === "Upcoming").length}
+                        />
+                    </>
+                )}
             </div>
 
             {/* Search and Filters */}
@@ -140,8 +160,10 @@ export default function AssignmentPage() {
 
             {/* Assignments List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading assignments">
-                    <p className="text-sm text-muted-foreground">Loading assignments...</p>
+                <div className="grid gap-4" role="status" aria-label="Loading assignments">
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
                 </div>
             ) : (
                 <div

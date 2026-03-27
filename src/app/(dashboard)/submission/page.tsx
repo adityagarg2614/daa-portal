@@ -14,6 +14,11 @@ import { SearchBar } from "@/components/ui/search-bar"
 import { FilterTabs } from "@/components/ui/filter-tabs"
 import { EmptyState } from "@/components/ui/empty-state"
 import { SubmissionCard } from "@/components/ui/submission-card"
+import {
+    StatsCardSkeleton,
+    SubmissionCardSkeleton,
+    PageHeaderSkeleton,
+} from "@/components/ui/skeleton"
 
 type SubmissionStatus = "Attempted" | "Submitted" | "Evaluated"
 
@@ -100,29 +105,43 @@ export default function SubmissionPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <SectionHeader
-                title="My Submissions"
-                description="Track all your submitted and evaluated problem solutions here"
-                icon={FileCode2}
-            />
+            {loading ? (
+                <PageHeaderSkeleton />
+            ) : (
+                <SectionHeader
+                    title="My Submissions"
+                    description="Track all your submitted and evaluated problem solutions here"
+                    icon={FileCode2}
+                />
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3" role="region" aria-label="Submission statistics">
-                <StatsCard
-                    icon={FileText}
-                    title="Total Records"
-                    value={submissions.length}
-                />
-                <StatsCard
-                    icon={Clock3}
-                    title="Submitted"
-                    value={submissions.filter((s) => s.status === "Submitted").length}
-                />
-                <StatsCard
-                    icon={CheckCircle2}
-                    title="Evaluated"
-                    value={submissions.filter((s) => s.status === "Evaluated").length}
-                />
+                {loading ? (
+                    <>
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatsCard
+                            icon={FileText}
+                            title="Total Records"
+                            value={submissions.length}
+                        />
+                        <StatsCard
+                            icon={Clock3}
+                            title="Submitted"
+                            value={submissions.filter((s) => s.status === "Submitted").length}
+                        />
+                        <StatsCard
+                            icon={CheckCircle2}
+                            title="Evaluated"
+                            value={submissions.filter((s) => s.status === "Evaluated").length}
+                        />
+                    </>
+                )}
             </div>
 
             {/* Search and Filters */}
@@ -148,8 +167,10 @@ export default function SubmissionPage() {
 
             {/* Submissions List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading submissions">
-                    <p className="text-sm text-muted-foreground">Loading submissions...</p>
+                <div className="grid gap-4" role="status" aria-label="Loading submissions">
+                    <SubmissionCardSkeleton />
+                    <SubmissionCardSkeleton />
+                    <SubmissionCardSkeleton />
                 </div>
             ) : (
                 <div

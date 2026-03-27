@@ -19,6 +19,11 @@ import {
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+    StatsCardSkeleton,
+    AssignmentCardSkeleton,
+    PageHeaderSkeleton,
+} from "@/components/ui/skeleton"
 
 type Assignment = {
     _id: string
@@ -104,94 +109,109 @@ export default function AdminAssignmentsPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <div
-                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                role="banner"
-            >
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                            aria-hidden="true"
-                        >
-                            <FileText className="h-6 w-6 icon-bounce" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                Assignments
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                View and manage all created assignments
-                            </p>
+            {loading ? (
+                <PageHeaderSkeleton />
+            ) : (
+                <div
+                    className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
+                    role="banner"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
+                                aria-hidden="true"
+                            >
+                                <FileText className="h-6 w-6 icon-bounce" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
+                                    Assignments
+                                </h1>
+                                <p className="text-sm text-muted-foreground">
+                                    View and manage all created assignments
+                                </p>
+                            </div>
                         </div>
                     </div>
+                    {/* Decorative background elements */}
+                    <div
+                        className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                        aria-hidden="true"
+                    />
+                    <div
+                        className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                        aria-hidden="true"
+                    />
                 </div>
-                {/* Decorative background elements */}
-                <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-            </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Assignment statistics">
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Assignments</p>
-                            <h2 className="mt-2 text-2xl font-bold">{assignments.length}</h2>
+                {loading ? (
+                    <>
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Assignments</p>
+                                    <h2 className="mt-2 text-2xl font-bold">{assignments.length}</h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <FileText className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <FileText className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Upcoming</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {assignments.filter((a) => getComputedStatus(a) === "Upcoming").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Upcoming</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {assignments.filter((a) => getComputedStatus(a) === "Upcoming").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <CalendarDays className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <CalendarDays className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Active</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {assignments.filter((a) => getComputedStatus(a) === "Active").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Active</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {assignments.filter((a) => getComputedStatus(a) === "Active").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <Clock3 className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <Clock3 className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Expired</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {assignments.filter((a) => getComputedStatus(a) === "Expired").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Expired</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {assignments.filter((a) => getComputedStatus(a) === "Expired").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <BookOpen className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <BookOpen className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
 
             {/* Search and Actions Bar */}
@@ -261,8 +281,10 @@ export default function AdminAssignmentsPage() {
 
             {/* Assignments List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading assignments">
-                    <p className="text-sm text-muted-foreground">Loading assignments...</p>
+                <div className="grid gap-4" role="status" aria-label="Loading assignments">
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
                 </div>
             ) : (
                 <div

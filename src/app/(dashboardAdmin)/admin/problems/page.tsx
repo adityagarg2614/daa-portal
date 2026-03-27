@@ -21,6 +21,11 @@ import {
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+    StatsCardSkeleton,
+    AssignmentCardSkeleton,
+    PageHeaderSkeleton,
+} from "@/components/ui/skeleton"
 
 type Problem = {
     _id: string
@@ -108,94 +113,109 @@ export default function ProblemsPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <div
-                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                role="banner"
-            >
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                            aria-hidden="true"
-                        >
-                            <BookOpen className="h-6 w-6 icon-bounce" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                Problem Bank
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                View and manage all reusable problems for assignments
-                            </p>
+            {loading ? (
+                <PageHeaderSkeleton />
+            ) : (
+                <div
+                    className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
+                    role="banner"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
+                                aria-hidden="true"
+                            >
+                                <BookOpen className="h-6 w-6 icon-bounce" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
+                                    Problem Bank
+                                </h1>
+                                <p className="text-sm text-muted-foreground">
+                                    View and manage all reusable problems for assignments
+                                </p>
+                            </div>
                         </div>
                     </div>
+                    {/* Decorative background elements */}
+                    <div
+                        className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                        aria-hidden="true"
+                    />
+                    <div
+                        className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
+                        aria-hidden="true"
+                    />
                 </div>
-                {/* Decorative background elements */}
-                <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-            </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Problem statistics">
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Problems</p>
-                            <h2 className="mt-2 text-2xl font-bold">{problems.length}</h2>
+                {loading ? (
+                    <>
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                        <StatsCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Problems</p>
+                                    <h2 className="mt-2 text-2xl font-bold">{problems.length}</h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <BookOpen className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <BookOpen className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Easy</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {problems.filter((p) => p.difficulty === "Easy").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Easy</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {problems.filter((p) => p.difficulty === "Easy").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <ShieldCheck className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <ShieldCheck className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Medium</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {problems.filter((p) => p.difficulty === "Medium").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Medium</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {problems.filter((p) => p.difficulty === "Medium").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <Star className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <Star className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Hard</p>
-                            <h2 className="mt-2 text-2xl font-bold">
-                                {problems.filter((p) => p.difficulty === "Hard").length}
-                            </h2>
+                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Hard</p>
+                                    <h2 className="mt-2 text-2xl font-bold">
+                                        {problems.filter((p) => p.difficulty === "Hard").length}
+                                    </h2>
+                                </div>
+                                <div className="rounded-xl bg-muted p-2">
+                                    <Zap className="h-5 w-5" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="rounded-xl bg-muted p-2">
-                            <Zap className="h-5 w-5" />
-                        </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
 
             {/* Search and Actions Bar */}
@@ -265,8 +285,10 @@ export default function ProblemsPage() {
 
             {/* Problems List */}
             {loading ? (
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm" role="status" aria-label="Loading problems">
-                    <p className="text-sm text-muted-foreground">Loading problems...</p>
+                <div className="grid gap-4" role="status" aria-label="Loading problems">
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
+                    <AssignmentCardSkeleton />
                 </div>
             ) : (
                 <div
