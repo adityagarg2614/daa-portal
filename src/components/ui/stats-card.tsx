@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
+import { NumberTicker } from "@/components/ui/number-ticker"
 
 interface StatsCardProps {
     icon: LucideIcon
@@ -20,6 +21,8 @@ export function StatsCard({
     subtitle,
     className,
 }: StatsCardProps) {
+    const isNumeric = typeof value === "number"
+
     return (
         <div
             className={cn(
@@ -30,7 +33,9 @@ export function StatsCard({
             <div className="flex items-start justify-between">
                 <div>
                     <p className="text-sm text-muted-foreground">{title}</p>
-                    <h2 className="mt-2 text-2xl font-bold">{value}</h2>
+                    <h2 className="mt-2 text-2xl font-bold">
+                        {isNumeric ? <NumberTicker value={value} /> : value}
+                    </h2>
                     {subtitle && (
                         <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
                     )}

@@ -24,6 +24,7 @@ import {
     AssignmentCardSkeleton,
     PageHeaderSkeleton,
 } from "@/components/ui/skeleton"
+import { StatsCard } from "@/components/ui/stats-card"
 
 type Assignment = {
     _id: string
@@ -157,59 +158,26 @@ export default function AdminAssignmentsPage() {
                     </>
                 ) : (
                     <>
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Assignments</p>
-                                    <h2 className="mt-2 text-2xl font-bold">{assignments.length}</h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <FileText className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Upcoming</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {assignments.filter((a) => getComputedStatus(a) === "Upcoming").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <CalendarDays className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Active</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {assignments.filter((a) => getComputedStatus(a) === "Active").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <Clock3 className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Expired</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {assignments.filter((a) => getComputedStatus(a) === "Expired").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <BookOpen className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
+                        <StatsCard
+                            icon={FileText}
+                            title="Total Assignments"
+                            value={assignments.length}
+                        />
+                        <StatsCard
+                            icon={CalendarDays}
+                            title="Upcoming"
+                            value={assignments.filter((a) => getComputedStatus(a) === "Upcoming").length}
+                        />
+                        <StatsCard
+                            icon={Clock3}
+                            title="Active"
+                            value={assignments.filter((a) => getComputedStatus(a) === "Active").length}
+                        />
+                        <StatsCard
+                            icon={BookOpen}
+                            title="Expired"
+                            value={assignments.filter((a) => getComputedStatus(a) === "Expired").length}
+                        />
                     </>
                 )}
             </div>

@@ -26,6 +26,7 @@ import {
     AssignmentCardSkeleton,
     PageHeaderSkeleton,
 } from "@/components/ui/skeleton"
+import { StatsCard } from "@/components/ui/stats-card"
 
 type Problem = {
     _id: string
@@ -161,59 +162,26 @@ export default function ProblemsPage() {
                     </>
                 ) : (
                     <>
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Problems</p>
-                                    <h2 className="mt-2 text-2xl font-bold">{problems.length}</h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <BookOpen className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Easy</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {problems.filter((p) => p.difficulty === "Easy").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <ShieldCheck className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Medium</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {problems.filter((p) => p.difficulty === "Medium").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <Star className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border bg-background p-5 shadow-sm">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Hard</p>
-                                    <h2 className="mt-2 text-2xl font-bold">
-                                        {problems.filter((p) => p.difficulty === "Hard").length}
-                                    </h2>
-                                </div>
-                                <div className="rounded-xl bg-muted p-2">
-                                    <Zap className="h-5 w-5" />
-                                </div>
-                            </div>
-                        </div>
+                        <StatsCard
+                            icon={BookOpen}
+                            title="Total Problems"
+                            value={problems.length}
+                        />
+                        <StatsCard
+                            icon={ShieldCheck}
+                            title="Easy"
+                            value={problems.filter((p) => p.difficulty === "Easy").length}
+                        />
+                        <StatsCard
+                            icon={Star}
+                            title="Medium"
+                            value={problems.filter((p) => p.difficulty === "Medium").length}
+                        />
+                        <StatsCard
+                            icon={Zap}
+                            title="Hard"
+                            value={problems.filter((p) => p.difficulty === "Hard").length}
+                        />
                     </>
                 )}
             </div>
