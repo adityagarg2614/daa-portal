@@ -2,6 +2,16 @@ import { connectDB } from "@/lib/db";
 import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
 
+// Helper function to capitalize difficulty values
+function capitalizeDifficulty(difficulty: string): string {
+    if (!difficulty) return "Easy";
+    const lower = difficulty.toLowerCase();
+    if (lower === "easy") return "Easy";
+    if (lower === "medium") return "Medium";
+    if (lower === "hard") return "Hard";
+    return "Easy"; // Default fallback
+}
+
 
 export async function POST(req: Request) {
     try {
@@ -43,7 +53,7 @@ export async function POST(req: Request) {
             slug,
             description,
             constraints: constraints || [],
-            difficulty: difficulty || "Easy",
+            difficulty: difficulty ? capitalizeDifficulty(difficulty) : "Easy",
             tags: tags || [],
             marks: marks || 10,
             starterCode: starterCode || {
