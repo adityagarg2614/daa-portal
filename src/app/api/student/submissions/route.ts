@@ -1,6 +1,9 @@
 import { connectDB } from "@/lib/db";
 import Submission from "@/models/Submission";
+import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
+import { runTestCases } from "@/lib/piston";
+import { ITestResult } from "@/models/Submission";
 
 
 export async function POST(req: Request) {
@@ -15,6 +18,7 @@ export async function POST(req: Request) {
             userId,
             code,
             language,
+            runTests = true, // Default to running tests
         } = body;
 
         if (!assignmentId || !problemId || !userId || !code || !language) {
@@ -27,26 +31,118 @@ export async function POST(req: Request) {
             );
         }
 
+        // Fetch problem to get test cases
+        const problem = await Problem.findById(problemId);
+        if (!problem) {
+            return NextResponse.json(
+                { success: false, message: "Problem not found" },
+                { status: 404 }
+            );
+        }
+
+        let testResults: ITestResult[] = [];
+        let allTestsPassed = false;
+        let executionTime = 0;
+        let memoryUsed = 0;
+        let passedTests = 0;
+        let totalTests = 0;
+
+        // Run test cases if requested and test cases exist
+        if (runTests && problem.testCases && problem.testCases.length > 0) {
+            const testCases = problem.testCases.map((tc: { input: string; output: string; isHidden: boolean }) => ({
+                input: tc.input,
+                output: tc.output,
+            }));
+
+            // Call Piston directly (no HTTP self-fetch)
+            const compileResult = await runTestCases(code, language, testCases);
+
+            // Compilation error — return early without saving
+            if (compileResult.compilationError) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        compilationError: true,
+                        message: compileResult.message || "Compilation failed",
+                        error: compileResult.compilationError,
+                        testResults: [],
+                        passedTests: 0,
+                        totalTests: compileResult.totalTests,
+                    },
+                    { status: 400 }
+                );
+            }
+
+            // Execution service failure
+            if (!compileResult.success) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: compileResult.message || "Failed to execute code",
+                        testResults: compileResult.results || [],
+                    },
+                    { status: 400 }
+                );
+            }
+
+            testResults = compileResult.results;
+            allTestsPassed = compileResult.allPassed;
+            executionTime = compileResult.executionTime;
+            memoryUsed = compileResult.memoryUsed;
+            passedTests = compileResult.passedTests;
+            totalTests = compileResult.totalTests;
+
+            // If not all tests pass, return results but don't save submission
+            if (!allTestsPassed) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Not all test cases passed. ${passedTests}/${totalTests} tests succeeded.`,
+                        testResults,
+                        passedTests,
+                        totalTests,
+                        executionTime,
+                        memoryUsed,
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+
+        // Delete any previous submission for this problem and user (allow re-submission)
+        await Submission.deleteOne({ userId, problemId });
+
+        // Save submission with test results
         const submission = await Submission.create({
             assignmentId,
             problemId,
             userId,
             code,
             language,
-            status: "Submitted",
+            status: "Evaluated",
             submittedAt: new Date(),
-            score: 0,
+            score: allTestsPassed ? problem.marks : 0,
+            testResults,
+            executionTime,
+            memoryUsed,
         });
 
         return NextResponse.json({
             success: true,
             message: "Submission saved successfully",
             submission,
+            testResults,
+            allTestsPassed,
+            passedTests,
+            totalTests,
         });
     } catch (error) {
         console.error("Create Submission Error:", error);
         return NextResponse.json(
-            { success: false, message: "Failed to save submission" },
+            {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to save submission",
+            },
             { status: 500 }
         );
     }
