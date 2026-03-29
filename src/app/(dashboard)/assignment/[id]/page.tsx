@@ -20,6 +20,10 @@ import {
     Loader2,
     BookOpen,
     Tag,
+    Send,
+    ClipboardCheck,
+    Play,
+    Terminal,
 } from "lucide-react"
 import { RotateCCWIcon } from "@/components/ui/rotate-ccw"
 import { Badge } from "@/components/ui/badge"
@@ -49,6 +53,15 @@ import { ChevronDown } from "lucide-react"
 import { useTimeRemaining } from "@/hooks/use-time-remaining"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { AssignmentDetailSkeleton } from "@/components/ui/skeleton"
+import { TestResultsDisplay, TestResult } from "@/components/ui/test-results-display"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 
 type Example = {
     input: string
@@ -91,7 +104,13 @@ type SubmissionState = {
         code: string
         language: string
         loading: boolean
+        loadingAction?: 'running' | 'submitting'
         message: string
+        messageType?: 'success' | 'error' | 'info' | 'compile-error'
+        compilationError?: string
+        testResults?: TestResult[]
+        executionTime?: number
+        memoryUsed?: number
     }
 }
 
@@ -138,12 +157,14 @@ export default function SingleAssignmentPage() {
     const [accessStatus, setAccessStatus] = useState<"not-published" | "active" | "expired">("active")
     const [autoSubmitting, setAutoSubmitting] = useState(false)
     const [previousAccessStatus, setPreviousAccessStatus] = useState<"not-published" | "active" | "expired">("active")
+    const [submitAssignmentDialogOpen, setSubmitAssignmentDialogOpen] = useState(false)
+    const [submittingAssignment, setSubmittingAssignment] = useState(false)
 
     const { timeRemaining, isExpiringSoon } = useTimeRemaining(assignment?.dueAt || "")
 
     // Count submitted problems
     const submittedCount = Object.values(submissionState).filter(
-        (state) => state.message === "Submission saved successfully"
+        (state) => state.messageType === "success"
     ).length
 
     // Memoized version of handleAutoSubmit for use in useCallback
@@ -163,6 +184,7 @@ export default function SingleAssignmentPage() {
                     userId: currentUserId,
                     code: codeToSubmit,
                     language: problemState?.language || "cpp",
+                    runTests: false, // Skip test validation on auto-submit
                 })
             })
 
@@ -374,6 +396,81 @@ export default function SingleAssignmentPage() {
         }))
     }
 
+    // Run Code — compile & execute without saving (uses /api/compile)
+    const handleRunCode = async (problemId: string) => {
+        const current = submissionState[problemId]
+        if (!current?.code.trim()) {
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    message: "Code is required",
+                    messageType: 'error' as const,
+                },
+            }))
+            return
+        }
+
+        try {
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    loading: true,
+                    loadingAction: 'running' as const,
+                    message: "",
+                    messageType: undefined,
+                    compilationError: undefined,
+                    testResults: undefined,
+                },
+            }))
+
+            const response = await axios.post("/api/compile", {
+                code: current.code,
+                language: current.language,
+            })
+
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    loading: false,
+                    loadingAction: undefined,
+                    message: response.data.output || "(no output)",
+                    messageType: 'info' as const,
+                    compilationError: undefined,
+                    executionTime: response.data.executionTime,
+                    memoryUsed: response.data.memoryUsed,
+                },
+            }))
+
+            toast.success("Code ran successfully!")
+        } catch (error: unknown) {
+            const errData = axios.isAxiosError(error) ? error.response?.data : null
+
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    loading: false,
+                    loadingAction: undefined,
+                    message: errData?.message || "Failed to run code",
+                    messageType: errData?.compilationError ? 'compile-error' as const : 'error' as const,
+                    compilationError: errData?.compilationError ? errData.error : undefined,
+                },
+            }))
+
+            if (errData?.compilationError) {
+                toast.error("Compilation failed", {
+                    description: "Fix the errors and try again.",
+                })
+            } else {
+                toast.error(errData?.message || "Failed to run code")
+            }
+        }
+    }
+
+    // Submit — compile, run all test cases, and save only if all pass
     const handleSubmitSolution = async (problemId: string) => {
         // Prevent submission if assignment is not active
         if (accessStatus !== "active") {
@@ -384,6 +481,7 @@ export default function SingleAssignmentPage() {
                     message: accessStatus === "not-published"
                         ? "Assignment is not yet available for submission"
                         : "Assignment deadline has passed",
+                    messageType: 'error' as const,
                 },
             }))
             return
@@ -397,6 +495,7 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     message: "Code is required",
+                    messageType: 'error' as const,
                 },
             }))
             return
@@ -408,11 +507,15 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     loading: true,
+                    loadingAction: 'submitting' as const,
                     message: "",
+                    messageType: undefined,
+                    compilationError: undefined,
+                    testResults: undefined,
                 },
             }))
 
-            await axios.post("/api/student/submissions", {
+            const response = await axios.post("/api/student/submissions", {
                 assignmentId: assignment?._id,
                 problemId,
                 userId: dbUserId,
@@ -425,22 +528,74 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     loading: false,
-                    message: "Submission saved successfully",
+                    loadingAction: undefined,
+                    message: "All test cases passed! Submission saved successfully.",
+                    messageType: 'success' as const,
+                    compilationError: undefined,
+                    testResults: response.data.testResults || [],
+                    executionTime: response.data.executionTime,
+                    memoryUsed: response.data.memoryUsed,
                 },
             }))
+
+            toast.success("All test cases passed! ✅", {
+                description: `Your solution passed ${response.data.passedTests || 0}/${response.data.totalTests || 0} test cases and was submitted.`,
+            })
         } catch (error: unknown) {
-            const errorMessage =
-                error instanceof Error && 'response' in error
-                    ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-                    : "Failed to save submission"
+            const errData = axios.isAxiosError(error) ? error.response?.data : null
+
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     loading: false,
-                    message: errorMessage || "Failed to save submission",
+                    loadingAction: undefined,
+                    message: errData?.message || "Failed to submit",
+                    messageType: errData?.compilationError ? 'compile-error' as const : 'error' as const,
+                    compilationError: errData?.compilationError ? errData.error : undefined,
+                    testResults: errData?.testResults || [],
+                    executionTime: errData?.executionTime || 0,
+                    memoryUsed: errData?.memoryUsed || 0,
                 },
             }))
+
+            if (errData?.compilationError) {
+                toast.error("Compilation failed", {
+                    description: "Fix the errors and try again.",
+                })
+            } else if (errData?.testResults && errData.passedTests !== undefined) {
+                toast.error(`${errData.passedTests}/${errData.totalTests} test cases passed`, {
+                    description: "Fix the failing test cases and try again.",
+                })
+            } else {
+                toast.error(errData?.message || "Failed to submit")
+            }
+        }
+    }
+
+    const handleFinalSubmit = async () => {
+        if (!assignment || !dbUserId) return
+
+        setSubmittingAssignment(true)
+
+        try {
+            const response = await axios.post(`/api/student/assignments/${assignment._id}/submit`, {
+                userId: dbUserId,
+            })
+
+            toast.success("Assignment submitted successfully!", {
+                description: `Score: ${response.data.totalScore}/${response.data.maxScore}`,
+            })
+
+            setSubmitAssignmentDialogOpen(false)
+            router.push("/assignment")
+        } catch (error) {
+            console.error("Final submission error:", error)
+            toast.error("Failed to submit assignment", {
+                description: "Please try again or contact support.",
+            })
+        } finally {
+            setSubmittingAssignment(false)
         }
     }
 
@@ -531,10 +686,20 @@ export default function SingleAssignmentPage() {
                             <h1 className="text-2xl font-bold tracking-tight">{assignment.title}</h1>
                             <p className="mt-2 text-sm text-muted-foreground">{assignment.description}</p>
                         </div>
-                        <Badge variant="outline" className="gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            {assignment.totalProblems} Problems
-                        </Badge>
+                        <div className="flex gap-2">
+                            <Badge variant="outline" className="gap-1">
+                                <BookOpen className="h-3 w-3" />
+                                {assignment.totalProblems} Problems
+                            </Badge>
+                            <Button
+                                onClick={() => setSubmitAssignmentDialogOpen(true)}
+                                className="gap-2"
+                                size="sm"
+                            >
+                                <Send className="h-4 w-4" />
+                                Submit Assignment
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Progress Bar */}
@@ -614,7 +779,7 @@ export default function SingleAssignmentPage() {
             {/* Problem Cards */}
             <div className="grid gap-6">
                 {assignment.problems?.map((problem, index) => {
-                    const isSubmitted = submissionState[problem._id]?.message === "Submission saved successfully"
+                    const isSubmitted = submissionState[problem._id]?.messageType === "success"
 
                     return (
                         <div
@@ -800,20 +965,39 @@ export default function SingleAssignmentPage() {
                                                 Reset
                                             </Button>
                                             <Button
+                                                variant="outline"
+                                                onClick={() => handleRunCode(problem._id)}
+                                                disabled={submissionState[problem._id]?.loading}
+                                                className="gap-1.5"
+                                                size="sm"
+                                            >
+                                                {submissionState[problem._id]?.loading && submissionState[problem._id]?.loadingAction === 'running' ? (
+                                                    <>
+                                                        <Loader2 className="h-4 w-4 icon-spin" />
+                                                        Compiling...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Play className="h-4 w-4 icon-hover-scale" />
+                                                        Run Code
+                                                    </>
+                                                )}
+                                            </Button>
+                                            <Button
                                                 onClick={() => handleSubmitSolution(problem._id)}
                                                 disabled={submissionState[problem._id]?.loading || accessStatus !== "active"}
                                                 className="gap-1.5"
                                                 size="sm"
                                             >
-                                                {submissionState[problem._id]?.loading ? (
+                                                {submissionState[problem._id]?.loading && submissionState[problem._id]?.loadingAction === 'submitting' ? (
                                                     <>
                                                         <Loader2 className="h-4 w-4 icon-spin" />
-                                                        Saving...
+                                                        Testing & Submitting...
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Save className="h-4 w-4 icon-hover-scale" />
-                                                        Save
+                                                        <Send className="h-4 w-4 icon-hover-scale" />
+                                                        Submit
                                                     </>
                                                 )}
                                             </Button>
@@ -826,20 +1010,54 @@ export default function SingleAssignmentPage() {
                                         onChange={(value) => handleInputChange(problem._id, "code", value)}
                                     />
 
+                                    {/* Compilation Error Display */}
+                                    {submissionState[problem._id]?.compilationError && (
+                                        <div className="mt-4 rounded-xl border border-red-500/50 bg-red-500/5 p-4">
+                                            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
+                                                <Terminal className="h-4 w-4" />
+                                                Compilation Error
+                                            </div>
+                                            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-red-950/10 dark:bg-red-950/30 p-3 font-mono text-xs text-red-700 dark:text-red-300">
+                                                {submissionState[problem._id]?.compilationError}
+                                            </pre>
+                                        </div>
+                                    )}
+
                                     {/* Status Message */}
-                                    {submissionState[problem._id]?.message && (
+                                    {submissionState[problem._id]?.message && !submissionState[problem._id]?.compilationError && (
                                         <Alert
                                             variant={
-                                                submissionState[problem._id]?.message.includes("successfully")
+                                                submissionState[problem._id]?.messageType === "success"
                                                     ? "success"
-                                                    : submissionState[problem._id]?.message.includes("reset")
+                                                    : submissionState[problem._id]?.messageType === "info"
                                                         ? "info"
-                                                        : "default"
+                                                        : submissionState[problem._id]?.messageType === "error"
+                                                            ? "destructive"
+                                                            : "default"
                                             }
                                             className="mt-4"
                                         >
                                             {submissionState[problem._id]?.message}
                                         </Alert>
+                                    )}
+
+                                    {/* Run Code Output (for Run Code mode) */}
+                                    {submissionState[problem._id]?.messageType === "info" && submissionState[problem._id]?.message && !submissionState[problem._id]?.testResults?.length && (
+                                        <div className="mt-3 rounded-lg border bg-muted/30 p-3">
+                                            <div className="mb-1 text-xs font-medium text-muted-foreground">Output:</div>
+                                            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm">
+                                                {submissionState[problem._id]?.message}
+                                            </pre>
+                                        </div>
+                                    )}
+
+                                    {/* Test Results Display */}
+                                    {submissionState[problem._id]?.testResults && submissionState[problem._id]?.testResults!.length > 0 && (
+                                        <TestResultsDisplay
+                                            results={submissionState[problem._id]?.testResults!}
+                                            totalExecutionTime={submissionState[problem._id]?.executionTime}
+                                            totalMemoryUsed={submissionState[problem._id]?.memoryUsed}
+                                        />
                                     )}
                                 </div>
                             </div>
@@ -847,6 +1065,82 @@ export default function SingleAssignmentPage() {
                     )
                 })}
             </div>
+
+            {/* Submit Assignment Dialog */}
+            <Dialog open={submitAssignmentDialogOpen} onOpenChange={setSubmitAssignmentDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <ClipboardCheck className="h-5 w-5" />
+                            Submit Assignment
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to submit your assignment? This will finalize your submission.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <div className="rounded-lg border bg-muted/50 p-4">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Problems Completed</span>
+                                    <span className="font-medium">
+                                        {submittedCount}/{assignment?.totalProblems}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Status</span>
+                                    <Badge
+                                        variant={submittedCount === assignment?.totalProblems ? "success" : "outline"}
+                                    >
+                                        {submittedCount === assignment?.totalProblems
+                                            ? "All problems attempted"
+                                            : "Some problems pending"}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+
+                        {submittedCount !== assignment?.totalProblems && (
+                            <Alert variant="default" className="mt-4">
+                                <AlertCircle className="h-4 w-4" />
+                                <div className="ml-2">
+                                    <p className="text-sm">
+                                        You haven&apos;t attempted all problems yet. Your current submissions will be submitted as-is.
+                                    </p>
+                                </div>
+                            </Alert>
+                        )}
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setSubmitAssignmentDialogOpen(false)}
+                            disabled={submittingAssignment}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleFinalSubmit}
+                            disabled={submittingAssignment}
+                            className="gap-2"
+                        >
+                            {submittingAssignment ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 icon-spin" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="h-4 w-4" />
+                                    Submit & Redirect
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
