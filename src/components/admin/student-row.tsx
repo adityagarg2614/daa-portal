@@ -10,7 +10,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getInitials, getStatusBadgeColor, getPerformanceBadgeColor, formatRelativeTime } from "@/lib/admin/students-utils";
+import { getInitials, getPerformanceBadgeColor } from "@/lib/admin/students-utils";
 import { MoreHorizontal, Eye, Download, Mail } from "lucide-react";
 
 interface StudentRowProps {
@@ -22,15 +22,12 @@ interface StudentRowProps {
         totalSubmissions: number;
         totalScore: number;
         averageScore: number;
-        lastActive: string | null;
-        status: string;
     };
     onViewDetails: (studentId: string) => void;
     onExportSubmissions: (studentId: string, studentName: string) => void;
 }
 
 export function StudentRow({ student, onViewDetails, onExportSubmissions }: StudentRowProps) {
-    const statusColors = getStatusBadgeColor(student.status);
     const performanceColors = getPerformanceBadgeColor(student.averageScore);
 
     return (
@@ -90,37 +87,15 @@ export function StudentRow({ student, onViewDetails, onExportSubmissions }: Stud
                     <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all ${student.averageScore >= 80
-                                    ? "bg-green-500"
-                                    : student.averageScore >= 50
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500"
+                                ? "bg-green-500"
+                                : student.averageScore >= 50
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
                                 }`}
                             style={{ width: `${Math.min(student.averageScore, 100)}%` }}
                         />
                     </div>
                 </div>
-            </TableCell>
-
-            {/* Last Active */}
-            <TableCell className="p-4 hidden lg:table-cell">
-                <div className="flex flex-col">
-                    <span className="text-sm text-muted-foreground">
-                        {formatRelativeTime(student.lastActive)}
-                    </span>
-                    {student.lastActive && (
-                        <span className="text-xs text-muted-foreground/70">
-                            {new Date(student.lastActive).toLocaleDateString()}
-                        </span>
-                    )}
-                </div>
-            </TableCell>
-
-            {/* Status Badge */}
-            <TableCell className="p-4 text-center">
-                <Badge className={`${statusColors.bg} ${statusColors.text} border-0 gap-1.5`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${statusColors.dot}`} />
-                    {student.status === "active" ? "Active" : "Inactive"}
-                </Badge>
             </TableCell>
 
             {/* Actions */}
