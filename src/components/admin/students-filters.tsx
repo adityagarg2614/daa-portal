@@ -9,25 +9,22 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, Download, Filter, X } from "lucide-react";
+import { Search, Download, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { exportStudentsToCSV } from "@/lib/admin/students-utils";
 
 interface StudentsFiltersProps {
     onSearchChange: (search: string) => void;
-    onStatusChange: (status: string) => void;
     onSortChange: (sortBy: string, order: string) => void;
     students: any[];
 }
 
 export function StudentsFilters({
     onSearchChange,
-    onStatusChange,
     onSortChange,
     students,
 }: StudentsFiltersProps) {
     const [searchValue, setSearchValue] = useState("");
-    const [status, setStatus] = useState("all");
     const [sortBy, setSortBy] = useState("name");
     const [order, setOrder] = useState("asc");
 
@@ -39,11 +36,6 @@ export function StudentsFilters({
 
         return () => clearTimeout(timer);
     }, [searchValue, onSearchChange]);
-
-    const handleStatusChange = (value: string) => {
-        setStatus(value);
-        onStatusChange(value);
-    };
 
     const handleSortChange = (value: string) => {
         const [field, sortOrder] = value.split("-");
@@ -58,11 +50,9 @@ export function StudentsFilters({
 
     const handleClearFilters = () => {
         setSearchValue("");
-        setStatus("all");
         setSortBy("name");
         setOrder("asc");
         onSearchChange("");
-        onStatusChange("all");
         onSortChange("name", "asc");
     };
 
@@ -90,19 +80,6 @@ export function StudentsFilters({
 
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-2">
-                {/* Status Filter */}
-                <Select value={status} onValueChange={handleStatusChange}>
-                    <SelectTrigger size="sm" className="w-32 h-9">
-                        <Filter className="h-4 w-4 mr-1" />
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                </Select>
-
                 {/* Sort */}
                 <Select value={`${sortBy}-${order}`} onValueChange={handleSortChange}>
                     <SelectTrigger size="sm" className="w-40 h-9">
@@ -119,8 +96,6 @@ export function StudentsFilters({
                         <SelectItem value="totalSubmissions-asc">Submissions (Low-High)</SelectItem>
                         <SelectItem value="averageScore-desc">Avg Score (High-Low)</SelectItem>
                         <SelectItem value="averageScore-asc">Avg Score (Low-High)</SelectItem>
-                        <SelectItem value="lastActive-desc">Last Active (Recent)</SelectItem>
-                        <SelectItem value="lastActive-asc">Last Active (Oldest)</SelectItem>
                     </SelectContent>
                 </Select>
 
@@ -131,7 +106,7 @@ export function StudentsFilters({
                 </Button>
 
                 {/* Clear Filters */}
-                {(searchValue || status !== "all") && (
+                {searchValue && (
                     <Button onClick={handleClearFilters} variant="ghost" size="sm" className="h-9">
                         Clear
                     </Button>

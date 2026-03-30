@@ -7,7 +7,7 @@ import { StudentsTable } from "@/components/admin/students-table";
 import { StudentsFilters } from "@/components/admin/students-filters";
 import { StudentsPagination } from "@/components/admin/students-pagination";
 import { StudentDetailDialog } from "@/components/admin/student-detail-dialog";
-import { Users, UserCheck, TrendingUp, Medal } from "lucide-react";
+import { Users, TrendingUp, Medal } from "lucide-react";
 import { toast } from "sonner";
 
 interface Student {
@@ -18,8 +18,6 @@ interface Student {
     totalSubmissions: number;
     totalScore: number;
     averageScore: number;
-    lastActive: string | null;
-    status: string;
 }
 
 interface PaginationData {
@@ -69,7 +67,6 @@ export default function StudentsPage() {
 
     // Filter states
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("all");
     const [sortBy, setSortBy] = useState("name");
     const [order, setOrder] = useState("asc");
     const [limit, setLimit] = useState(20);
@@ -82,7 +79,6 @@ export default function StudentsPage() {
                 page: pagination.currentPage.toString(),
                 limit: limit.toString(),
                 search,
-                status,
                 sortBy,
                 order,
             });
@@ -102,7 +98,7 @@ export default function StudentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [pagination.currentPage, limit, search, status, sortBy, order]);
+    }, [pagination.currentPage, limit, search, sortBy, order]);
 
     useEffect(() => {
         fetchStudents();
@@ -154,11 +150,6 @@ export default function StudentsPage() {
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
     };
 
-    const handleStatusChange = (newStatus: string) => {
-        setStatus(newStatus);
-        setPagination((prev) => ({ ...prev, currentPage: 1 }));
-    };
-
     const handleSortChange = (newSortBy: string, newOrder: string) => {
         setSortBy(newSortBy);
         setOrder(newOrder);
@@ -166,7 +157,6 @@ export default function StudentsPage() {
     };
 
     // Calculate stats
-    const activeStudents = students.filter((s) => s.status === "active").length;
     const avgScore =
         students.length > 0
             ? Math.round(students.reduce((sum, s) => sum + s.averageScore, 0) / students.length)
@@ -183,18 +173,12 @@ export default function StudentsPage() {
             />
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <StatsCard
                     icon={Users}
                     title="Total Students"
                     value={pagination.totalStudents}
                     subtitle="All registered students"
-                />
-                <StatsCard
-                    icon={UserCheck}
-                    title="Active Students"
-                    value={activeStudents}
-                    subtitle="Submitted in last 30 days"
                 />
                 <StatsCard
                     icon={TrendingUp}
@@ -213,7 +197,6 @@ export default function StudentsPage() {
             {/* Filters */}
             <StudentsFilters
                 onSearchChange={handleSearchChange}
-                onStatusChange={handleStatusChange}
                 onSortChange={handleSortChange}
                 students={students}
             />
