@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles } from "lucide-react"
+import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles, Users } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -44,6 +44,10 @@ const data = {
         />
       ),
       items: [
+        {
+          title: "Students",
+          url: "/admin/students",
+        },
         {
           title: "Assignments",
           url: "/admin/assignments",

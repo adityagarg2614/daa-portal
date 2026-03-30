@@ -1,6 +1,5 @@
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import Submission from "@/models/Submission";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
@@ -34,7 +33,6 @@ export async function GET(request: Request) {
         const search = searchParams.get("search") || "";
         const sortBy = searchParams.get("sortBy") || "name";
         const order = searchParams.get("order") || "asc";
-        const status = searchParams.get("status") || "all";
 
         // Build search filter
         const searchFilter: any = {};
@@ -47,7 +45,7 @@ export async function GET(request: Request) {
         }
 
         // Build sort object
-        const sortField: string = sortBy === "totalScore" || sortBy === "totalSubmissions" || sortBy === "averageScore" || sortBy === "lastActive"
+        const sortField: string = sortBy === "totalScore" || sortBy === "totalSubmissions" || sortBy === "averageScore"
             ? sortBy
             : sortBy === "name"
                 ? "name"
@@ -92,17 +90,13 @@ export async function GET(request: Request) {
                             { $divide: [{ $sum: "$submissions.score" }, { $size: "$submissions" }] },
                         ],
                     },
-                    lastActive: {
-                        $max: "$submissions.submittedAt",
-                    },
                 },
             },
             {
                 $sort: {
                     [sortBy === "totalScore" ? "totalScore" :
                         sortBy === "totalSubmissions" ? "totalSubmissions" :
-                            sortBy === "averageScore" ? "averageScore" :
-                                sortBy === "lastActive" ? "lastActive" : mongoSortField]: sortOrder,
+                            sortBy === "averageScore" ? "averageScore" : mongoSortField]: sortOrder,
                 },
             },
             {
@@ -121,19 +115,6 @@ export async function GET(request: Request) {
                     totalSubmissions: 1,
                     totalScore: 1,
                     averageScore: { $round: ["$averageScore", 2] },
-                    lastActive: 1,
-                    status: {
-                        $cond: [
-                            {
-                                $or: [
-                                    { $eq: ["$lastActive", null] },
-                                    { $lt: ["$lastActive", thirtyDaysAgo] }
-                                ]
-                            },
-                            "inactive",
-                            "active",
-                        ],
-                    },
                 },
             },
         ]);
