@@ -436,7 +436,7 @@ export default function SingleAssignmentPage() {
                     ...prev[problemId],
                     loading: false,
                     loadingAction: undefined,
-                    message: response.data.output || "(no output)",
+                    message: response.data.output || "(no out)",
                     messageType: 'info' as const,
                     compilationError: undefined,
                     executionTime: response.data.executionTime,
