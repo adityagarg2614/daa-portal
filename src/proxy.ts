@@ -1,7 +1,5 @@
-import { clerkClient, clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db";
-import UserModel from "@/models/User";
 
 const isPublicRoute = createRouteMatcher([
     "/",
@@ -64,92 +62,15 @@ export default clerkMiddleware(async (auth, req) => {
     const rollNo = metadata?.rollNo as string | undefined;
     const role = metadata?.role as string | undefined;
 
-    // Check if user is admin from DB (even if Clerk metadata is not updated yet)
-    let isAdmin = role === "admin";
-    if (!isAdmin) {
-        // Check DB for admin role
-        try {
-            await connectDB();
-
-            // First try to find by actual clerkId
-            let dbUser = await UserModel.findOne({ clerkId: userId });
-            console.log("[Middleware] Initial DB lookup by userId:", userId, "Result:", dbUser ? "Found" : "Not found");
-
-            // If not found, check if there's a pending admin record for this email
-            if (!dbUser) {
-                const { clerkClient } = await import("@clerk/nextjs/server");
-                const client = await clerkClient();
-                const clerkUser = await client.users.getUser(userId);
-                const email = clerkUser.emailAddresses.find(
-                    (e) => e.id === clerkUser.primaryEmailAddressId
-                )?.emailAddress?.toLowerCase();
-
-                console.log("[Middleware] Looking for pending admin with email:", email);
-
-                if (email) {
-                    // Check for pending admin record
-                    dbUser = await UserModel.findOne({
-                        $or: [
-                            { email: email },
-                            { clerkId: "pending_" + email }
-                        ]
-                    });
-
-                    console.log("[Middleware] Pending admin lookup result:", dbUser ? "Found" : "Not found");
-
-                    // If found and it's an admin, update the clerkId
-                    if (dbUser && dbUser.role === "admin" && dbUser.clerkId.startsWith("pending_")) {
-                        dbUser.clerkId = userId;
-                        await dbUser.save();
-                        console.log("[Middleware] ✅ Updated admin clerkId from pending to:", userId);
-                    }
-                }
-            }
-
-            if (dbUser?.role === "admin") {
-                isAdmin = true;
-                console.log("[Middleware] User is admin, updating Clerk metadata...");
-
-                // Update Clerk metadata to reflect admin role
-                try {
-                    const client = await clerkClient();
-                    await client.users.updateUser(userId, {
-                        publicMetadata: {
-                            ...metadata,
-                            role: "admin",
-                            onboardingComplete: true,
-                        },
-                    });
-                    console.log("[Middleware] ✅ Updated Clerk metadata for admin:", userId);
-                } catch (err) {
-                    console.error("[Middleware] Failed to update Clerk metadata for admin:", err);
-                }
-            }
-        } catch (err) {
-            console.error("[Middleware] Failed to check DB for admin role:", err);
-        }
-    }
+    // Check if user is admin from metadata
+    const isAdmin = role === "admin";
 
     if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req) && !isAdmin) {
-        // Fallback: Check Clerk directly if the session token is stale
-        // This makes sure the redirect after onboarding works on the first try
-        try {
-            const { clerkClient } = await import("@clerk/nextjs/server");
-            const client = await clerkClient();
-            const freshUser = await client.users.getUser(userId);
-
-            if (freshUser.publicMetadata.onboardingComplete === true && freshUser.publicMetadata.rollNo) {
-                return NextResponse.next();
-            }
-        } catch (error) {
-            console.error("[Middleware] Fallback metadata check failed:", error);
-        }
-
         return NextResponse.redirect(new URL("/onboarding", req.url));
     }
 
     // Redirect admins to admin dashboard (skip onboarding)
-    if (isAdmin && !isAdminRoute(req) && !isOnboardingRoute(req)) {
+    if (isAdmin && !isAdminRoute(req) && !isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api")) {
         return NextResponse.redirect(new URL("/admin", req.url));
     }
 
