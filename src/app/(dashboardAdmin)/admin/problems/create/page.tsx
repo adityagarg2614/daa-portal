@@ -17,6 +17,7 @@ import {
 import { FormField } from "@/components/ui/form-field"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
     Select,
     SelectContent,
@@ -44,7 +45,8 @@ export default function CreateProblemPage() {
     const [description, setDescription] = useState("")
     const [difficulty, setDifficulty] = useState("Easy")
     const [marks, setMarks] = useState(10)
-    const [tags, setTags] = useState("")
+    const [tags, setTags] = useState<string[]>([])
+    const [tagInput, setTagInput] = useState("")
     const [constraints, setConstraints] = useState<string[]>([""])
     const [examples, setExamples] = useState<Example[]>([
         { input: "", output: "", explanation: "" },
@@ -138,6 +140,40 @@ export default function CreateProblemPage() {
         }))
     }
 
+    const addTag = (tag: string) => {
+        const trimmedTag = tag.trim()
+        // Validate: max length 20, only alphabets and mathematical operators allowed
+        if (!trimmedTag || trimmedTag.length > 20) return
+        const validPattern = /^[a-zA-Z+\-*/=<>!&|^%~]+$/.test(trimmedTag)
+        if (!validPattern) return
+        // Prevent duplicates
+        if (tags.includes(trimmedTag)) return
+        setTags([...tags, trimmedTag])
+    }
+
+    const removeTag = (index: number) => {
+        setTags(tags.filter((_, i) => i !== index))
+    }
+
+    const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault()
+            addTag(tagInput)
+            setTagInput("")
+        } else if (e.key === "Backspace" && tagInput === "" && tags.length > 0) {
+            removeTag(tags.length - 1)
+        }
+    }
+
+    const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Only allow alphabets and mathematical operators
+        const value = e.target.value
+        const validPattern = /^[a-zA-Z+\-*/=<>!&|^%~\s]*$/.test(value)
+        if (validPattern || value === "") {
+            setTagInput(value.slice(0, 20))
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setMessage("")
@@ -156,10 +192,7 @@ export default function CreateProblemPage() {
             description,
             difficulty,
             marks,
-            tags: tags
-                .split(",")
-                .map((tag) => tag.trim())
-                .filter(Boolean),
+            tags,
             constraints: constraints.filter(Boolean),
             examples: examples.filter(
                 (example) => example.input.trim() && example.output.trim()
@@ -192,7 +225,8 @@ export default function CreateProblemPage() {
             setDescription("")
             setDifficulty("Easy")
             setMarks(10)
-            setTags("")
+            setTags([])
+            setTagInput("")
             setConstraints([""])
             setExamples([{ input: "", output: "", explanation: "" }])
             setTestCases([{ input: "", output: "", isHidden: false }])
@@ -347,15 +381,36 @@ export default function CreateProblemPage() {
 
                     <FormField
                         label="Tags"
-                        hint="Comma-separated tags (e.g., Array, Hash Map, DP)"
+                        hint="Type a tag and press Enter or comma to add (max 20 chars, letters and operators only)"
                         className="mt-4"
                     >
                         <input
-                            value={tags}
-                            onChange={(e) => setTags(e.target.value)}
-                            placeholder="Array, Hash Map, DP"
+                            value={tagInput}
+                            onChange={handleTagInputChange}
+                            onKeyDown={handleTagInputKeyDown}
+                            placeholder="Add tags..."
                             className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
+                            maxLength={20}
                         />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {tags.map((tag, index) => (
+                                <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="gap-1 px-2 py-0.5"
+                                >
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeTag(index)}
+                                        className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-transparent hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                                        aria-label={`Remove tag ${tag}`}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                        </div>
                     </FormField>
 
                     <FormField

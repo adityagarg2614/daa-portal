@@ -22,9 +22,13 @@ const UserSchema = new Schema(
         },
         email: {
             type: String,
+            unique: true,
         },
         rollNo: {
             type: String,
+            default: null,
+            unique: true,
+            sparse: true,
         },
         role: {
             type: String,
