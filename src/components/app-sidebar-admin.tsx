@@ -49,6 +49,10 @@ const data = {
           url: "/admin/students",
         },
         {
+          title: "Create Admin",
+          url: "/admin/create-admin",
+        },
+        {
           title: "Assignments",
           url: "/admin/assignments",
         },
