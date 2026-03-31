@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles } from "lucide-react"
+import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles, Megaphone } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -66,21 +66,13 @@ const data = {
       title: "Updates",
       url: "#",
       icon: (
-        <BookOpenIcon
+        <Megaphone
         />
       ),
       items: [
         {
           title: "Announcements",
-          url: "#",
-        },
-        {
-          title: "Events",
-          url: "#",
-        },
-        {
-          title: "Notifications",
-          url: "#",
+          url: "/announcements",
         },
       ],
     },
