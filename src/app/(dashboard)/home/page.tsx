@@ -1,6 +1,6 @@
 'use client'
 
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
 import {
     BookOpen,
@@ -17,6 +17,7 @@ import { InfoCard } from "@/components/ui/info-card"
 import { SectionHeader } from "@/components/ui/section-header"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 export default function HomePage() {
     const { user } = useUser()
@@ -82,12 +83,6 @@ export default function HomePage() {
             score: "20/20",
             submittedAt: "Submitted 1 week ago",
         },
-    ]
-
-    const announcements = [
-        "Assignment 4 has been published by the professor.",
-        "Lab attendance feature will be available soon.",
-        "Make sure to submit before the deadline to avoid zero marks.",
     ]
 
     const getStatusClasses = (status: string) => {
@@ -216,17 +211,19 @@ export default function HomePage() {
                 </InfoCard>
 
                 {/* Announcements */}
-                <InfoCard title="Announcements" icon={Bell}>
-                    <div className="space-y-3">
-                        {announcements.map((item, index) => (
-                            <div
-                                key={index}
-                                className="rounded-xl border bg-muted/30 p-4 transition-all hover:shadow-sm"
-                            >
-                                <p className="text-sm">{item}</p>
-                            </div>
-                        ))}
-                    </div>
+                <InfoCard
+                    title="Announcements"
+                    icon={Bell}
+                    action={
+                        <Link
+                            href="/announcements"
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            View all →
+                        </Link>
+                    }
+                >
+                    <AnnouncementsList />
                 </InfoCard>
             </div>
 
@@ -284,4 +281,65 @@ export default function HomePage() {
             </InfoCard>
         </div>
     )
+}
+
+// Announcements List Component
+function AnnouncementsList() {
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchAnnouncements() {
+            try {
+                const response = await fetch("/api/student/announcements?limit=3");
+                const data = await response.json();
+
+                if (data.success) {
+                    setAnnouncements(data.data);
+                }
+            } catch (error) {
+                console.error("Error fetching announcements:", error);
+                toast.error("Failed to fetch announcements");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchAnnouncements();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="h-16 rounded-xl bg-muted animate-pulse"
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    if (announcements.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No announcements yet</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-3">
+            {announcements.map((item) => (
+                <div
+                    key={item._id}
+                    className="rounded-xl border bg-muted/30 p-4 transition-all hover:shadow-sm"
+                >
+                    <p className="text-sm">{item.content}</p>
+                </div>
+            ))}
+        </div>
+    );
 }
