@@ -56,14 +56,52 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(new URL("/", req.url));
     }
 
-    // Force onboarding if incomplete (but skip for admins)
+    // Check if user is admin from metadata
     const metadata = (sessionClaims?.metadata as Record<string, unknown>) || {};
+    const role = metadata?.role as string | undefined;
+    let isAdmin = role === "admin";
+
+    // If not admin from metadata, check DB for pending admins
+    if (!isAdmin && userId) {
+        try {
+            const { connectDB } = await import("@/lib/db");
+            const UserModel = (await import("@/models/User")).default;
+
+            await connectDB();
+
+            // Check if user exists as admin in DB (including pending admins)
+            const dbUser = await UserModel.findOne({
+                $or: [
+                    { clerkId: userId },
+                    { clerkId: "pending_" + (sessionClaims?.metadata as Record<string, any>)?.email },
+                    { email: (sessionClaims?.metadata as Record<string, any>)?.email }
+                ]
+            });
+
+            if (dbUser?.role === "admin") {
+                isAdmin = true;
+
+                // Update Clerk metadata if not already set
+                if (role !== "admin") {
+                    const { clerkClient } = await import("@clerk/nextjs/server");
+                    const client = await clerkClient();
+                    await client.users.updateUser(userId, {
+                        publicMetadata: {
+                            ...metadata,
+                            role: "admin",
+                            onboardingComplete: true,
+                        },
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("[Middleware] DB check failed:", error);
+        }
+    }
+
+    // Force onboarding if incomplete (but skip for admins)
     const onboardingComplete = (metadata?.onboardingComplete as boolean) === true;
     const rollNo = metadata?.rollNo as string | undefined;
-    const role = metadata?.role as string | undefined;
-
-    // Check if user is admin from metadata
-    const isAdmin = role === "admin";
 
     if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req) && !isAdmin) {
         return NextResponse.redirect(new URL("/onboarding", req.url));
@@ -95,7 +133,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Protect admin routes - redirect non-admins to home
-    if (isAdminRoute(req) && role !== "admin") {
+    if (isAdminRoute(req) && !isAdmin) {
         return NextResponse.redirect(new URL("/home", req.url));
     }
 
@@ -108,7 +146,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Redirect admins away from student routes
-    if (isStudentRoute(req) && role === "admin") {
+    if (isStudentRoute(req) && isAdmin) {
         return NextResponse.redirect(new URL("/admin", req.url));
     }
 

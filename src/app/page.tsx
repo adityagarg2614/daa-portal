@@ -10,7 +10,29 @@ export default async function RootPage() {
     if (userId) {
         await connectDB();
 
-        const dbUser = await UserModel.findOne({ clerkId: userId });
+        // First check if user exists with actual clerkId
+        let dbUser = await UserModel.findOne({ clerkId: userId });
+
+        // If not found, check if user is a pending admin (clerkId starts with "pending_")
+        if (!dbUser) {
+            const metadata = (sessionClaims?.metadata as Record<string, unknown>) || {};
+            const email = metadata?.email as string | undefined;
+
+            if (email) {
+                dbUser = await UserModel.findOne({
+                    $or: [
+                        { email: email.toLowerCase() },
+                        { clerkId: "pending_" + email.toLowerCase() }
+                    ]
+                });
+
+                // If found as pending admin, update the clerkId
+                if (dbUser && dbUser.clerkId.startsWith("pending_")) {
+                    dbUser.clerkId = userId;
+                    await dbUser.save();
+                }
+            }
+        }
 
         const metadata = (sessionClaims?.metadata as Record<string, unknown>) || {};
         const role = metadata?.role as string | undefined;
