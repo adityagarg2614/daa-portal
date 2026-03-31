@@ -27,8 +27,8 @@ const UserSchema = new Schema(
         rollNo: {
             type: String,
             default: null,
-            unique: true,
-            sparse: true,
+            // Removed unique constraint to allow multiple null values (for admins)
+            // Only students should have roll numbers, and uniqueness is enforced at application level
         },
         role: {
             type: String,
