@@ -4,6 +4,7 @@ import { CodeEditor } from "@/components/editor/code-editor"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation"
 import React, { useEffect, useState, useCallback } from "react"
+import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { toast } from "sonner"
 import {
     CalendarDays,
@@ -234,79 +235,83 @@ export default function SingleAssignmentPage() {
         }
     }, [assignment, accessStatus, dbUserId, submissionState, handleAutoSubmitMemo])
 
-    // Initial data fetch
-    useEffect(() => {
-        const fetchAssignmentAndUser = async () => {
-            try {
-                const [assignmentRes, userRes] = await Promise.all([
-                    axios.get(`/api/student/assignments/${id}`),
-                    axios.get("/api/users/me"),
-                ])
+    // Fetch assignment data when id changes
+    const fetchAssignmentAndUser = useCallback(async () => {
+        if (!id) return;
 
-                const fetchedAssignment = assignmentRes.data.assignment
-                const fetchedUserId = userRes.data.user._id
+        try {
+            const [assignmentRes, userRes] = await Promise.all([
+                axios.get(`/api/student/assignments/${id}`),
+                axios.get("/api/users/me"),
+            ])
 
-                setAssignment(fetchedAssignment)
-                setDbUserId(fetchedUserId)
+            const fetchedAssignment = assignmentRes.data.assignment
+            const fetchedUserId = userRes.data.user._id
 
-                // Set initial access status (will be monitored by real-time checker)
-                const now = new Date()
-                const publishDate = new Date(fetchedAssignment.publishAt)
-                const dueDate = new Date(fetchedAssignment.dueAt)
+            setAssignment(fetchedAssignment)
+            setDbUserId(fetchedUserId)
 
-                if (now < publishDate) {
-                    setAccessStatus("not-published")
-                } else if (now > dueDate) {
-                    setAccessStatus("expired")
-                    // If already expired on page load, auto-submit immediately
-                    await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionState)
-                    return
-                } else {
-                    setAccessStatus("active")
-                }
+            // Set initial access status (will be monitored by real-time checker)
+            const now = new Date()
+            const publishDate = new Date(fetchedAssignment.publishAt)
+            const dueDate = new Date(fetchedAssignment.dueAt)
 
-                const submissionsRes = await axios.get(
-                    `/api/student/submissions/by-assignment/${id}?userId=${fetchedUserId}`
+            if (now < publishDate) {
+                setAccessStatus("not-published")
+            } else if (now > dueDate) {
+                setAccessStatus("expired")
+                // If already expired on page load, auto-submit immediately
+                await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionState)
+                return
+            } else {
+                setAccessStatus("active")
+            }
+
+            const submissionsRes = await axios.get(
+                `/api/student/submissions/by-assignment/${id}?userId=${fetchedUserId}`
+            )
+
+            const submissions: Submission[] = submissionsRes.data.submissions || []
+
+            const initialState: SubmissionState = {}
+
+            fetchedAssignment.problems.forEach((problem: Problem) => {
+                const existingSubmission = submissions.find(
+                    (submission) => submission.problemId === problem._id
                 )
 
-                const submissions: Submission[] = submissionsRes.data.submissions || []
+                const savedLanguage =
+                    existingSubmission?.language || "cpp"
 
-                const initialState: SubmissionState = {}
+                const starterForSavedLanguage =
+                    problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
+                    FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
 
-                fetchedAssignment.problems.forEach((problem: Problem) => {
-                    const existingSubmission = submissions.find(
-                        (submission) => submission.problemId === problem._id
-                    )
+                initialState[problem._id] = {
+                    code: existingSubmission?.code || starterForSavedLanguage,
+                    language: savedLanguage,
+                    loading: false,
+                    message: existingSubmission
+                        ? "Loaded your latest saved submission"
+                        : "",
+                }
+            })
 
-                    const savedLanguage =
-                        existingSubmission?.language || "cpp"
-
-                    const starterForSavedLanguage =
-                        problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
-                        FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
-
-                    initialState[problem._id] = {
-                        code: existingSubmission?.code || starterForSavedLanguage,
-                        language: savedLanguage,
-                        loading: false,
-                        message: existingSubmission
-                            ? "Loaded your latest saved submission"
-                            : "",
-                    }
-                })
-
-                setSubmissionState(initialState)
-            } catch (error) {
-                console.error("Error fetching assignment or user:", error)
-            } finally {
-                setLoading(false)
-            }
+            setSubmissionState(initialState)
+        } catch (error) {
+            console.error("Error fetching assignment or user:", error)
+        } finally {
+            setLoading(false)
         }
+    }, [id, handleAutoSubmitMemo, submissionState])
 
-        if (id) {
-            fetchAssignmentAndUser()
-        }
-    }, [id])
+    // Initial data fetch
+    useEffect(() => {
+        fetchAssignmentAndUser()
+    }, [fetchAssignmentAndUser])
+
+    // Refetch when navigating back via browser back button or window focus
+    useRefetchOnFocus(fetchAssignmentAndUser)
 
     // Real-time access status checker - runs every second
     useEffect(() => {

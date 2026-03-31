@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { useUser } from "@clerk/nextjs"
 import {
     BookOpen,
@@ -288,25 +289,28 @@ function AnnouncementsList() {
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchAnnouncements() {
-            try {
-                const response = await fetch("/api/student/announcements?limit=3");
-                const data = await response.json();
+    const fetchAnnouncements = useCallback(async () => {
+        try {
+            const response = await fetch("/api/student/announcements?limit=3");
+            const data = await response.json();
 
-                if (data.success) {
-                    setAnnouncements(data.data);
-                }
-            } catch (error) {
-                console.error("Error fetching announcements:", error);
-                toast.error("Failed to fetch announcements");
-            } finally {
-                setLoading(false);
+            if (data.success) {
+                setAnnouncements(data.data);
             }
+        } catch (error) {
+            console.error("Error fetching announcements:", error);
+            toast.error("Failed to fetch announcements");
+        } finally {
+            setLoading(false);
         }
-
-        fetchAnnouncements();
     }, []);
+
+    useEffect(() => {
+        fetchAnnouncements();
+    }, [fetchAnnouncements]);
+
+    // Refetch when navigating back via browser back button or window focus
+    useRefetchOnFocus(fetchAnnouncements);
 
     if (loading) {
         return (

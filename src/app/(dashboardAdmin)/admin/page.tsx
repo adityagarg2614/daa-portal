@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
+import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import {
     FileText,
     Library,
@@ -36,24 +37,27 @@ export default function AdminDashboardHomePage() {
     })
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const res = await fetch("/api/admin/dashboard")
-                const data = await res.json()
-
-                if (data.success) {
-                    setStats(data.stats)
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error)
-            } finally {
-                setLoading(false)
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const res = await fetch("/api/admin/dashboard");
+            const data = await res.json();
+            if (data.success) {
+                setStats(data.stats)
             }
+        } catch (error) {
+            console.error("Failed to fetch dashboard data:", error)
+        } finally {
+            setLoading(false)
         }
-
-        fetchDashboardData()
     }, [])
+
+    // Initial fetch on mount
+    useEffect(() => {
+        fetchDashboardData()
+    }, [fetchDashboardData])
+
+    // Refetch when navigating back via browser back button or window focus
+    useRefetchOnFocus(fetchDashboardData)
 
     const quickActions = [
         {
