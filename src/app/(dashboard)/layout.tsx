@@ -30,6 +30,11 @@ export default async function DashboardLayout({
     redirect("/onboarding");
   }
 
+  // Check if user is student (admins should not access student dashboard)
+  if (dbUser.role !== "student") {
+    redirect("/admin"); // Redirect admins to admin dashboard
+  }
+
   const user = await currentUser();
   const metadata = user?.publicMetadata as Record<string, unknown>;
   const name = metadata?.name as string | undefined;

@@ -12,13 +12,22 @@ export default function OnboardingPage() {
     const [rollNo, setRollNo] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [isAdmin, setIsAdmin] = useState(false);
     const router = useRouter();
 
-    // Derive rollNo from college email on load
+    // Check if user is admin and derive rollNo from college email on load
     useEffect(() => {
         if (!isLoaded || !user) return;
 
         const email = user.primaryEmailAddress?.emailAddress ?? "";
+
+        // Check if user is already marked as admin in Clerk metadata
+        const userRole = user.publicMetadata?.role as string;
+        if (userRole === "admin") {
+            setIsAdmin(true);
+            return;
+        }
+
         // Expected format: 22bcs010@iiitdmj.ac.in  →  rollNo = "22bcs010"
         const match = email.match(/^([^@]+)@iiitdmj\.ac\.in$/i);
         if (match) {
@@ -39,7 +48,7 @@ export default function OnboardingPage() {
             return;
         }
 
-        if (!rollNo) {
+        if (!isAdmin && !rollNo) {
             setError(
                 "Could not derive roll number from your email. Make sure you signed in with your IIITDMJ college email (e.g. 22bcs010@iiitdmj.ac.in)."
             );
@@ -50,10 +59,11 @@ export default function OnboardingPage() {
             setLoading(true);
             await axios.post("/api/onboarding/complete", {
                 name: name.trim(),
-                rollNo,
+                rollNo: isAdmin ? "" : rollNo,
+                isAdmin,
             });
             // Force a full reload to ensure middleware catches the new session metadata
-            window.location.href = "/home";
+            window.location.href = isAdmin ? "/admin" : "/home";
         } catch (err: unknown) {
             const axiosErr = err as { response?: { data?: { message?: string } } };
             setError(axiosErr?.response?.data?.message || "Something went wrong");
@@ -72,16 +82,28 @@ export default function OnboardingPage() {
             <div className={`${styles.orb} ${styles.orb2}`} aria-hidden="true" />
 
             <main className={`${styles.container}`}>
-                <h1 className={styles.title}>Complete Your Profile</h1>
-                <p className={styles.subtitle}>Let&apos;s get you set up for the Algo-Grade portal.</p>
+                <h1 className={styles.title}>
+                    {isAdmin ? "Admin Access Detected" : "Complete Your Profile"}
+                </h1>
+                <p className={styles.subtitle}>
+                    {isAdmin
+                        ? "Welcome! Confirm your details to access the admin dashboard."
+                        : "Let's get you set up for the Algo-Grade portal."}
+                </p>
 
-                {rollNo ? (
+                {!isAdmin && rollNo ? (
                     <div className={styles.info}>
                         Detected roll number: <strong className={styles.rollHighlight}>{rollNo}</strong>
                     </div>
-                ) : (
+                ) : !isAdmin && (
                     <div className={styles.errorText}>
                         ⚠️ Sign in with your IIITDMJ email to continue.
+                    </div>
+                )}
+
+                {isAdmin && (
+                    <div className={styles.info}>
+                        <span className="text-green-600 dark:text-green-400">✓</span> Admin access will be granted to your account
                     </div>
                 )}
 
@@ -105,10 +127,10 @@ export default function OnboardingPage() {
 
                     <button
                         type="submit"
-                        disabled={loading || !rollNo}
+                        disabled={loading || (!isAdmin && !rollNo)}
                         className={styles.button}
                     >
-                        {loading ? "Saving..." : "Save & Continue"}
+                        {loading ? "Saving..." : (isAdmin ? "Continue to Admin Dashboard" : "Save & Continue")}
                     </button>
                 </form>
             </main>
