@@ -50,10 +50,18 @@ export async function POST(req: Request) {
                 // Update the clerkId for pending admin users
                 if (existingAdmin.clerkId.startsWith("pending_")) {
                     existingAdmin.clerkId = userId;
-                    existingAdmin.email = primaryEmail;
+                    existingAdmin.email = primaryEmail.toLowerCase();
                     existingAdmin.name = name;
                     await existingAdmin.save();
                 }
+            } else {
+                // Create new admin user if not found (fallback)
+                await UserModel.create({
+                    clerkId: userId,
+                    email: primaryEmail.toLowerCase(),
+                    name,
+                    role: "admin",
+                });
             }
         } else {
             // Student flow - validate roll number

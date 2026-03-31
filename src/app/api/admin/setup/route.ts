@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/db";
 import UserModel from "@/models/User";
 
@@ -7,36 +7,49 @@ import UserModel from "@/models/User";
  * POST /api/admin/setup
  * 
  * Create an admin user with any email domain.
- * Protected by ADMIN_SETUP_SECRET environment variable.
  * 
- * Body: { email: string, name: string }
- * Headers: { Authorization: "Bearer <ADMIN_SETUP_SECRET>" }
+ * Authentication Methods:
+ * 1. Admin Session (Recommended): Logged-in admin making request
+ * 2. Setup Secret: Bearer token for initial setup
+ * 
+ * Body: { email: string, name: string, designation?: string }
  */
 export async function POST(req: Request) {
     try {
-        // Verify admin setup secret
-        const authHeader = req.headers.get("authorization");
-        const expectedSecret = process.env.ADMIN_SETUP_SECRET;
+        let isAdmin = false;
+        let userId: string | null = null;
 
-        if (!expectedSecret) {
-            return NextResponse.json(
-                { message: "Server configuration error: ADMIN_SETUP_SECRET not set" },
-                { status: 500 }
-            );
+        // Method 1: Check for admin session (from dashboard)
+        try {
+            const { userId: authUserId } = await auth();
+            if (authUserId) {
+                await connectDB();
+                const dbUser = await UserModel.findOne({ clerkId: authUserId });
+                if (dbUser?.role === "admin") {
+                    isAdmin = true;
+                    userId = authUserId;
+                }
+            }
+        } catch (err) {
+            // Auth might fail if no session, that's okay - try secret method
         }
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json(
-                { message: "Unauthorized: Missing or invalid authorization header" },
-                { status: 401 }
-            );
+        // Method 2: Check for setup secret (fallback for public setup)
+        if (!isAdmin) {
+            const authHeader = req.headers.get("authorization");
+            const expectedSecret = process.env.ADMIN_SETUP_SECRET;
+
+            if (authHeader && authHeader.startsWith("Bearer ") && expectedSecret) {
+                const providedSecret = authHeader.substring(7);
+                if (providedSecret === expectedSecret) {
+                    isAdmin = true;
+                }
+            }
         }
 
-        const providedSecret = authHeader.substring(7); // Remove "Bearer " prefix
-
-        if (providedSecret !== expectedSecret) {
+        if (!isAdmin) {
             return NextResponse.json(
-                { message: "Forbidden: Invalid setup secret" },
+                { message: "Unauthorized - Admin access required" },
                 { status: 403 }
             );
         }
@@ -82,7 +95,7 @@ export async function POST(req: Request) {
             // Update Clerk metadata
             const client = await clerkClient();
             const clerkUsers = await client.users.getUserList({ emailAddress: [email.toLowerCase()] });
-            
+
             if (clerkUsers.data.length > 0) {
                 const clerkUser = clerkUsers.data[0];
                 await client.users.updateUser(clerkUser.id, {
@@ -114,6 +127,24 @@ export async function POST(req: Request) {
             clerkId: "pending_" + email.toLowerCase(), // Placeholder, will be updated on first login
         });
 
+        // Try to update Clerk metadata if user already exists in Clerk
+        try {
+            const clerkClientInstance = await clerkClient();
+            const clerkUsers = await clerkClientInstance.users.getUserList({ emailAddress: [email.toLowerCase()] });
+            if (clerkUsers.data.length > 0) {
+                const clerkUser = clerkUsers.data[0];
+                await clerkClientInstance.users.updateUser(clerkUser.id, {
+                    publicMetadata: {
+                        ...clerkUser.publicMetadata,
+                        role: "admin",
+                        email: email.toLowerCase(),
+                    },
+                });
+            }
+        } catch (err) {
+            console.error("[admin/setup] Failed to update Clerk metadata:", err);
+        }
+
         return NextResponse.json({
             message: "Admin user created successfully. User should sign in with Clerk to activate.",
             user: {
@@ -142,8 +173,8 @@ export async function GET() {
     const isConfigured = !!process.env.ADMIN_SETUP_SECRET;
     return NextResponse.json({
         configured: isConfigured,
-        message: isConfigured 
-            ? "Admin setup is configured. Use POST to create admin users." 
+        message: isConfigured
+            ? "Admin setup is configured. Use POST to create admin users."
             : "ADMIN_SETUP_SECRET not set in environment variables",
     });
 }
