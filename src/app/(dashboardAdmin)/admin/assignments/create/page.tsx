@@ -37,6 +37,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
+import { DateTimePicker } from "@/components/ui/date-time-picker"
 
 type Problem = {
     _id: string
@@ -281,12 +282,11 @@ export default function CreateAssignmentPage() {
                             required
                             hint="When the assignment becomes available"
                         >
-                            <input
-                                type="datetime-local"
+                            <DateTimePicker
                                 value={publishAt}
-                                onChange={(e) => setPublishAt(e.target.value)}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
-                                required
+                                onChange={(val) => setPublishAt(val)}
+                                placeholder="Select publish date"
+                                clearable
                             />
                         </FormField>
 
@@ -295,12 +295,12 @@ export default function CreateAssignmentPage() {
                             required
                             hint="Submission deadline"
                         >
-                            <input
-                                type="datetime-local"
+                            <DateTimePicker
                                 value={dueAt}
-                                onChange={(e) => setDueAt(e.target.value)}
-                                className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
-                                required
+                                onChange={(val) => setDueAt(val)}
+                                placeholder="Select due date"
+                                clearable
+                                minDate={publishAt ? new Date(publishAt) : undefined}
                             />
                         </FormField>
                     </div>
