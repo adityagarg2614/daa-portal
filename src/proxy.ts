@@ -31,7 +31,6 @@ const isAdminRoute = createRouteMatcher([
 
 const isStudentRoute = createRouteMatcher([
     "/home(.*)",
-    "/dashboard(.*)",
     "/assignment(.*)",
     "/submission(.*)",
     "/results(.*)",
