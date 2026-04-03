@@ -91,16 +91,13 @@ export default function AdminViewAssignmentPage() {
                 const res = await axios.get(`/api/admin/assignments/${assignmentId}`);
 
                 if (res.data.success) {
-                    console.log("[Frontend] Assignment data received:", res.data.data);
                     setAssignment(res.data.data);
                 } else {
                     const errorMsg = res.data.message || 'Failed to load assignment';
-                    console.error("[Frontend] API returned error:", errorMsg);
                     setError(errorMsg);
                 }
             } catch (err: any) {
                 console.error('[Frontend] Error fetching assignment:', err);
-                console.error('[Frontend] Error response:', err.response?.data);
                 const errorMsg = err.response?.data?.message || 'Failed to load assignment';
                 setError(errorMsg);
             } finally {

@@ -20,8 +20,8 @@ export function SignInModalButton({ className, style, children }: {
 
     const handleClick = () => {
         if (isLoaded && isSignedIn) {
-            // User is already signed in, redirect to dashboard
-            router.push("/dashboard");
+            // User is already signed in, redirect to root which handles role-based routing
+            router.push("/");
         } else {
             // Open sign-in modal
             openSignIn();

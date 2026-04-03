@@ -13,8 +13,6 @@ export async function GET(
 
         const { id } = await params;
 
-        console.log("[API] Fetching assignment:", id);
-
         const assignment = await Assignment.findById(id)
             .populate({
                 path: "problemIds",
@@ -26,8 +24,6 @@ export async function GET(
                 select: "name email",
             });
 
-        console.log("[API] Assignment found:", !!assignment);
-
         if (!assignment) {
             return NextResponse.json(
                 { success: false, message: "Assignment not found" },
@@ -36,9 +32,7 @@ export async function GET(
         }
 
         // Get submission statistics for this assignment
-        console.log("[API] Fetching submissions for assignment:", id);
         const submissions = await Submission.find({ assignmentId: id });
-        console.log("[API] Found submissions:", submissions.length);
 
         const totalSubmissions = submissions.length;
         const gradedSubmissions = submissions.filter(
@@ -58,7 +52,6 @@ export async function GET(
                 : 0;
 
         // Get top performers (submissions with highest scores)
-        console.log("[API] Fetching top performers");
         const topPerformers = await Submission.find({ assignmentId: id })
             .sort({ score: -1 })
             .limit(5)
@@ -80,8 +73,6 @@ export async function GET(
             };
         });
 
-        console.log("[API] Successfully prepared assignment data");
-
         return NextResponse.json({
             success: true,
             data: {
@@ -97,7 +88,6 @@ export async function GET(
         });
     } catch (error: any) {
         console.error("[API] Fetch Assignment Error:", error);
-        console.error("[API] Error stack:", error.stack);
         return NextResponse.json(
             { success: false, message: "Failed to fetch assignment: " + error.message },
             { status: 500 }
