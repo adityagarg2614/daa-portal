@@ -339,10 +339,13 @@ export default function AdminAssignmentsPage() {
                                                 Ready to manage
                                             </div>
 
-                                            <Button className="gap-2">
+                                            <Link
+                                                href={`/admin/assignments/${assignment._id}`}
+                                                className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 hover:shadow-md gap-2"
+                                            >
                                                 View Details
                                                 <ArrowRight className="h-4 w-4 icon-hover-scale" />
-                                            </Button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>
