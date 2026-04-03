@@ -5,7 +5,7 @@ const PISTON_API = "http://localhost:2000/api/v2";
 
 // Language mapping to Piston language names and versions
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
-    cpp: { language: "cpp", version: "10.2.0" },
+    cpp: { language: "c++", version: "10.2.0" },
     java: { language: "java", version: "15.0.2" },
     python: { language: "python", version: "3.10.0" },
     javascript: { language: "javascript", version: "18.15.0" },

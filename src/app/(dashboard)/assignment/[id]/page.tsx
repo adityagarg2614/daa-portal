@@ -3,7 +3,7 @@
 import { CodeEditor } from "@/components/editor/code-editor"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation"
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { toast } from "sonner"
 import {
@@ -161,6 +161,12 @@ export default function SingleAssignmentPage() {
     const [submitAssignmentDialogOpen, setSubmitAssignmentDialogOpen] = useState(false)
     const [submittingAssignment, setSubmittingAssignment] = useState(false)
 
+    // Ref to access the latest submissionState without causing re-renders
+    const submissionStateRef = useRef(submissionState)
+    useEffect(() => {
+        submissionStateRef.current = submissionState
+    }, [submissionState])
+
     const { timeRemaining, isExpiringSoon } = useTimeRemaining(assignment?.dueAt || "")
 
     // Count submitted problems
@@ -178,21 +184,32 @@ export default function SingleAssignmentPage() {
             const submissionPromises = currentAssignment.problems.map((problem) => {
                 const problemState = currentState[problem._id]
                 const codeToSubmit = problemState?.code || problem.starterCode?.cpp || ""
+                const languageToSubmit = problemState?.language || "cpp"
+
+                // Validate before submitting
+                if (!codeToSubmit || !languageToSubmit) {
+                    console.error(`Invalid code or language for problem ${problem._id}`)
+                    return Promise.resolve(null)
+                }
 
                 return axios.post("/api/student/submissions", {
                     assignmentId: currentAssignment._id,
                     problemId: problem._id,
                     userId: currentUserId,
                     code: codeToSubmit,
-                    language: problemState?.language || "cpp",
+                    language: languageToSubmit,
                     runTests: false, // Skip test validation on auto-submit
+                }).catch((error) => {
+                    console.error(`Failed to auto-submit problem ${problem._id}:`, error.response?.data || error.message)
+                    return null
                 })
             })
 
-            await Promise.all(submissionPromises)
+            const results = await Promise.all(submissionPromises)
+            const successfulSubmissions = results.filter(r => r !== null)
 
             toast.success("Assignment submitted successfully", {
-                description: "Your code has been automatically submitted.",
+                description: `Successfully submitted ${successfulSubmissions.length}/${currentAssignment.problems.length} problems.`,
             })
 
             router.push("/assignment")
@@ -230,10 +247,10 @@ export default function SingleAssignmentPage() {
 
             // Trigger auto-submit if transitioning from active to expired
             if (newStatus === "expired" && accessStatus === "active") {
-                handleAutoSubmitMemo(assignment, dbUserId, submissionState)
+                handleAutoSubmitMemo(assignment, dbUserId, submissionStateRef.current)
             }
         }
-    }, [assignment, accessStatus, dbUserId, submissionState, handleAutoSubmitMemo])
+    }, [assignment, accessStatus, dbUserId, handleAutoSubmitMemo])
 
     // Fetch assignment data when id changes
     const fetchAssignmentAndUser = useCallback(async () => {
@@ -244,6 +261,18 @@ export default function SingleAssignmentPage() {
                 axios.get(`/api/student/assignments/${id}`),
                 axios.get("/api/users/me"),
             ])
+
+            // Validate assignment response
+            if (!assignmentRes.data?.assignment) {
+                console.error("Assignment data not found in response")
+                return
+            }
+
+            // Validate user response
+            if (!userRes.data?.user?._id) {
+                console.error("User data not found in response - user may not be authenticated")
+                return
+            }
 
             const fetchedAssignment = assignmentRes.data.assignment
             const fetchedUserId = userRes.data.user._id
@@ -261,7 +290,7 @@ export default function SingleAssignmentPage() {
             } else if (now > dueDate) {
                 setAccessStatus("expired")
                 // If already expired on page load, auto-submit immediately
-                await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionState)
+                await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionStateRef.current)
                 return
             } else {
                 setAccessStatus("active")
@@ -273,37 +302,41 @@ export default function SingleAssignmentPage() {
 
             const submissions: Submission[] = submissionsRes.data.submissions || []
 
-            const initialState: SubmissionState = {}
+            // Only initialize submission state if it's empty (first load)
+            // This prevents overwriting user's code when refetching
+            if (Object.keys(submissionStateRef.current).length === 0) {
+                const initialState: SubmissionState = {}
 
-            fetchedAssignment.problems.forEach((problem: Problem) => {
-                const existingSubmission = submissions.find(
-                    (submission) => submission.problemId === problem._id
-                )
+                fetchedAssignment.problems.forEach((problem: Problem) => {
+                    const existingSubmission = submissions.find(
+                        (submission) => submission.problemId === problem._id
+                    )
 
-                const savedLanguage =
-                    existingSubmission?.language || "cpp"
+                    const savedLanguage =
+                        existingSubmission?.language || "cpp"
 
-                const starterForSavedLanguage =
-                    problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
-                    FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
+                    const starterForSavedLanguage =
+                        problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
+                        FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
 
-                initialState[problem._id] = {
-                    code: existingSubmission?.code || starterForSavedLanguage,
-                    language: savedLanguage,
-                    loading: false,
-                    message: existingSubmission
-                        ? "Loaded your latest saved submission"
-                        : "",
-                }
-            })
+                    initialState[problem._id] = {
+                        code: existingSubmission?.code || starterForSavedLanguage,
+                        language: savedLanguage,
+                        loading: false,
+                        message: existingSubmission
+                            ? "Loaded your latest saved submission"
+                            : "",
+                    }
+                })
 
-            setSubmissionState(initialState)
+                setSubmissionState(initialState)
+            }
         } catch (error) {
             console.error("Error fetching assignment or user:", error)
         } finally {
             setLoading(false)
         }
-    }, [id, handleAutoSubmitMemo, submissionState])
+    }, [id, handleAutoSubmitMemo])
 
     // Initial data fetch
     useEffect(() => {
@@ -404,12 +437,25 @@ export default function SingleAssignmentPage() {
     // Run Code — compile & execute without saving (uses /api/compile)
     const handleRunCode = async (problemId: string) => {
         const current = submissionState[problemId]
-        if (!current?.code.trim()) {
+
+        if (!current?.code || !current.code.trim()) {
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     message: "Code is required",
+                    messageType: 'error' as const,
+                },
+            }))
+            return
+        }
+
+        if (!current.language) {
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    message: "Programming language is required",
                     messageType: 'error' as const,
                 },
             }))
@@ -494,12 +540,24 @@ export default function SingleAssignmentPage() {
 
         const current = submissionState[problemId]
 
-        if (!current?.code.trim()) {
+        if (!current?.code || !current.code.trim()) {
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     message: "Code is required",
+                    messageType: 'error' as const,
+                },
+            }))
+            return
+        }
+
+        if (!current.language) {
+            setSubmissionState((prev) => ({
+                ...prev,
+                [problemId]: {
+                    ...prev[problemId],
+                    message: "Programming language is required",
                     messageType: 'error' as const,
                 },
             }))
