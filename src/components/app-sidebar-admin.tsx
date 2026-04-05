@@ -45,6 +45,10 @@ const data = {
       ),
       items: [
         {
+          title: "Users",
+          url: "/admin/users",
+        },
+        {
           title: "Students",
           url: "/admin/students",
         },
