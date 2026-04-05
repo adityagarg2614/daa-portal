@@ -3,6 +3,7 @@
 import axios from "axios"
 import React, { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import {
     Code2,
     FileText,
@@ -22,6 +23,7 @@ import { FormField } from "@/components/ui/form-field"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SectionHeader } from "@/components/ui/section-header"
 import {
     Select,
     SelectContent,
@@ -30,7 +32,6 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
-import Link from "next/link"
 
 type Example = {
     input: string
@@ -354,44 +355,21 @@ export default function ViewEditProblemPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2 pb-24">
-            {/* Enhanced Header */}
-            <div
-                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                role="banner"
+            {/* Back Button */}
+            <Link
+                href="/admin/problems"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href="/admin/problems"
-                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                        <div
-                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                            aria-hidden="true"
-                        >
-                            <Code2 className="h-6 w-6 icon-bounce" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                View / Edit Problem
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                View and modify problem details
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-            </div>
+                <ArrowLeft className="h-4 w-4" />
+                Back to Problems
+            </Link>
+
+            {/* Enhanced Header */}
+            <SectionHeader
+                title="View / Edit Problem"
+                description="View and modify problem details"
+                icon={Code2}
+            />
 
             <form
                 onSubmit={(e) => e.preventDefault()}

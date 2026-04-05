@@ -9,7 +9,6 @@ import {
     Clock3,
     FileText,
     Search,
-    X,
     Plus,
     Award,
     CheckCircle2,
@@ -19,12 +18,15 @@ import {
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { SectionHeader } from "@/components/ui/section-header"
+import { StatsCard } from "@/components/ui/stats-card"
+import { SearchBar } from "@/components/ui/search-bar"
+import { FilterTabs } from "@/components/ui/filter-tabs"
 import {
     StatsCardSkeleton,
     AssignmentCardSkeleton,
     PageHeaderSkeleton,
 } from "@/components/ui/skeleton"
-import { StatsCard } from "@/components/ui/stats-card"
 
 type Assignment = {
     _id: string
@@ -113,38 +115,11 @@ export default function AdminAssignmentsPage() {
             {loading ? (
                 <PageHeaderSkeleton />
             ) : (
-                <div
-                    className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                    role="banner"
-                >
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                                aria-hidden="true"
-                            >
-                                <FileText className="h-6 w-6 icon-bounce" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                    Assignments
-                                </h1>
-                                <p className="text-sm text-muted-foreground">
-                                    View and manage all created assignments
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Decorative background elements */}
-                    <div
-                        className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                        aria-hidden="true"
-                    />
-                    <div
-                        className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                        aria-hidden="true"
-                    />
-                </div>
+                <SectionHeader
+                    title="Assignments"
+                    description="View and manage all created assignments"
+                    icon={FileText}
+                />
             )}
 
             {/* Stats Cards */}
@@ -189,53 +164,18 @@ export default function AdminAssignmentsPage() {
                 aria-label="Assignment search and filters"
             >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                        {tabs.map((tab) => {
-                            const isActive = activeTab === tab
-                            return (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={cn(
-                                        "rounded-full px-4 py-2 text-sm font-medium transition-all",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground shadow-md"
-                                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                    )}
-                                    aria-pressed={isActive}
-                                >
-                                    {tab}
-                                </button>
-                            )
-                        })}
-                    </div>
-
+                    <FilterTabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                    />
                     <div className="flex w-full flex-col gap-3 lg:w-auto lg:flex-row">
-                        <div className="relative w-full lg:w-80">
-                            <Search
-                                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground icon-pulse"
-                                aria-hidden="true"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Search assignments..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="h-11 w-full rounded-xl border bg-background pl-10 pr-10 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20 transition-all"
-                                aria-label="Search assignments"
-                            />
-                            {search && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSearch("")}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-muted transition-colors"
-                                    aria-label="Clear search"
-                                >
-                                    <X className="h-4 w-4 icon-hover-scale" />
-                                </button>
-                            )}
-                        </div>
-
+                        <SearchBar
+                            value={search}
+                            onChange={setSearch}
+                            placeholder="Search assignments..."
+                            ariaLabel="Search assignments"
+                        />
                         <Link
                             href="/admin/assignments/create"
                             className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 hover:shadow-md"

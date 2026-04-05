@@ -18,6 +18,7 @@ import { FormField } from "@/components/ui/form-field"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SectionHeader } from "@/components/ui/section-header"
 import {
     Select,
     SelectContent,
@@ -255,38 +256,11 @@ export default function CreateProblemPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            <div
-                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                role="banner"
-            >
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                            aria-hidden="true"
-                        >
-                            <Code2 className="h-6 w-6 icon-bounce" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                Create Problem
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                Add a new reusable problem to the problem bank
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {/* Decorative background elements */}
-                <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-            </div>
+            <SectionHeader
+                title="Create Problem"
+                description="Add a new reusable problem to the problem bank"
+                icon={Code2}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-6" aria-labelledby="page-heading">
                 {/* Basic Details Section */}

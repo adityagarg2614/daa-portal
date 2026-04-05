@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SectionHeader } from "@/components/ui/section-header"
 import {
     Select,
     SelectContent,
@@ -216,40 +217,11 @@ export default function CreateAssignmentPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
-            {/* Header */}
-            <div
-                className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm"
-                role="banner"
-            >
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg"
-                            aria-hidden="true"
-                        >
-                            <FileText className="h-6 w-6 icon-bounce" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight" id="page-heading">
-                                Create Assignment
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                Build a new assignment by selecting problems from the problem
-                                bank
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {/* Decorative background elements */}
-                <div
-                    className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-                <div
-                    className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl"
-                    aria-hidden="true"
-                />
-            </div>
+            <SectionHeader
+                title="Create Assignment"
+                description="Build a new assignment by selecting problems from the problem bank"
+                icon={FileText}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-6" aria-labelledby="page-heading">
                 {/* Assignment Details Section */}

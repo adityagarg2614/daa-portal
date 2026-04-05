@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SectionHeader } from '@/components/ui/section-header';
 import { StatsCard } from '@/components/ui/stats-card';
 import { cn } from '@/lib/utils';
 
@@ -215,57 +216,34 @@ export default function AdminViewAssignmentPage() {
     return (
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm">
-                <div className="relative z-10">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <Link href="/admin/assignments">
-                                <Button variant="outline" size="icon" className="h-10 w-10">
-                                    <ArrowLeft className="h-5 w-5" />
-                                </Button>
-                            </Link>
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-                                        <FileText className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <h1 className="text-2xl font-bold tracking-tight">
-                                            {assignment.title}
-                                        </h1>
-                                        <p className="text-sm text-muted-foreground">
-                                            Assignment Details
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Link href={`/admin/assignments/create?id=${assignment._id}`}>
-                                <Button variant="outline" className="gap-2">
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                </Button>
-                            </Link>
-                            <Button
-                                variant="destructive"
-                                className="gap-2"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                            >
-                                {deleting ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                )}
-                                Delete
+            <SectionHeader
+                title={assignment.title}
+                description="Assignment Details"
+                icon={FileText}
+                action={
+                    <div className="flex items-center gap-2">
+                        <Link href={`/admin/assignments/create?id=${assignment._id}`}>
+                            <Button variant="outline" className="gap-2">
+                                <Edit className="h-4 w-4" />
+                                Edit
                             </Button>
-                        </div>
+                        </Link>
+                        <Button
+                            variant="destructive"
+                            className="gap-2"
+                            onClick={handleDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Trash2 className="h-4 w-4" />
+                            )}
+                            Delete
+                        </Button>
                     </div>
-                </div>
-                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
-                <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
-            </div>
+                }
+            />
 
             {/* Status and Description */}
             <div className="rounded-2xl border bg-background p-6 shadow-sm">
