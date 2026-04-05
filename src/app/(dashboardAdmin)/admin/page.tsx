@@ -125,7 +125,7 @@ export default function AdminDashboardHomePage() {
                 <QuickActionsSkeleton />
             ) : (
                 <div
-                    className="rounded-2xl border bg-background p-6 shadow-sm"
+                    className="rounded-2xl border bg-card p-6 shadow-sm"
                     role="region"
                     aria-labelledby="quick-actions-heading"
                 >

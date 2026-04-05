@@ -139,7 +139,7 @@ export default function AssignmentPage() {
 
             {/* Search and Filters */}
             <div
-                className="rounded-2xl border bg-background p-6 shadow-sm"
+                className="rounded-2xl border bg-card p-6 shadow-sm"
                 role="search"
                 aria-label="Assignment search and filters"
             >
