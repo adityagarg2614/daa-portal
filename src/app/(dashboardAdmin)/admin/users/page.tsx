@@ -9,6 +9,7 @@ import { UsersPagination } from "@/components/admin/users-pagination";
 import { UserDetailDialog } from "@/components/admin/user-detail-dialog";
 import { UserRoleDialog } from "@/components/admin/user-role-dialog";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
+import { SendEmailDialog } from "@/components/admin/send-email-dialog";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Users, Shield, GraduationCap, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,16 @@ export default function UsersManagementPage() {
     const [roleDialogOpen, setRoleDialogOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    // Email dialog state
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+    const [pendingEmailData, setPendingEmailData] = useState<{
+        name: string;
+        email: string;
+        password: string;
+        role: "admin" | "student";
+        rollNo?: string;
+    } | null>(null);
 
     // User counts by role
     const [userCounts, setUserCounts] = useState({
@@ -239,6 +250,25 @@ export default function UsersManagementPage() {
         fetchUsers();
     };
 
+    const handleUserCreated = (userData: {
+        name: string;
+        email: string;
+        password: string;
+        role: "admin" | "student";
+        rollNo?: string;
+    }) => {
+        setPendingEmailData(userData);
+        setEmailDialogOpen(true);
+    };
+
+    const handleEmailSent = () => {
+        setPendingEmailData(null);
+    };
+
+    const handleEmailSkipped = () => {
+        setPendingEmailData(null);
+    };
+
     const handleDetailDialogClose = () => {
         setDetailDialogOpen(false);
         setUserDetail(null);
@@ -355,6 +385,16 @@ export default function UsersManagementPage() {
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
                 onSuccess={handleCreateSuccess}
+                onUserCreated={handleUserCreated}
+            />
+
+            {/* Send Welcome Email Dialog */}
+            <SendEmailDialog
+                open={emailDialogOpen}
+                onOpenChange={setEmailDialogOpen}
+                userData={pendingEmailData}
+                onSuccess={handleEmailSent}
+                onSkip={handleEmailSkipped}
             />
 
             {/* Delete Confirmation Dialog */}

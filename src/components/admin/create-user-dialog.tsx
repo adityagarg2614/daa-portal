@@ -26,12 +26,20 @@ interface CreateUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess: () => void;
+    onUserCreated?: (userData: {
+        name: string;
+        email: string;
+        password: string;
+        role: "admin" | "student";
+        rollNo?: string;
+    }) => void;
 }
 
 export function CreateUserDialog({
     open,
     onOpenChange,
     onSuccess,
+    onUserCreated,
 }: CreateUserDialogProps) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -94,6 +102,17 @@ export function CreateUserDialog({
                 setCreatedPassword(data.data.password);
                 toast.success(data.message || "User created successfully");
                 onSuccess();
+
+                // Emit user created event for email dialog
+                if (onUserCreated) {
+                    onUserCreated({
+                        name: name.trim(),
+                        email: email.trim().toLowerCase(),
+                        password: data.data.password,
+                        role,
+                        rollNo: role === "student" ? rollNo.trim() : undefined,
+                    });
+                }
 
                 // Reset form
                 setName("");
