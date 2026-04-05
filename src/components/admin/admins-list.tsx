@@ -100,7 +100,7 @@ export function AdminsList() {
                                 className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                             >
                                 <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-sm font-semibold">
+                                    <AvatarFallback className="bg-linear-to-br from-indigo-500 to-purple-600 text-white text-sm font-semibold">
                                         {getInitials(admin.name)}
                                     </AvatarFallback>
                                 </Avatar>

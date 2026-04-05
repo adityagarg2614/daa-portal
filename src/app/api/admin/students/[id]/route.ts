@@ -12,7 +12,7 @@ export async function GET(
 ) {
     try {
         const { userId } = await auth();
-        
+
         if (!userId) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
@@ -72,6 +72,7 @@ export async function GET(
             {
                 $project: {
                     _id: 1,
+                    assignmentId: 1,
                     assignmentTitle: "$assignment.title",
                     assignmentDueAt: "$assignment.dueAt",
                     problemTitle: "$problem.title",

@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { connectDB } from "./lib/db";
 
 const isPublicRoute = createRouteMatcher([
     "/",
@@ -63,13 +64,15 @@ export default clerkMiddleware(async (auth, req) => {
     // If not admin from metadata, check DB for pending admins
     if (!isAdmin && userId) {
         try {
-            const { connectDB } = await import("@/lib/db");
+
             const UserModel = (await import("@/models/User")).default;
 
             await connectDB();
 
             // Check if user exists as admin in DB (including pending admins)
             const dbUser = await UserModel.findOne({
+
+                // mongoose pipeline to check if user exists as admin in DB (including pending admins)
                 $or: [
                     { clerkId: userId },
                     { clerkId: "pending_" + (sessionClaims?.metadata as Record<string, any>)?.email },

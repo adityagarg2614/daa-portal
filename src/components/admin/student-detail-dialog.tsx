@@ -84,12 +84,12 @@ export function StudentDetailDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw]! w-full max-h-[90vh] overflow-y-auto sm:max-w-[95vw]!">
                 <DialogHeader>
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16">
-                                <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">
+                                <AvatarFallback className="bg-linear-to-br from-indigo-500 to-purple-600 text-white text-xl font-bold">
                                     {studentData ? getInitials(studentData.student.name) : "..."}
                                 </AvatarFallback>
                             </Avatar>
