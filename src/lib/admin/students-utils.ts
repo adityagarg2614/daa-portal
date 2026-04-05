@@ -41,10 +41,13 @@ export function exportStudentsToCSV(students: any[], filename: string = "student
     ].join("\n");
 
     // Create and download file
+
+    //Blob is a browser api that is used to create a file like object
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
 
+    // programatically create a download link and click it 
     link.setAttribute("href", url);
     link.setAttribute("download", filename);
     link.style.visibility = "hidden";
