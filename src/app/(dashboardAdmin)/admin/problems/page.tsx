@@ -336,10 +336,13 @@ export default function ProblemsPage() {
                                                 {problem.constraints?.length || 0} constraints
                                             </div>
 
-                                            <Button className="gap-2">
+                                            <Link
+                                                href={`/admin/problems/${problem._id}`}
+                                                className="inline-flex h-9 items-center justify-center rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 hover:shadow-md"
+                                            >
                                                 View Details
-                                                <ArrowRight className="h-4 w-4 icon-hover-scale" />
-                                            </Button>
+                                                <ArrowRight className="ml-2 h-4 w-4 icon-hover-scale" />
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>
