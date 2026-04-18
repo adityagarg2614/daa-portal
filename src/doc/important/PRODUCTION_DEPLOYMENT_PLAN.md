@@ -127,6 +127,45 @@ const nextConfig: NextConfig = {
 };
 ```
 
+#### 1.5a NEXT_PUBLIC_ Variables and Docker Build-Time Baking ✅ LEARNED IN PHASE 1
+
+> **Critical lesson from Phase 1 testing:** `NEXT_PUBLIC_*` environment variables are **baked into the JavaScript bundle at build time** by Next.js. Passing them via `docker run --env-file` does NOT work — they must be provided as `ARG` during `docker build`.
+
+**What happens without this fix:**
+- Clerk's JS bundle loads (you'll see a preload warning in DevTools)
+- But `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is `undefined` in the built code
+- `openSignIn()` silently fails — no network calls, no console errors
+- The "Get Started" button does nothing
+
+**Fix — Two-part Dockerfile change (already implemented):**
+
+```dockerfile
+# In the builder stage:
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+```
+
+**Build command (ALWAYS use this):**
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_dW5pdGVkLWV3ZS00Ny5jbGVyay5hY2NvdW50cy5kZXYk \
+  -t daa-portal:latest .
+```
+
+**Run command (runtime env vars for server-side secrets):**
+```bash
+docker run -p 3000:3000 --env-file .env.local daa-portal:latest
+```
+
+**Rule of thumb for all `NEXT_PUBLIC_*` vars:**
+
+| Variable type | How to pass |
+|---|---|
+| `NEXT_PUBLIC_*` | `--build-arg` during `docker build` |
+| Server-only (DB, API keys) | `--env-file` during `docker run` |
+
+**For Phase 3 (CI/CD):** store `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a **GitHub Secret** and pass it as `--build-arg` in the workflow (see Phase 3 section).
+
 #### 1.5 Environment Variable Strategy
 
 **Problem:** The Piston API URL is currently hardcoded in `src/lib/piston.ts`.
@@ -156,13 +195,13 @@ const PISTON_API = process.env.PISTON_API_URL || "http://localhost:2000/api/v2";
 
 ### Deliverables
 
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Multi-stage build for production image |
-| `.dockerignore` | Exclude unnecessary build context |
-| `src/app/api/health/route.ts` | Health check endpoint |
-| Updated `src/lib/piston.ts` | Externalized Piston URL |
-| Updated `next.config.ts` | Standalone output enabled |
+| File | Status | Purpose |
+|------|--------|---------|
+| `Dockerfile` | ✅ Done | Multi-stage build with `NEXT_PUBLIC_` build-arg support |
+| `.dockerignore` | ✅ Done | Exclude unnecessary build context |
+| `src/app/api/health/route.ts` | ✅ Done | Health check endpoint |
+| Updated `src/lib/piston.ts` | ✅ Done | Externalized Piston URL |
+| Updated `next.config.ts` | ✅ Done | Standalone output enabled |
 
 ### Why Not Start With Kubernetes?
 
@@ -474,6 +513,8 @@ jobs:
         env:
           # Skip env validation during CI build
           SKIP_ENV_VALIDATION: "1"
+          # NEXT_PUBLIC_ vars must be available at build time
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
       # Future: Add unit/integration tests here
       # - name: Run tests
@@ -513,6 +554,9 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # NEXT_PUBLIC_ vars must be baked in at build time (not runtime)
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
   # ─────────────────────────────────────
   # JOB 3: Deploy (Phase 3: Docker Compose)
@@ -560,6 +604,9 @@ jobs:
 | `VPS_HOST` | Production server IP/hostname | Your hosting provider |
 | `VPS_USER` | SSH username for deployment | Your server setup |
 | `VPS_SSH_KEY` | Private key for SSH deployment | Generate via `ssh-keygen` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key — baked into Docker image at build time | `.env.local` or Clerk Dashboard |
+
+> **Note:** Even though `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is not truly secret (it's exposed in the browser), storing it as a GitHub Secret keeps it out of your source code and makes key rotation simple without a code change.
 
 #### 3.4 Branch Strategy
 
@@ -695,6 +742,8 @@ data:
   NODE_ENV: "production"
   NEXT_PUBLIC_APP_URL: "https://algo-grade.example.com"
 ```
+
+> **Important:** `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` does NOT go in the ConfigMap. It must be **baked into the Docker image at build time** via `--build-arg` (see Phase 1 section 1.5a). ConfigMap values are runtime env vars — they are ignored by `NEXT_PUBLIC_*` references compiled into JS.
 
 #### 4.5 Secret (Sensitive Data)
 
@@ -1444,6 +1493,7 @@ Phase 5: Advanced Optimizations
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|-----------|------------|
+| **`NEXT_PUBLIC_*` vars missing from build** | High | High | Always pass as `--build-arg` during `docker build`; store in GitHub Secrets for CI/CD |
 | Piston `--privileged` security | High | Medium | Use Kata Containers or gVisor for stronger isolation |
 | MongoDB data loss | Critical | Low | Automated backups + Atlas managed service |
 | Traffic spike overwhelms HPA | High | Medium | Set appropriate HPA thresholds, test with load testing |
@@ -1451,6 +1501,7 @@ Phase 5: Advanced Optimizations
 | Secrets leaked in Git | Critical | Low | SOPS encryption, never commit plaintext |
 | Cost overruns (cloud) | Medium | Medium | Set billing alerts, start with free tiers |
 | Cluster downtime | High | Low | Use managed K8s (GKE/EKS) with SLA, multi-AZ deployment |
+| `docker build` without `--build-arg` overwrites good image | High | High | Use a Makefile or shell script to wrap the build command (see below) |
 
 ---
 
@@ -1475,12 +1526,63 @@ Phase 5: Advanced Optimizations
 
 ---
 
+## Makefile (Recommended — Prevents Human Error)
+
+Create a `Makefile` in the project root to wrap all Docker commands with the correct flags:
+
+```makefile
+# Load NEXT_PUBLIC_ vars from .env.local automatically
+include .env.local
+export
+
+IMAGE_NAME = daa-portal
+CONTAINER_NAME = daa-portal-app
+
+.PHONY: build run stop restart logs clean
+
+build:
+	docker build \
+	  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) \
+	  -t $(IMAGE_NAME):latest .
+
+run:
+	docker run -d -p 3000:3000 \
+	  --name $(CONTAINER_NAME) \
+	  --env-file .env.local \
+	  $(IMAGE_NAME):latest
+
+stop:
+	docker stop $(CONTAINER_NAME) && docker rm $(CONTAINER_NAME)
+
+restart: stop build run
+
+logs:
+	docker logs -f $(CONTAINER_NAME)
+
+clean:
+	docker stop $(CONTAINER_NAME) || true
+	docker rm $(CONTAINER_NAME) || true
+	docker rmi $(IMAGE_NAME):latest || true
+```
+
+Usage:
+```bash
+make build    # Always builds with correct --build-arg
+make run      # Runs container with env-file
+make restart  # Stop → Build → Run in one command
+make logs     # Tail container logs
+make clean    # Full cleanup
+```
+
+---
+
 ## Next Steps
 
-1. **Review this plan** and decide which phases to prioritize
-2. **Make the key decisions** (container registry, K8s provider, database strategy)
-3. **Start Phase 1** — Docker containerization (lowest risk, highest immediate value)
-4. **Set up a GitHub repository** if not already done (needed for CI/CD)
-5. **Create a Docker Hub account** (or decide on ghcr.io)
+1. ✅ **Phase 1 Complete** — Dockerfile built, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` baked in, app running on `localhost:3000`, "Get Started" button working
+2. **Create `Makefile`** — Prevents accidentally building without `--build-arg` (5 min task)
+3. **Start Phase 2** — Docker Compose to add MongoDB + Piston containers
+4. **Make the key decisions** (container registry, K8s provider, database strategy)
+5. **Set up a GitHub repository** if not already done (needed for Phase 3 CI/CD)
+6. **Create a Docker Hub account** (or decide on ghcr.io for CI/CD)
 
 Each phase is designed to be **independently valuable** — you can stop after any phase and still have a working, improved system.
