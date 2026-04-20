@@ -55,15 +55,15 @@ import {
 } from "@/lib/announcement";
 import { AnnouncementForm } from "@/components/admin/announcement-form";
 
-interface Announcement {
+interface AnnouncementData {
     _id: string;
     title: string;
     content: string;
     type: "general" | "assignment" | "event" | "urgent";
     priority: "low" | "medium" | "high";
     isActive: boolean;
-    publishAt: string;
-    expiresAt: string | null;
+    publishAt?: string;
+    expiresAt?: string | null;
     createdBy: {
         _id: string;
         name: string;
@@ -82,7 +82,7 @@ interface PaginationData {
 }
 
 export default function AnnouncementsPage() {
-    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
     const [pagination, setPagination] = useState<PaginationData>({
         currentPage: 1,
         totalPages: 0,
@@ -92,7 +92,7 @@ export default function AnnouncementsPage() {
     });
     const [loading, setLoading] = useState(true);
     const [formDialogOpen, setFormDialogOpen] = useState(false);
-    const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+    const [editingAnnouncement, setEditingAnnouncement] = useState<AnnouncementData | null>(null);
 
     // Filter states
     const [typeFilter, setTypeFilter] = useState("all");
@@ -138,7 +138,7 @@ export default function AnnouncementsPage() {
         setFormDialogOpen(true);
     };
 
-    const handleEdit = (announcement: Announcement) => {
+    const handleEdit = (announcement: AnnouncementData) => {
         setEditingAnnouncement(announcement);
         setFormDialogOpen(true);
     };
@@ -212,12 +212,7 @@ export default function AnnouncementsPage() {
 
     // Calculate stats
     const activeCount = announcements.filter((a) => a.isActive).length;
-    const upcomingCount = announcements.filter(
-        (a) => !isPublished(new Date(a.publishAt))
-    ).length;
-    const expiredCount = announcements.filter((a) =>
-        isExpired(a.expiresAt ? new Date(a.expiresAt) : null)
-    ).length;
+    const inactiveCount = announcements.length - activeCount;
 
     return (
         <div className="space-y-6 pb-8">
@@ -235,7 +230,7 @@ export default function AnnouncementsPage() {
             />
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <StatsCard
                     icon={Megaphone}
                     title="Total Announcements"
@@ -249,16 +244,10 @@ export default function AnnouncementsPage() {
                     subtitle="Currently visible"
                 />
                 <StatsCard
-                    icon={Megaphone}
-                    title="Upcoming"
-                    value={upcomingCount}
-                    subtitle="Scheduled to publish"
-                />
-                <StatsCard
                     icon={ToggleLeft}
-                    title="Expired"
-                    value={expiredCount}
-                    subtitle="Past expiry date"
+                    title="Inactive"
+                    value={inactiveCount}
+                    subtitle="Hidden from students"
                 />
             </div>
 
@@ -318,7 +307,7 @@ export default function AnnouncementsPage() {
                             <TableHead>Title</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead>Priority</TableHead>
-                            <TableHead>Publish Date</TableHead>
+                            <TableHead>Posted Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -359,7 +348,7 @@ export default function AnnouncementsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {new Date(announcement.publishAt).toLocaleDateString()}
+                                        {new Date(announcement.createdAt).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={announcement.isActive ? "success" : "outline"}>

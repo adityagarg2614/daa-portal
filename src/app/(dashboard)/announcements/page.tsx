@@ -20,8 +20,7 @@ interface Announcement {
     content: string;
     type: "general" | "assignment" | "event" | "urgent";
     priority: "low" | "medium" | "high";
-    publishAt: string;
-    expiresAt: string | null;
+    createdAt: string;
     createdBy?: {
         name: string;
     };
