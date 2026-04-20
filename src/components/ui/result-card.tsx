@@ -2,10 +2,11 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
 interface Result {
-    id: number
+    id: string
     assignmentTitle: string
     subject: string
     totalProblems: number
+    submittedProblems: number
     obtainedMarks: number
     totalMarks: number
     percentage: number
@@ -79,7 +80,7 @@ export function ResultCard({
                     <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
                         <div>
                             <span className="font-medium text-foreground">Problems:</span>{" "}
-                            {result.totalProblems}
+                            {result.submittedProblems}/{result.totalProblems}
                         </div>
                         <div>
                             <span className="font-medium text-foreground">Marks:</span>{" "}

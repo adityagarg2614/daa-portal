@@ -20,88 +20,43 @@ import {
     PageHeaderSkeleton,
 } from "@/components/ui/skeleton"
 
-type ResultStatus = "Excellent" | "Good" | "Average" | "Needs Improvement"
+    type ResultStatus = "Excellent" | "Good" | "Average" | "Needs Improvement"
 
-type Result = {
-    id: number
-    assignmentTitle: string
-    subject: string
-    totalProblems: number
-    obtainedMarks: number
-    totalMarks: number
-    percentage: number
-    evaluatedAt: string
-    status: ResultStatus
-}
+    type Result = {
+        id: string
+        assignmentTitle: string
+        subject: string
+        totalProblems: number
+        submittedProblems: number
+        obtainedMarks: number
+        totalMarks: number
+        percentage: number
+        evaluatedAt: string
+        status: ResultStatus
+    }
 
-export default function ResultsPage() {
-    const [search, setSearch] = useState("")
-    const [activeTab, setActiveTab] = useState<"All" | ResultStatus>("All")
-    const [results, setResults] = useState<Result[]>([])
-    const [loading, setLoading] = useState(true)
+    export default function ResultsPage() {
+        const [search, setSearch] = useState("")
+        const [activeTab, setActiveTab] = useState<"All" | ResultStatus>("All")
+        const [results, setResults] = useState<Result[]>([])
+        const [loading, setLoading] = useState(true)
 
-    // TODO: Replace with actual API call when backend is ready
-    useEffect(() => {
-        const fetchResults = async () => {
-            try {
-                // Replace with: const res = await axios.get("/api/student/results")
-                // For now, using dummy data
-                const dummyResults: Result[] = [
-                    {
-                        id: 1,
-                        assignmentTitle: "DAA Lab Assignment 1",
-                        subject: "Design and Analysis of Algorithms",
-                        totalProblems: 5,
-                        obtainedMarks: 18,
-                        totalMarks: 20,
-                        percentage: 90,
-                        evaluatedAt: "18 Mar 2026, 01:20 PM",
-                        status: "Excellent",
-                    },
-                    {
-                        id: 2,
-                        assignmentTitle: "Searching and Sorting",
-                        subject: "Design and Analysis of Algorithms",
-                        totalProblems: 4,
-                        obtainedMarks: 14,
-                        totalMarks: 20,
-                        percentage: 70,
-                        evaluatedAt: "20 Mar 2026, 02:10 PM",
-                        status: "Good",
-                    },
-                    {
-                        id: 3,
-                        assignmentTitle: "Recursion and Backtracking",
-                        subject: "Design and Analysis of Algorithms",
-                        totalProblems: 6,
-                        obtainedMarks: 11,
-                        totalMarks: 20,
-                        percentage: 55,
-                        evaluatedAt: "22 Mar 2026, 04:15 PM",
-                        status: "Average",
-                    },
-                    {
-                        id: 4,
-                        assignmentTitle: "Greedy Algorithms Practice",
-                        subject: "Design and Analysis of Algorithms",
-                        totalProblems: 5,
-                        obtainedMarks: 7,
-                        totalMarks: 20,
-                        percentage: 35,
-                        evaluatedAt: "23 Mar 2026, 10:00 AM",
-                        status: "Needs Improvement",
-                    },
-                ]
-                setResults(dummyResults)
-            } catch (error) {
-                console.error("Error fetching results:", error)
-            } finally {
-                setLoading(false)
+        useEffect(() => {
+            const fetchResults = async () => {
+                try {
+                    const res = await axios.get("/api/student/results")
+                    if (res.data.success) {
+                        setResults(res.data.results)
+                    }
+                } catch (error) {
+                    console.error("Error fetching results:", error)
+                } finally {
+                    setLoading(false)
+                }
             }
-        }
 
-        fetchResults()
-    }, [])
+            fetchResults()
+        }, [])
 
     const tabs: Array<"All" | ResultStatus> = [
         "All",
