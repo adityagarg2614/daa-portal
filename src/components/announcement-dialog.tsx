@@ -24,8 +24,7 @@ interface AnnouncementDialogProps {
         content: string;
         type: "general" | "assignment" | "event" | "urgent";
         priority: "low" | "medium" | "high";
-        publishAt: string;
-        expiresAt: string | null;
+        createdAt: string;
         createdBy?: {
             name: string;
         };
@@ -39,10 +38,7 @@ export function AnnouncementDialog({
 }: AnnouncementDialogProps) {
     if (!announcement) return null;
 
-    const isExpired = announcement.expiresAt
-        ? new Date(announcement.expiresAt) < new Date()
-        : false;
-    const timeAgo = formatRelativeTime(new Date(announcement.publishAt));
+    const timeAgo = formatRelativeTime(new Date(announcement.createdAt));
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,9 +56,6 @@ export function AnnouncementDialog({
                         >
                             {getPriorityLabel(announcement.priority)}
                         </Badge>
-                        {isExpired && (
-                            <Badge variant="outline">Expired</Badge>
-                        )}
                         <span className="text-xs text-muted-foreground ml-auto">
                             {timeAgo}
                         </span>
@@ -83,20 +76,11 @@ export function AnnouncementDialog({
                                 <p>Posted by: <span className="text-foreground">{announcement.createdBy.name}</span></p>
                             )}
                             <p>
-                                Published:{" "}
+                                Posted:{" "}
                                 <span className="text-foreground">
-                                    {new Date(announcement.publishAt).toLocaleString()}
+                                    {new Date(announcement.createdAt).toLocaleString()}
                                 </span>
                             </p>
-                            {announcement.expiresAt && (
-                                <p>
-                                    Expires:{" "}
-                                    <span className={isExpired ? "text-destructive" : "text-foreground"}>
-                                        {new Date(announcement.expiresAt).toLocaleString()}
-                                        {isExpired && " (Expired)"}
-                                    </span>
-                                </p>
-                            )}
                         </div>
                     </div>
                 </div>

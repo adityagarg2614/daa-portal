@@ -17,8 +17,7 @@ interface AnnouncementCardProps {
     content: string;
     type: "general" | "assignment" | "event" | "urgent";
     priority: "low" | "medium" | "high";
-    publishAt: string;
-    expiresAt: string | null;
+    createdAt: string;
     createdBy?: {
         name: string;
     };
@@ -26,22 +25,19 @@ interface AnnouncementCardProps {
 }
 
 export function AnnouncementCard({
-    _id,
     title,
     content,
     type,
     priority,
-    publishAt,
-    expiresAt,
+    createdAt,
     createdBy,
     onClick,
 }: AnnouncementCardProps) {
-    const isExpired = expiresAt ? new Date(expiresAt) < new Date() : false;
-    const timeAgo = formatRelativeTime(new Date(publishAt));
+    const timeAgo = formatRelativeTime(new Date(createdAt));
 
     return (
         <Card
-            className={`cursor-pointer transition-all hover:shadow-lg ${isExpired ? "opacity-60" : ""}`}
+            className="cursor-pointer transition-all hover:shadow-lg"
             onClick={onClick}
         >
             <CardHeader className="pb-2">
@@ -58,9 +54,6 @@ export function AnnouncementCard({
                         >
                             {getPriorityLabel(priority)}
                         </Badge>
-                        {isExpired && (
-                            <Badge variant="outline">Expired</Badge>
-                        )}
                     </div>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {timeAgo}

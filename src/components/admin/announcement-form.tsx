@@ -22,8 +22,8 @@ interface Announcement {
     type: "general" | "assignment" | "event" | "urgent";
     priority: "low" | "medium" | "high";
     isActive: boolean;
-    publishAt: string;
-    expiresAt: string | null;
+    publishAt?: string;
+    expiresAt?: string | null;
 }
 
 interface AnnouncementFormProps {
@@ -42,8 +42,6 @@ export function AnnouncementForm({
     const [type, setType] = useState<"general" | "assignment" | "event" | "urgent">("general");
     const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
     const [isActive, setIsActive] = useState(true);
-    const [publishAt, setPublishAt] = useState("");
-    const [expiresAt, setExpiresAt] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
     // Populate form when editing
@@ -54,24 +52,6 @@ export function AnnouncementForm({
             setType(announcement.type);
             setPriority(announcement.priority);
             setIsActive(announcement.isActive);
-            // Format datetime for input
-            const publishDate = new Date(announcement.publishAt);
-            const publishLocal = new Date(publishDate.getTime() - publishDate.getTimezoneOffset() * 60000);
-            setPublishAt(publishLocal.toISOString().slice(0, 16));
-
-            if (announcement.expiresAt) {
-                const expiryDate = new Date(announcement.expiresAt);
-                const expiryLocal = new Date(expiryDate.getTime() - expiryDate.getTimezoneOffset() * 60000);
-                setExpiresAt(expiryLocal.toISOString().slice(0, 16));
-            } else {
-                setExpiresAt("");
-            }
-        } else {
-            // Default values for new announcement
-            const now = new Date();
-            const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-            setPublishAt(local.toISOString().slice(0, 16));
-            setExpiresAt("");
         }
     }, [announcement]);
 
@@ -92,22 +72,6 @@ export function AnnouncementForm({
             return;
         }
 
-        const publishDate = new Date(publishAt);
-        if (publishDate < new Date()) {
-            toast.error("Publish date cannot be in the past");
-            setSubmitting(false);
-            return;
-        }
-
-        if (expiresAt) {
-            const expiryDate = new Date(expiresAt);
-            if (expiryDate <= publishDate) {
-                toast.error("Expiry date must be after publish date");
-                setSubmitting(false);
-                return;
-            }
-        }
-
         try {
             const url = announcement
                 ? `/api/admin/announcements/${announcement._id}`
@@ -124,8 +88,6 @@ export function AnnouncementForm({
                     type,
                     priority,
                     isActive,
-                    publishAt: publishAt,
-                    expiresAt: expiresAt || null,
                 }),
             });
 
@@ -223,30 +185,6 @@ export function AnnouncementForm({
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="publishAt">Publish At</Label>
-                    <Input
-                        id="publishAt"
-                        type="datetime-local"
-                        value={publishAt}
-                        onChange={(e) => setPublishAt(e.target.value)}
-                        disabled={submitting}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="expiresAt">Expires At (Optional)</Label>
-                    <Input
-                        id="expiresAt"
-                        type="datetime-local"
-                        value={expiresAt}
-                        onChange={(e) => setExpiresAt(e.target.value)}
-                        placeholder="Optional"
-                        disabled={submitting}
-                    />
-                </div>
-            </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
                 <div className="space-y-0.5">

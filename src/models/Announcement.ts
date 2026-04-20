@@ -65,8 +65,7 @@ const AnnouncementSchema = new Schema(
 );
 
 // Index for efficient active announcements query
-AnnouncementSchema.index({ isActive: 1, publishAt: -1 });
-AnnouncementSchema.index({ expiresAt: 1 });
+AnnouncementSchema.index({ isActive: 1, createdAt: -1 });
 
 export default mongoose.models.Announcement ||
     mongoose.model<IAnnouncement>("Announcement", AnnouncementSchema);
