@@ -1471,11 +1471,14 @@ Phase 5: Advanced Optimizations
 
 | Approach | Pros | Cons |
 |----------|------|------|
-| MongoDB in K8s (StatefulSet) | All-in-one cluster, managed | Requires persistent storage, backup setup |
-| Managed MongoDB (Atlas) | Zero ops, automated backups, backups included | Costs money, external dependency |
-| Self-hosted MongoDB (separate server) | Full control, cheaper than Atlas | Manual ops, backup responsibility |
+| **Managed Service (Atlas)** | **Zero ops, automated backups, high availability included** | Costs money (after free tier) |
+| MongoDB in K8s (StatefulSet) | All-in-one cluster, fully self-managed | Requires persistent storage, manual backup setup |
+| Self-hosted (separate server) | Full control, cheaper than Atlas | Manual ops, backup responsibility |
 
-**Recommendation:** For production, use **MongoDB Atlas** (free tier available). It eliminates the most complex part of the K8s setup (stateful storage) and provides automated backups, monitoring, and scaling.
+**Recommendation:** For production, use **Managed Service (Recommended - MongoDB Atlas)**.
+- **Just like you were using before**, you use a cloud provider like Atlas.
+- **How it works:** You don't run a "mongo" container in your production `docker-compose` or Kubernetes cluster. Instead, you just change your `MONGODB_URI` environment variable to point to the Atlas connection string.
+- **Pros:** Automated backups, security updates, and high availability are handled for you, significantly reducing operations overhead.
 
 ### 5. SSL/TLS Strategy
 
