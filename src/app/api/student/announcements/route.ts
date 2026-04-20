@@ -23,17 +23,9 @@ export async function GET(request: Request) {
         const limit = parseInt(searchParams.get("limit") || "10");
 
         // Build filters for active announcements
-        const now = new Date();
-        const filters: any = {
+        const filters: Record<string, string | boolean | object> = {
             isActive: true,
-            publishAt: { $lte: now },
         };
-
-        // Add expiry check: include if expiresAt is null or in the future
-        filters.$or = [
-            { expiresAt: null },
-            { expiresAt: { $gt: now } },
-        ];
 
         if (type && type !== "all") {
             filters.type = type;
@@ -42,7 +34,7 @@ export async function GET(request: Request) {
         // Fetch active announcements
         const announcements = await Announcement.find(filters)
             .populate("createdBy", "name")
-            .sort({ publishAt: -1 })
+            .sort({ createdAt: -1 })
             .limit(limit);
 
         return NextResponse.json({

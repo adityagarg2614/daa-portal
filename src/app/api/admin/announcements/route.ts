@@ -1,12 +1,11 @@
 import { verifyAdmin } from "@/lib/auth";
 import Announcement from "@/models/Announcement";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 
 // GET - Fetch all announcements with pagination and filters
 export async function GET(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -18,7 +17,7 @@ export async function GET(request: Request) {
         const status = searchParams.get("status") || ""; // active, inactive, all
 
         // Build filters
-        const filters: any = {};
+        const filters: Record<string, string | boolean | object> = {};
 
         if (type && type !== "all") {
             filters.type = type;
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
         // Fetch announcements with pagination
         const announcements = await Announcement.find(filters)
             .populate("createdBy", "name email")
-            .sort({ publishAt: -1 })
+            .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit);
 
@@ -65,12 +64,12 @@ export async function GET(request: Request) {
 // POST - Create new announcement
 export async function POST(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response, dbUser } = await verifyAdmin();
 
         if (!authorized) return response;
 
         const body = await request.json();
-        const { title, content, type, priority, publishAt, expiresAt } = body;
+        const { title, content, type, priority } = body;
 
         // Validation
         if (!title || !content) {
@@ -93,19 +92,6 @@ export async function POST(request: Request) {
                 { status: 400 }
             );
         }
-
-        // Validate dates
-        const publishDate = publishAt ? new Date(publishAt) : new Date();
-        if (expiresAt) {
-            const expiryDate = new Date(expiresAt);
-            if (expiryDate <= publishDate) {
-                return NextResponse.json(
-                    { success: false, message: "Expiry date must be after publish date" },
-                    { status: 400 }
-                );
-            }
-        }
-
         // Create announcement
         const announcement = await Announcement.create({
             title,
@@ -113,8 +99,7 @@ export async function POST(request: Request) {
             type: type || "general",
             priority: priority || "medium",
             isActive: true,
-            publishAt: publishDate,
-            expiresAt: expiresAt ? new Date(expiresAt) : null,
+            // Mode defaults handle publishAt
             createdBy: dbUser?._id,
         });
 

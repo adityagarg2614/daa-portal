@@ -106,31 +106,6 @@ export async function PUT(
             announcement.isActive = isActive;
         }
 
-        if (publishAt !== undefined) {
-            const publishDate = new Date(publishAt);
-            if (expiresAt) {
-                const expiryDate = new Date(expiresAt);
-                if (expiryDate <= publishDate) {
-                    return NextResponse.json(
-                        { success: false, message: "Expiry date must be after publish date" },
-                        { status: 400 }
-                    );
-                }
-            }
-            announcement.publishAt = publishDate;
-        }
-
-        if (expiresAt !== undefined) {
-            const expiryDate = expiresAt ? new Date(expiresAt) : null;
-            if (expiryDate && expiryDate <= announcement.publishAt) {
-                return NextResponse.json(
-                    { success: false, message: "Expiry date must be after publish date" },
-                    { status: 400 }
-                );
-            }
-            announcement.expiresAt = expiryDate;
-        }
-
         await announcement.save();
 
         // Populate creator info
