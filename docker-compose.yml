@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/daa-portal
+      - PISTON_API_URL=http://piston:2000/api/v2
+    depends_on:
+      - mongo
+      - piston
+
+  mongo:
+    image: mongo:latest
+    container_name: daa-portal-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  piston:
+    image: ghcr.io/engineer-man/piston:latest
+    container_name: daa-portal-piston
+    platform: linux/amd64
+    user: "0:0"
+    restart: always
+    privileged: true
+    ports:
+      - "2000:2000"
+    volumes:
+      - piston-packages:/piston
+
+volumes:
+  mongo-data:
+  piston-packages:

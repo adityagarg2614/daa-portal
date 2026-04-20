@@ -1,7 +1,7 @@
 // Piston code execution library
 // Using self-hosted Piston instance (Docker)
 
-const PISTON_API = process.env.PISTON_API_URL || "http://localhost:2000/api/v2";
+const PISTON_API = process.env.PISTON_API_URL;
 
 // Language mapping to Piston language names and versions
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
