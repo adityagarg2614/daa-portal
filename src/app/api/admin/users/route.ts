@@ -1,4 +1,4 @@
-import { connectDB } from "@/lib/db";
+import { verifyAdmin } from "@/lib/auth";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
@@ -6,25 +6,9 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 // GET - Fetch all users with pagination and filtering
 export async function GET(request: Request) {
     try {
-        const { userId } = await auth();
+        const { authorized, response, userId, dbUser } = await verifyAdmin();
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        // Verify admin role
-        const adminUser = await User.findOne({ clerkId: userId });
-        if (!adminUser || adminUser.role !== "admin") {
-            return NextResponse.json(
-                { success: false, message: "Forbidden - Admin access required" },
-                { status: 403 }
-            );
-        }
-
-        await connectDB();
+        if (!authorized) return response;
 
         // Parse query parameters
         const { searchParams } = new URL(request.url);
@@ -89,25 +73,9 @@ export async function GET(request: Request) {
 // POST - Create a new user
 export async function POST(request: Request) {
     try {
-        const { userId } = await auth();
+        const { authorized, response, userId, dbUser } = await verifyAdmin();
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        // Verify admin role
-        const adminUser = await User.findOne({ clerkId: userId });
-        if (!adminUser || adminUser.role !== "admin") {
-            return NextResponse.json(
-                { success: false, message: "Forbidden - Admin access required" },
-                { status: 403 }
-            );
-        }
-
-        await connectDB();
+        if (!authorized) return response;
 
         const body = await request.json();
         const { email, name, role, rollNo, password } = body;
@@ -200,11 +168,68 @@ export async function POST(request: Request) {
 
             // Extract error message from Clerk error structure
             let errorMessage = "Failed to create user in authentication provider";
+            let isEmailTaken = false;
 
             if (clerkError?.errors && Array.isArray(clerkError.errors)) {
                 errorMessage = clerkError.errors.map((e: any) => e.message || e.longMessage).filter(Boolean).join(", ");
+                isEmailTaken = clerkError.errors.some((e: any) => e.code === "form_identifier_exists" || e.message?.includes("already exists"));
             } else if (clerkError?.message) {
                 errorMessage = clerkError.message;
+                isEmailTaken = clerkError.message.includes("already exists");
+            }
+
+            // [NEW] If email exists in Clerk but not in DB, we can try to sync them
+            if (isEmailTaken) {
+                try {
+                    const client = await clerkClient();
+                    const clerkUsers = await client.users.getUserList({ emailAddress: [email.toLowerCase()] });
+                    
+                    if (clerkUsers.data.length > 0) {
+                        const clerkUser = clerkUsers.data[0];
+                        
+                        // Check if they exist in DB (should be negative since we checked earlier, but just in case)
+                        let dbUser = await User.findOne({ email: email.toLowerCase() });
+                        
+                        if (!dbUser) {
+                            // [NEW] Generate a new password since we are "creating" them in our system
+                            const syncPassword = password || Math.random().toString(36).slice(-10) + "!";
+                            
+                            // Create in MongoDB
+                            dbUser = await User.create({
+                                clerkId: clerkUser.id,
+                                email: email.toLowerCase(),
+                                name: name || clerkUser.firstName || "Synced User",
+                                role: role,
+                                rollNo: role === "student" ? rollNo : null,
+                            });
+
+                            // Update Clerk user (including password if we generated/provided one)
+                            await client.users.updateUser(clerkUser.id, {
+                                password: syncPassword,
+                                publicMetadata: {
+                                    ...clerkUser.publicMetadata,
+                                    role: role,
+                                    onboardingComplete: true,
+                                }
+                            });
+
+                            return NextResponse.json(
+                                {
+                                    success: true,
+                                    message: "User was already in authentication system. Local record has been created and password updated.",
+                                    data: {
+                                        user: dbUser,
+                                        password: syncPassword,
+                                        isSynced: true
+                                    },
+                                },
+                                { status: 201 }
+                            );
+                        }
+                    }
+                } catch (syncError) {
+                    console.error("Failed to sync existing Clerk user:", syncError);
+                }
             }
 
             return NextResponse.json(

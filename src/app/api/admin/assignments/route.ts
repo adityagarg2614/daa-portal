@@ -1,4 +1,4 @@
-import { connectDB } from "@/lib/db";
+import { verifyAdmin } from "@/lib/auth";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        await connectDB();
+        const { authorized, response } = await verifyAdmin();
+        if (!authorized) return response;
 
         const body = await req.json();
 
@@ -73,7 +74,8 @@ export async function POST(req: Request) {
 
 export async function GET() {
     try {
-        await connectDB();
+        const { authorized, response } = await verifyAdmin();
+        if (!authorized) return response;
 
         const assignments = await Assignment.find()
             .populate("problemIds")

@@ -1,31 +1,14 @@
-import { connectDB } from "@/lib/db";
+import { verifyAdmin } from "@/lib/auth";
 import Announcement from "@/models/Announcement";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 // GET - Fetch all announcements with pagination and filters
 export async function GET(request: Request) {
     try {
-        const { userId } = await auth();
+        const { authorized, response, userId, dbUser } = await verifyAdmin();
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        // Verify admin role
-        const adminUser = await User.findOne({ clerkId: userId });
-        if (!adminUser || adminUser.role !== "admin") {
-            return NextResponse.json(
-                { success: false, message: "Forbidden - Admin access required" },
-                { status: 403 }
-            );
-        }
-
-        await connectDB();
+        if (!authorized) return response;
 
         // Parse query parameters
         const { searchParams } = new URL(request.url);
@@ -82,25 +65,9 @@ export async function GET(request: Request) {
 // POST - Create new announcement
 export async function POST(request: Request) {
     try {
-        const { userId } = await auth();
+        const { authorized, response, userId, dbUser } = await verifyAdmin();
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        // Verify admin role
-        const adminUser = await User.findOne({ clerkId: userId });
-        if (!adminUser || adminUser.role !== "admin") {
-            return NextResponse.json(
-                { success: false, message: "Forbidden - Admin access required" },
-                { status: 403 }
-            );
-        }
-
-        await connectDB();
+        if (!authorized) return response;
 
         const body = await request.json();
         const { title, content, type, priority, publishAt, expiresAt } = body;
@@ -148,7 +115,7 @@ export async function POST(request: Request) {
             isActive: true,
             publishAt: publishDate,
             expiresAt: expiresAt ? new Date(expiresAt) : null,
-            createdBy: adminUser._id,
+            createdBy: dbUser?._id,
         });
 
         // Populate creator info

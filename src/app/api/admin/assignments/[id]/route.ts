@@ -1,15 +1,15 @@
-import { connectDB } from "@/lib/db";
+import { verifyAdmin } from "@/lib/auth";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        await connectDB();
+        const { authorized, response } = await verifyAdmin();
+        if (!authorized) return response;
 
         const { id } = await params;
 
@@ -100,16 +100,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        await connectDB();
+        const { authorized, response } = await verifyAdmin();
+        if (!authorized) return response;
 
         const { id } = await params;
 

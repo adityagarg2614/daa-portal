@@ -1,30 +1,12 @@
-import { connectDB } from "@/lib/db";
+import { verifyAdmin } from "@/lib/auth";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 
 export async function GET(request: Request) {
     try {
-        const { userId } = await auth();
+        const { authorized, response, userId, dbUser } = await verifyAdmin();
 
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, message: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        // Verify admin role
-        const adminUser = await User.findOne({ clerkId: userId });
-        // commneted due to testing 
-        // if (!adminUser || adminUser.role !== "admin") {
-        //     return NextResponse.json(
-        //         { success: false, message: "Forbidden - Admin access required" },
-        //         { status: 403 }
-        //     );
-        // }
-
-        await connectDB();
+        if (!authorized) return response;
 
         // Parse query parameters
         const { searchParams } = new URL(request.url);
