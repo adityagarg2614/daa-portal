@@ -338,6 +338,22 @@ export default function SingleAssignmentPage() {
         }
     }, [id, handleAutoSubmitMemo])
 
+    // Attendance Sync
+    useEffect(() => {
+        if (assignment && dbUserId && accessStatus === "active") {
+            const syncAttendance = async () => {
+                try {
+                    await axios.post("/api/attendance/sync-assignment", {
+                        assignmentId: assignment._id
+                    })
+                } catch (error) {
+                    console.error("Attendance sync failed:", error)
+                }
+            }
+            syncAttendance()
+        }
+    }, [assignment?._id, dbUserId, accessStatus])
+
     // Initial data fetch
     useEffect(() => {
         fetchAssignmentAndUser()
