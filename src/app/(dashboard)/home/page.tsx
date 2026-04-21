@@ -19,72 +19,78 @@ import { SectionHeader } from "@/components/ui/section-header"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { format } from "date-fns"
 
 export default function HomePage() {
     const { user } = useUser()
+    const [data, setData] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
 
-    const stats = [
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const response = await fetch("/api/student/dashboard");
+            const resData = await response.json();
+            if (resData.success) {
+                setData(resData.data);
+            }
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            toast.error("Failed to load dashboard data");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    useRefetchOnFocus(fetchDashboardData);
+
+    const stats = data ? [
         {
             title: "Total Assignments",
-            value: "12",
-            subtitle: "This semester",
+            value: data.stats.totalAssignments.toString(),
+            subtitle: "In the portal",
             icon: BookOpen,
         },
         {
             title: "Pending Assignments",
-            value: "3",
-            subtitle: "Need submission",
+            value: data.stats.pendingAssignments.toString(),
+            subtitle: "To be completed",
             icon: Clock,
         },
         {
             title: "Completed",
-            value: "8",
-            subtitle: "Successfully submitted",
+            value: data.stats.completedAssignments.toString(),
+            subtitle: "Solved by you",
             icon: ClipboardCheck,
         },
         {
             title: "Average Score",
-            value: "78%",
-            subtitle: "Overall performance",
+            value: data.stats.averageScore,
+            subtitle: "Performance",
             icon: Trophy,
         },
-    ]
+    ] : []
 
-    const upcomingAssignments = [
-        {
-            title: "DAA Lab Assignment 4",
-            due: "Tomorrow, 11:59 PM",
-            status: "Active",
-        },
-        {
-            title: "Greedy Algorithms Practice",
-            due: "25 Mar 2026, 10:00 AM",
-            status: "Upcoming",
-        },
-        {
-            title: "Dynamic Programming Sheet",
-            due: "28 Mar 2026, 11:59 PM",
-            status: "Upcoming",
-        },
-    ]
+    const upcomingAssignments = data?.upcomingAssignments || []
+    const recentSubmissions = data?.recentResults || []
 
-    const recentSubmissions = [
-        {
-            title: "DAA Lab Assignment 3",
-            score: "18/20",
-            submittedAt: "Submitted 2 days ago",
-        },
-        {
-            title: "Searching & Sorting",
-            score: "14/20",
-            submittedAt: "Submitted 5 days ago",
-        },
-        {
-            title: "Recursion Basics",
-            score: "20/20",
-            submittedAt: "Submitted 1 week ago",
-        },
-    ]
+    const formatDueDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return format(date, "MMM d, yyyy h:mm a");
+    }
+
+    const formatRelativeTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
+        
+        if (diffInDays === 0) return "Today";
+        if (diffInDays === 1) return "Yesterday";
+        return `${diffInDays} days ago`;
+    }
 
     const getStatusClasses = (status: string) => {
         switch (status) {
@@ -107,15 +113,21 @@ export default function HomePage() {
 
             {/* Stats Grid */}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Statistics">
-                {stats.map((item) => (
-                    <StatsCard
-                        key={item.title}
-                        icon={item.icon}
-                        title={item.title}
-                        value={item.value}
-                        subtitle={item.subtitle}
-                    />
-                ))}
+                {loading ? (
+                    [...Array(4)].map((_, i) => (
+                        <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
+                    ))
+                ) : (
+                    stats.map((item) => (
+                        <StatsCard
+                            key={item.title}
+                            icon={item.icon}
+                            title={item.title}
+                            value={item.value}
+                            subtitle={item.subtitle}
+                        />
+                    ))
+                )}
             </div>
 
             {/* Main Content Grid */}
@@ -135,43 +147,66 @@ export default function HomePage() {
                     }
                 >
                     <div className="space-y-3">
-                        {upcomingAssignments.map((assignment, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
-                            >
-                                <div>
-                                    <h3 className="font-medium">{assignment.title}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        Due: {assignment.due}
-                                    </p>
-                                </div>
-                                <Badge
-                                    variant={assignment.status === "Active" ? "secondary" : "outline"}
-                                    className={cn(
-                                        getStatusClasses(assignment.status)
-                                    )}
+                        {loading ? (
+                            [...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)
+                        ) : upcomingAssignments.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">No upcoming assignments</div>
+                        ) : (
+                            upcomingAssignments.map((assignment: any, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
                                 >
-                                    {assignment.status}
-                                </Badge>
-                            </div>
-                        ))}
+                                    <div>
+                                        <h3 className="font-medium">{assignment.title}</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Due: {formatDueDate(assignment.due)}
+                                        </p>
+                                    </div>
+                                    <Badge
+                                        variant={assignment.status === "Active" ? "secondary" : "outline"}
+                                        className={cn(
+                                            getStatusClasses(assignment.status)
+                                        )}
+                                    >
+                                        {assignment.status}
+                                    </Badge>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </InfoCard>
 
                 {/* Attendance */}
                 <InfoCard title="Attendance" icon={CalendarCheck}>
                     <div className="space-y-3">
-                        <div className="rounded-xl border p-4">
-                            <p className="text-sm text-muted-foreground">Current Attendance</p>
-                            <h3 className="mt-2 text-3xl font-bold">82%</h3>
-                        </div>
-                        <div className="rounded-xl border p-4">
-                            <p className="text-sm text-muted-foreground">Status</p>
-                            <p className="mt-2 text-sm font-medium">
-                                Feature coming soon for live tracking
-                            </p>
-                        </div>
+                        {loading ? (
+                            <div className="h-40 rounded-xl bg-muted animate-pulse" />
+                        ) : (
+                            <>
+                                <Link href="/attendance" className="block group">
+                                    <div className="rounded-xl border p-4 transition-all group-hover:border-primary/50 group-hover:shadow-sm">
+                                        <div className="flex justify-between items-start">
+                                            <p className="text-sm text-muted-foreground">Current Attendance</p>
+                                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
+                                        </div>
+                                        <h3 className={cn("mt-2 text-3xl font-bold", 
+                                            (data?.attendance?.percentage || 0) >= 75 ? "text-primary" : "text-red-500"
+                                        )}>
+                                            {data?.attendance?.percentage || 0}%
+                                        </h3>
+                                    </div>
+                                </Link>
+                                <div className="rounded-xl border p-4 bg-muted/30">
+                                    <p className="text-sm text-muted-foreground">Summary</p>
+                                    <p className="mt-2 text-xs font-medium">
+                                        {(data?.attendance?.percentage || 0) >= 75 
+                                            ? "Your attendance is well maintained." 
+                                            : "Your attendance is below 75%. Please attend more sessions."}
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </InfoCard>
             </div>
@@ -192,22 +227,28 @@ export default function HomePage() {
                     }
                 >
                     <div className="space-y-3">
-                        {recentSubmissions.map((submission, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
-                            >
-                                <div>
-                                    <h3 className="font-medium">{submission.title}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {submission.submittedAt}
-                                    </p>
+                        {loading ? (
+                            [...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)
+                        ) : recentSubmissions.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">No submissions yet</div>
+                        ) : (
+                            recentSubmissions.map((submission: any, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
+                                >
+                                    <div>
+                                        <h3 className="font-medium">{submission.title}</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            Submitted {formatRelativeTime(submission.submittedAt)}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-semibold text-primary">{submission.score}</p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-semibold">{submission.score}</p>
-                                </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </InfoCard>
 
