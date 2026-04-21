@@ -58,7 +58,7 @@ const data = {
         },
         {
           title: "Attendance",
-          url: "#",
+          url: "/attendance",
         },
       ],
     },

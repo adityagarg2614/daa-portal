@@ -110,6 +110,7 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
         items: [
           { title: "Admin Dashboard", url: "/admin" },
           { title: "Manage Users", url: "/admin/users" },
+          { title: "Manage Attendance", url: "/admin/handle-attendance" },
         ],
       },
       ...data.navMain.filter(item => item.title !== "Overview")
