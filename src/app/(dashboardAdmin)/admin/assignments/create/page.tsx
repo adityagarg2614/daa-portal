@@ -2,6 +2,7 @@
 
 import axios from "axios"
 import React, { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import {
     FileText,
     Search,
@@ -18,6 +19,7 @@ import {
     Loader2,
     Send,
     Trash2,
+    Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FormField } from "@/components/ui/form-field"
@@ -65,12 +67,14 @@ export default function CreateAssignmentPage() {
     const [search, setSearch] = useState("")
     const [difficultyFilter, setDifficultyFilter] = useState("all")
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+    const [isSebRequired, setIsSebRequired] = useState(false)
     const [pendingSubmission, setPendingSubmission] = useState<null | {
         title: string
         description: string
         publishAt: string
         dueAt: string
         problemIds: string[]
+        isSebRequired: boolean
     }>(null)
 
     useEffect(() => {
@@ -89,6 +93,28 @@ export default function CreateAssignmentPage() {
 
         fetchProblems()
     }, [])
+
+    const searchParams = useSearchParams()
+    const editId = searchParams.get("id")
+
+    useEffect(() => {
+        const fetchAssignment = async () => {
+            if (!editId) return
+            try {
+                const res = await axios.get(`/api/admin/assignments/${editId}`)
+                const a = res.data.data
+                setTitle(a.title)
+                setDescription(a.description)
+                setPublishAt(new Date(a.publishAt).toISOString().slice(0, 16))
+                setDueAt(new Date(a.dueAt).toISOString().slice(0, 16))
+                setSelectedProblemIds(a.problemIds.map((p: any) => p._id))
+                setIsSebRequired(a.isSebRequired || false)
+            } catch (error) {
+                console.error("Error fetching assignment:", error)
+            }
+        }
+        fetchAssignment()
+    }, [editId])
 
     const handleProblemToggle = (problemId: string) => {
         setSelectedProblemIds((prev) =>
@@ -174,6 +200,7 @@ export default function CreateAssignmentPage() {
             publishAt: new Date(publishAt).toISOString(),
             dueAt: new Date(dueAt).toISOString(),
             problemIds: selectedProblemIds,
+            isSebRequired,
         })
         setShowConfirmDialog(true)
     }
@@ -186,18 +213,23 @@ export default function CreateAssignmentPage() {
             setShowConfirmDialog(false)
             setPendingSubmission(null)
 
-            const res = await axios.post("/api/admin/assignments", pendingSubmission)
+            const res = editId 
+                ? await axios.patch(`/api/admin/assignments/${editId}`, pendingSubmission)
+                : await axios.post("/api/admin/assignments", pendingSubmission)
 
-            setMessage(res.data.message || "Assignment created successfully")
+            setMessage(res.data.message || (editId ? "Assignment updated successfully" : "Assignment created successfully"))
             setMessageType("success")
 
-            setTitle("")
-            setDescription("")
-            setPublishAt("")
-            setDueAt("")
-            setSelectedProblemIds([])
-            setSearch("")
-            setDifficultyFilter("all")
+            if (!editId) {
+                setTitle("")
+                setDescription("")
+                setPublishAt("")
+                setDueAt("")
+                setSelectedProblemIds([])
+                setIsSebRequired(false)
+                setSearch("")
+                setDifficultyFilter("all")
+            }
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error && 'response' in error
@@ -218,8 +250,8 @@ export default function CreateAssignmentPage() {
         <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
             {/* Enhanced Header */}
             <SectionHeader
-                title="Create Assignment"
-                description="Build a new assignment by selecting problems from the problem bank"
+                title={editId ? "Edit Assignment" : "Create Assignment"}
+                description={editId ? "Update your assignment details and problems" : "Build a new assignment by selecting problems from the problem bank"}
                 icon={FileText}
             />
 
@@ -292,6 +324,33 @@ export default function CreateAssignmentPage() {
                             required
                         />
                     </FormField>
+                </div>
+
+                <div className="rounded-2xl border bg-background p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                <Shield className="h-5 w-5 text-destructive" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-semibold">Safe Exam Browser</h2>
+                                <p className="text-xs text-muted-foreground">Require SEB for secure proctoring. Only verified SEB requests will be allowed.</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isSebRequired}
+                            onClick={() => setIsSebRequired(!isSebRequired)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                isSebRequired ? "bg-destructive" : "bg-muted-foreground/30"
+                            }`}
+                        >
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                isSebRequired ? "translate-x-6" : "translate-x-1"
+                            }`} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Problem Selection Section */}
@@ -605,17 +664,17 @@ export default function CreateAssignmentPage() {
                         }
                         className="w-full md:w-auto min-w-[200px] gap-2"
                         size="lg"
-                        aria-label="Create assignment"
+                        aria-label={editId ? "Update assignment" : "Create assignment"}
                     >
                         {submitting ? (
                             <>
                                 <Loader2 className="h-4 w-4 icon-spin" />
-                                <span>Creating Assignment...</span>
+                                <span>{editId ? "Updating Assignment..." : "Creating Assignment..."}</span>
                             </>
                         ) : (
                             <>
                                 <Send className="h-4 w-4 icon-hover-scale" />
-                                <span>Create Assignment</span>
+                                <span>{editId ? "Update Assignment" : "Create Assignment"}</span>
                             </>
                         )}
                     </Button>
@@ -633,16 +692,16 @@ export default function CreateAssignmentPage() {
                 open={showConfirmDialog}
                 onOpenChange={setShowConfirmDialog}
                 onConfirm={confirmSubmission}
-                title="Confirm Assignment Creation"
+                title={editId ? "Confirm Assignment Update" : "Confirm Assignment Creation"}
                 description={
                     pendingSubmission
-                        ? `You are about to create "${pendingSubmission.title}" with ${pendingSubmission.problemIds.length} problem(s) and ${selectedProblemIds.reduce((sum, id) => {
+                        ? `You are about to ${editId ? "update" : "create"} "${pendingSubmission.title}" with ${pendingSubmission.problemIds.length} problem(s) and ${selectedProblemIds.reduce((sum, id) => {
                             const problem = problems.find(p => p._id === id)
                             return sum + (problem?.marks || 0)
                         }, 0)} total marks.`
-                        : "Are you sure you want to create this assignment?"
+                        : `Are you sure you want to ${editId ? "update" : "create"} this assignment?`
                 }
-                confirmText="Create Assignment"
+                confirmText={editId ? "Update Assignment" : "Create Assignment"}
                 cancelText="Cancel"
                 variant="default"
             />
