@@ -4,6 +4,8 @@ import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
 import { runTestCases } from "@/lib/piston";
 import { ITestResult } from "@/models/Submission";
+import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
+import { headers } from "next/headers";
 
 
 export async function POST(req: Request) {
@@ -28,6 +30,29 @@ export async function POST(req: Request) {
                     message: "assignmentId, problemId, userId, code, and language are required",
                 },
                 { status: 400 }
+            );
+        }
+
+        // SEB Verification
+        const sebCheck = await verifySebSession(assignmentId, userId);
+        if (!sebCheck.success) {
+            return NextResponse.json(
+                { 
+                    success: false, 
+                    message: sebCheck.message,
+                    sebError: sebCheck.errorCode 
+                },
+                { status: 403 }
+            );
+        }
+
+        // Mark attempt as started if it's the first submission and using SEB
+        if (sebCheck.attempt) {
+            const head = await headers();
+            await markAttemptAsStarted(
+                sebCheck.attempt._id.toString(), 
+                head.get("user-agent") || "unknown",
+                head.get("x-forwarded-for") || "127.0.0.1"
             );
         }
 

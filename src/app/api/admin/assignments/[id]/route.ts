@@ -1,5 +1,6 @@
 import { verifyAdmin } from "@/lib/auth";
 import Assignment from "@/models/Assignment";
+import Problem from "@/models/Problem";
 import Submission from "@/models/Submission";
 import { NextResponse } from "next/server";
 
@@ -128,6 +129,73 @@ export async function DELETE(
         console.error("Delete Assignment Error:", error);
         return NextResponse.json(
             { success: false, message: "Failed to delete assignment" },
+            { status: 500 }
+        );
+    }
+}
+
+export async function PATCH(
+    req: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { authorized, response } = await verifyAdmin();
+        if (!authorized) return response;
+
+        const { id } = await params;
+        const body = await req.json();
+
+        const {
+            title,
+            description,
+            publishAt,
+            dueAt,
+            problemIds,
+            isSebRequired,
+        } = body;
+
+        const assignment = await Assignment.findById(id);
+        if (!assignment) {
+            return NextResponse.json(
+                { success: false, message: "Assignment not found" },
+                { status: 404 }
+            );
+        }
+
+        // Calculate total marks if problems changed
+        let totalMarks = assignment.totalMarks;
+        let totalProblems = assignment.totalProblems;
+
+        if (problemIds) {
+            const problems = await Problem.find({ _id: { $in: problemIds } });
+            totalProblems = problems.length;
+            totalMarks = problems.reduce((sum: number, p: any) => sum + (p.marks || 0), 0);
+        }
+
+        const updatedAssignment = await Assignment.findByIdAndUpdate(
+            id,
+            {
+                title: title ?? assignment.title,
+                description: description ?? assignment.description,
+                publishAt: publishAt ?? assignment.publishAt,
+                dueAt: dueAt ?? assignment.dueAt,
+                problemIds: problemIds ?? assignment.problemIds,
+                totalProblems,
+                totalMarks,
+                isSebRequired: isSebRequired !== undefined ? isSebRequired : assignment.isSebRequired,
+            },
+            { new: true }
+        );
+
+        return NextResponse.json({
+            success: true,
+            message: "Assignment updated successfully",
+            assignment: updatedAssignment,
+        });
+    } catch (error) {
+        console.error("Update Assignment Error:", error);
+        return NextResponse.json(
+            { success: false, message: "Failed to update assignment" },
             { status: 500 }
         );
     }

@@ -18,6 +18,7 @@ export async function POST(req: Request) {
             dueAt,
             problemIds,
             createdBy,
+            isSebRequired,
         } = body;
 
         if (!title || !description || !publishAt || !dueAt || !problemIds?.length) {
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
             totalProblems,
             totalMarks,
             createdBy: createdBy || null,
+            isSebRequired: isSebRequired || false,
         });
 
         return NextResponse.json({
