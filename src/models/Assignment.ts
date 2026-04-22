@@ -9,6 +9,7 @@ export interface IAssignment extends Document {
     dueAt: Date;
     createdBy?: string;
     problemIds: string[];
+    isSebRequired?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -52,6 +53,10 @@ const AssignmentSchema: Schema = new Schema(
                 ref: "Problem",
             },
         ],
+        isSebRequired: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 );
