@@ -78,5 +78,5 @@ export const CodeEditor = ({
         }
     }, [value]);
 
-    return <div ref={editorRef} className="min-h-[420px] overflow-hidden rounded-xl border bg-background" />;
+    return <div ref={editorRef} className="h-[520px] rounded-[22px] border bg-background md:h-[600px] xl:h-[680px]" />;
 };
