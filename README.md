@@ -265,7 +265,7 @@ daa-portal/
 
 ## Local Development
 
-## Prerequisites
+### Prerequisites
 
 Make sure you have:
 
@@ -275,13 +275,13 @@ Make sure you have:
 - a Clerk application
 - Docker, if you want local Piston execution through containers
 
-## 1. Install dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-## 2. Create `.env.local`
+### 2. Create `.env.local`
 
 Use values like these:
 
@@ -306,7 +306,7 @@ RESEND_API_KEY=re_...
 FROM_EMAIL=onboarding@your-domain.com
 ```
 
-## 3. Start the app
+### 3. Start the app
 
 ```bash
 npm run dev
@@ -413,7 +413,7 @@ The API surface is organized by responsibility:
 
 There is a small `scripts/` area for maintenance and admin workflows.
 
-See [scripts/README.md](/Users/adityagarg/Desktop/daa-portal/scripts/README.md) for details.
+See [scripts/README.md](./scripts/README.md) for details.
 
 Current script documentation focuses on:
 
@@ -437,6 +437,7 @@ Current script documentation focuses on:
 - The project uses **App Router** route groups like `(dashboard)` and `(dashboardAdmin)`.
 - MongoDB connections are cached globally to avoid repeated connections during development.
 - Inngest is already wired for Clerk user sync events.
+- Use `npm run dev:inngest` if you want to run the local Inngest dev server alongside the app.
 - Code execution is intentionally separated behind `src/lib/piston.ts`, which makes the grading flow easier to evolve later.
 
 ---
