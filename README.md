@@ -1,687 +1,473 @@
-# 🎯 Algo-Grade DAA Portal
+# Algo-Grade
 
-> **A Modern Auto-Grading Platform for Design & Analysis of Algorithms**  
-> Built for IIITDMJ • Powered by Next.js 16 • Real-time Code Execution
+<p align="center">
+  <strong>A full-stack DAA course portal for assignments, auto-grading, attendance, announcements, and role-based academic workflows.</strong>
+</p>
 
-![Next.js](https://img.shields.io/badge/Next.js-16.2.1-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![Clerk](https://img.shields.io/badge/Clerk-7.0.6-6c47ff?logo=clerk)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.1-47A248?logo=mongodb)
-![Tailwind](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwind-css)
+<p align="center">
+  Built with Next.js 16, React 19, Clerk, MongoDB, Tailwind CSS 4, and a self-hosted Piston execution engine.
+</p>
 
----
-
-## 📖 Table of Contents
-
-- [Overview](#-overview)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Getting Started](#-getting-started)
-- [Project Structure](#-project-structure)
-- [Database Models](#-database-models)
-- [Key Workflows](#-key-workflows)
-- [Admin Management](#-admin-management)
-- [Utilities & Scripts](#-utilities--scripts)
-- [Environment Variables](#-environment-variables)
-- [Development](#-development)
-- [Deployment](#-deployment)
-- [Contributing](#-contributing)
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-149ECA?logo=react" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Auth-Clerk-6C47FF" alt="Clerk" />
+  <img src="https://img.shields.io/badge/Styling-Tailwind%20CSS%204-06B6D4?logo=tailwindcss" alt="Tailwind CSS 4" />
+</p>
 
 ---
 
-## 🌟 Overview
+## Overview
 
-**Algo-Grade** is a full-stack web application designed to streamline the assignment submission and auto-grading process for the **Design & Analysis of Algorithms (DAA)** course at **IIITDMJ**.
+`Algo-Grade` is a course portal built for **Design and Analysis of Algorithms (DAA)** workflows. It gives students a dedicated place to view assignments, write code, run solutions, submit answers, track attendance, read announcements, and review results. On the admin side, it provides tools to manage problems, assemble assignments, monitor submissions, handle attendance, and onboard admin users safely.
 
-### What It Does
+The project uses:
 
-- 👨‍🎓 **Students** can write, test, and submit algorithm solutions in multiple languages
-- 🤖 **Auto-grading** with real-time feedback using Piston (Docker-based code execution)
-- 👨‍🏫 **Admins** can create problems, assignments, and view analytics
-- 📊 **Instant results** with detailed test case breakdowns
-- 🌓 **Beautiful UI** with dark/light mode support
-
-### Core Value Proposition
-
-| Traditional | Algo-Grade |
-|-------------|------------|
-| Manual grading (days) | Instant auto-grading (seconds) |
-| Limited test cases | Comprehensive test coverage |
-| No code execution history | Full submission history |
-| Email submissions | Centralized platform |
-| Subjective evaluation | Objective, test-based scoring |
+- **Clerk** for authentication and identity
+- **MongoDB + Mongoose** for application data
+- **Piston** for multi-language code execution
+- **Next.js App Router** for UI and API routes
+- **Inngest** for user-sync event handling
+- **Resend** for welcome-email delivery
 
 ---
 
-## ✨ Features
+## What The Project Does
 
-### 🔐 Authentication & Authorization
+### For Students
 
-- **Clerk Integration** - Secure OAuth with Google, GitHub, Email
-- **Role-Based Access** - Separate dashboards for students and admins
-- **IIITDMJ Email Validation** - Auto-extract roll numbers from `@iiitdmj.ac.in` emails
-- **Onboarding Flow** - Seamless profile completion with roll number detection
+- Sign in and complete onboarding using an `@iiitdmj.ac.in` email
+- Auto-detect roll number from the college email
+- Browse active and upcoming assignments
+- Open a problem set and code directly in the browser
+- Run code and submit solutions in multiple languages
+- View recent results, scores, and dashboard summaries
+- Track class and assignment attendance
+- Read announcements and updates
 
-### 📝 Assignment Management
+### For Admins
 
-- **Create Problems** - Add descriptions, constraints, examples, test cases
-- **Multi-language Support** - C++, Java, Python, JavaScript
-- **Starter Code Templates** - Pre-filled code for each language
-- **Difficulty Levels** - Easy, Medium, Hard tagging
-- **Marks Distribution** - Custom marks per problem
-
-### 🚀 Code Execution & Auto-Grading
-
-- **Real-time Compilation** - Powered by Piston (self-hosted Docker)
-- **Test Case Execution** - Hidden and visible test cases
-- **Performance Metrics** - Execution time and memory usage tracking
-- **Detailed Feedback** - Expected vs actual output comparison
-- **Re-submission Allowed** - Students can improve their solutions
-
-### 📊 Analytics & Dashboard
-
-- **Student Progress** - Track completed assignments and scores
-- **Admin Analytics** - View submission statistics and performance
-- **Assignment Overview** - Due dates, completion status, total marks
-- **Test Results Display** - Collapsible, color-coded test case results
-
-### 🎨 User Experience
-
-- **Modern UI** - Built with shadcn/ui components
-- **Responsive Design** - Works on desktop, tablet, and mobile
-- **Dark/Light Mode** - Full theme support with `next-themes`
-- **Code Editor** - Monaco/CodeMirror with syntax highlighting
-- **Toast Notifications** - Real-time success/error feedback
-- **Loading States** - Spinners and progress indicators
+- Access a dedicated admin dashboard
+- Create and manage problems with:
+  - descriptions
+  - constraints
+  - examples
+  - visible/hidden test cases
+  - starter code for multiple languages
+- Create assignments by combining problems and setting publish/due dates
+- Manage students and users
+- Track attendance
+- Publish announcements
+- Create pending admin accounts through a protected setup flow
+- Send welcome emails
 
 ---
 
-## 🛠️ Tech Stack
+## Core Highlights
 
-### Frontend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Next.js** | 16.2.1 | React framework with App Router |
-| **TypeScript** | 5.x | Type-safe development |
-| **Tailwind CSS** | 4.x | Utility-first styling |
-| **shadcn/ui** | Latest | Beautiful UI components |
-| **Radix UI** | 1.4.3 | Accessible primitives |
-| **Lucide React** | 0.577.0 | Icon library |
-| **next-themes** | 0.4.6 | Dark/light mode |
-| **Motion** | 12.38.0 | Animations |
-
-### Backend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **MongoDB** | 7.1.0 | NoSQL database |
-| **Mongoose** | 9.3.1 | ODM for MongoDB |
-| **Clerk** | 7.0.6 | Authentication & user management |
-| **Inngest** | 4.0.4 | Background jobs & workflows |
-| **Zod** | 4.3.6 | Schema validation |
-
-### Code Execution
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Piston** | Latest | Code execution engine |
-| **Docker** | Latest | Sandboxed execution |
-| **CodeMirror** | 6.x | Code editor component |
-
-### Data Visualization
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Recharts** | 2.15.4 | Charts and graphs |
-| **date-fns** | 4.1.0 | Date manipulation |
+- **Role-based experience**: student and admin users are separated through Clerk metadata plus MongoDB-backed checks.
+- **Auto-grading workflow**: code is executed against test cases through a self-hosted Piston service.
+- **Multi-language support**: current language support includes `C++`, `Java`, `Python`, and `JavaScript`.
+- **Real course workflows**: attendance, announcements, onboarding, submission history, and admin setup are all part of the product.
+- **Docker-ready local stack**: the repo includes `Dockerfile`, `docker-compose.yml`, and a `Makefile` for app + MongoDB + Piston.
+- **Modern UI**: responsive interface built with Tailwind CSS, shadcn/ui-style components, CodeMirror, and polished dashboard pages.
 
 ---
 
-## 🏗️ Architecture
+## Product Flow
 
-### High-Level Diagram
+```mermaid
+flowchart LR
+    A[User signs in with Clerk] --> B{Role}
+    B -->|Student| C[Onboarding]
+    C --> D[Student Dashboard]
+    D --> E[Assignments]
+    E --> F[Code Editor]
+    F --> G[Compile / Run]
+    G --> H[Piston]
+    H --> I[Submission + Results in MongoDB]
+    D --> J[Attendance]
+    D --> K[Announcements]
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Landing    │  │   Student    │  │    Admin     │          │
-│  │    Page      │  │  Dashboard   │  │  Dashboard   │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│         ↓                  ↓                  ↓                 │
-│  ┌────────────────────────────────────────────────────┐        │
-│  │           Clerk Authentication Provider            │        │
-│  └────────────────────────────────────────────────────┘        │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ HTTPS
-┌─────────────────────────────────────────────────────────────────┐
-│                      APPLICATION LAYER                           │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Next.js App Router (API Routes)             │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │   │
-│  │  │ /api/    │  │ /api/    │  │ /api/    │  │ /api/    │ │   │
-│  │  │onboarding│  │ student  │  │  admin   │  │ compile  │ │   │
-│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                 Business Logic Layer                     │   │
-│  │  - Authentication Middleware (proxy.ts)                  │   │
-│  │  - Route Protection & Role Checks                        │   │
-│  │  - Request Validation (Zod)                              │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                       DATA LAYER                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   MongoDB    │  │    Piston    │  │   Clerk DB   │          │
-│  │  (Problems,  │  │  (Docker API │  │   (Users,    │          │
-│  │  Users, etc) │  │   for Code)  │  │   Sessions)  │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Request Flow: Student Submission
-
-```
-Student clicks "Save"
-        ↓
-Frontend: POST /api/student/submissions
-        ↓
-Backend: Fetch problem test cases
-        ↓
-Backend: POST /api/compile
-        ↓
-Piston: Execute code in Docker
-        ↓
-Piston: Run test cases, compare outputs
-        ↓
-Backend: Save submission to MongoDB
-        ↓
-Frontend: Display results with UI feedback
+    B -->|Admin| L[Admin Dashboard]
+    L --> M[Create Problems]
+    L --> N[Create Assignments]
+    L --> O[Manage Students]
+    L --> P[Announcements / Attendance]
 ```
 
 ---
 
-## 🚀 Getting Started
+## Tech Stack
 
-### Prerequisites
-
-Before you begin, ensure you have:
-
-- **Node.js** 20+ ([Download](https://nodejs.org/))
-- **npm/pnpm/yarn** package manager
-- **MongoDB** instance (local or Atlas)
-- **Clerk Account** ([Sign up](https://clerk.com/))
-- **Docker** (for Piston code execution)
-
-### Installation
-
-#### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd daa-portal
-```
-
-#### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-#### 3. Set Up Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```env
-# Clerk Authentication
-CLERK_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-
-# MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/daa-portal
-# or for Atlas:
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/daa-portal
-
-# Admin Setup (for creating initial admin)
-ADMIN_SETUP_SECRET=your_super_secret_key_here
-
-# Application
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-#### 4. Set Up Piston (Code Execution)
-
-```bash
-# Run Piston in Docker
-docker run -d --name piston --privileged -p 2000:2000 \
-  ghcr.io/engineer-man/piston:latest
-```
-
-Verify Piston is running:
-```bash
-curl http://localhost:2000/api/v2/languages
-```
-
-#### 5. Start Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) 🎉
+| Layer | Tools |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
+| UI | Radix-based UI patterns, shadcn-style components, Lucide icons, Motion |
+| Auth | Clerk |
+| Database | MongoDB, Mongoose |
+| Code Execution | Self-hosted Piston |
+| Async / Events | Inngest |
+| Email | Resend |
+| Charts / Visuals | Recharts, custom attendance heatmap |
+| Editor | CodeMirror 6 |
 
 ---
 
-## 📁 Project Structure
+## Architecture
 
+```mermaid
+flowchart TD
+    UI[Next.js App Router UI] --> API[Route Handlers / API]
+    API --> AUTH[Clerk Auth + Middleware]
+    API --> DB[(MongoDB)]
+    API --> EXEC[Piston Execution API]
+    API --> MAIL[Resend]
+    CLERK[Clerk Webhooks / User Events] --> INNGEST[Inngest Functions]
+    INNGEST --> DB
 ```
+
+### Important implementation pieces
+
+- `src/proxy.ts`
+  Route protection, admin redirects, onboarding enforcement, and student/admin route separation.
+
+- `src/lib/auth.ts`
+  Admin verification helper that checks Clerk metadata and MongoDB, and can auto-sync missing admin records.
+
+- `src/lib/piston.ts`
+  Central code execution utility for running code and grading test cases.
+
+- `src/inngest/functions.ts`
+  Syncs Clerk users into MongoDB on create/update and removes them on deletion.
+
+- `src/models/*`
+  Mongoose models for users, assignments, problems, submissions, attendance, announcements, and email logs.
+
+---
+
+## Data Model
+
+The project currently defines these main collections:
+
+| Model | Purpose |
+| --- | --- |
+| `User` | Stores app-level user profile, role, email, roll number, and Clerk linkage |
+| `Problem` | Problem statement, difficulty, marks, examples, test cases, starter code |
+| `Assignment` | Assignment metadata, publish/due dates, and linked problem IDs |
+| `Submission` | Student code submissions, language, score, execution data, and test results |
+| `Attendance` | Class and assignment attendance sessions with per-student records |
+| `Announcement` | Published course updates with type, priority, and schedule fields |
+| `EmailLog` | Audit trail for emails sent through Resend |
+
+---
+
+## Key Features In This Repo
+
+### 1. Secure onboarding
+
+- Student onboarding validates roll number format
+- Roll number must match the signed-in IIITDMJ email
+- Admin onboarding supports pre-created pending admins
+
+### 2. Assignment workflow
+
+- Admins create problems first
+- Assignments are built by selecting problem-bank entries
+- Students see publish/due state and can work problem-by-problem
+
+### 3. Code execution
+
+- `POST /api/compile` supports:
+  - run code with stdin
+  - run code against test cases
+- Execution returns output, errors, timing, and memory usage
+
+### 4. Submission evaluation
+
+- Submission records store code, language, score, and detailed test results
+- Students can review recent performance from the dashboard and results page
+
+### 5. Attendance tracking
+
+- Attendance supports both `class` and `assignment` session types
+- Assignment attendance can be synced when a student opens an assignment
+- Students get summary cards and a heatmap view
+
+### 6. Admin setup flow
+
+- Admins can be created using a protected setup endpoint
+- Pending admins are stored before first login
+- On first successful login, the `pending_` Clerk ID is replaced with the real one
+
+### 7. Announcements and email
+
+- Admin-created announcements are available to students
+- Welcome emails are sent through Resend and logged in MongoDB
+
+---
+
+## Project Structure
+
+```text
 daa-portal/
-├── 📂 src/
-│   ├── 📂 app/                      # Next.js App Router
-│   │   ├── 📂 (auth)/               # Authentication pages
-│   │   │   └── LandingPage.tsx
-│   │   ├── 📂 (dashboard)/          # Student dashboard layout
-│   │   ├── 📂 (dashboardAdmin)/     # Admin dashboard layout
-│   │   ├── 📂 admin/                # Admin pages
-│   │   ├── 📂 api/                  # API routes
-│   │   │   ├── 📂 admin/            # Admin endpoints
-│   │   │   ├── 📂 compile/          # Code execution
-│   │   │   ├── 📂 inngest/          # Background jobs
-│   │   │   ├── 📂 onboarding/       # Profile completion
-│   │   │   ├── 📂 student/          # Student endpoints
-│   │   │   └── 📂 users/            # User management
-│   │   ├── 📂 onboarding/           # Onboarding flow
-│   │   ├── 📂 setup-admin/          # Admin setup page
-│   │   ├── layout.tsx               # Root layout
-│   │   ├── page.tsx                 # Entry point
-│   │   └── globals.css              # Global styles
-│   │
-│   ├── 📂 components/
-│   │   ├── 📂 ui/                   # shadcn/ui components (55+)
-│   │   ├── providers.tsx            # Clerk & Theme providers
-│   │   └── SignInModalButton.tsx
-│   │
-│   ├── 📂 models/                   # Mongoose schemas
-│   │   ├── User.ts                  # User schema (admin/student)
-│   │   ├── Problem.ts               # Problem schema
-│   │   ├── Assignment.ts            # Assignment schema
-│   │   ├── Submission.ts            # Submission schema
-│   │   └── Announcement.ts          # Announcement schema
-│   │
-│   ├── 📂 lib/                      # Utilities
-│   │   ├── db.ts                    # MongoDB connection
-│   │   ├── piston.ts                # Piston API wrapper
-│   │   └── utils.ts                 # Helper functions
-│   │
-│   ├── 📂 inngest/                  # Background functions
-│   │   └── functions.ts
-│   │
-│   ├── proxy.ts                     # Clerk middleware
-│   └── doc/                         # Documentation
-│
-├── 📂 scripts/                      # Utility scripts
-│   ├── get-users.js                 # List all users
-│   ├── drop-rollno-index.js         # Fix duplicate key errors
-│   ├── sync-pending-admins.js       # Check pending admins
-│   ├── cleanup-admins.js            # Admin audit utility
-│   └── README.md                    # Scripts documentation
-│
-├── 📂 public/                       # Static assets
-├── 📂 types/                        # TypeScript types
-│   └── globals.d.ts
-│
-├── package.json
-├── tsconfig.json
-├── next.config.ts
-├── tailwind.config.ts
+├── src/
+│   ├── app/
+│   │   ├── (auth)/                # landing page
+│   │   ├── (dashboard)/           # student-facing routes
+│   │   ├── (dashboardAdmin)/      # admin-facing routes
+│   │   └── api/                   # route handlers
+│   ├── components/                # shared UI and domain components
+│   ├── hooks/                     # reusable hooks
+│   ├── inngest/                   # Inngest client and functions
+│   ├── lib/                       # auth, db, piston, email utilities
+│   └── models/                    # Mongoose models
+├── public/                        # static assets
+├── scripts/                       # utility/admin scripts
+├── Dockerfile
+├── docker-compose.yml
+├── Makefile
 └── README.md
 ```
 
 ---
 
-## 🗄️ Database Models
+## Main Routes
 
-### User
+### Student pages
 
-Base schema for both students and admins.
+- `/`
+- `/onboarding`
+- `/home`
+- `/assignment`
+- `/assignment/[id]`
+- `/submission`
+- `/results`
+- `/attendance`
+- `/announcements`
 
-```typescript
-interface IUser {
-  clerkId: string;           // Clerk user ID
-  name?: string;             // Full name
-  email?: string;            // Email address
-  rollNo?: string;           // Roll number (students only)
-  role: "admin" | "student"; // User role
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
+### Admin pages
 
-### Problem
-
-Coding problems with test cases and starter code.
-
-```typescript
-interface IProblem {
-  title: string;
-  slug: string;
-  description: string;
-  constraints: string[];
-  difficulty: "Easy" | "Medium" | "Hard";
-  tags: string[];
-  marks: number;
-  examples: { input, output, explanation }[];
-  testCases: { input, output, isHidden }[];
-  starterCode: { cpp, java, python, javascript };
-  createdBy?: ObjectId;
-}
-```
-
-### Assignment
-
-Collection of problems with deadlines.
-
-```typescript
-interface IAssignment {
-  title: string;
-  description: string;
-  totalProblems: number;
-  totalMarks: number;
-  publishAt: Date;
-  dueAt: Date;
-  problemIds: ObjectId[];
-  createdBy?: ObjectId;
-}
-```
-
-### Submission
-
-Student code submissions with execution results.
-
-```typescript
-interface ISubmission {
-  assignmentId: ObjectId;
-  problemId: ObjectId;
-  userId: ObjectId;
-  code: string;
-  language: string;
-  status: "Attempted" | "Submitted" | "Evaluated";
-  score?: number;
-  testResults: {
-    testCaseIndex: number;
-    passed: boolean;
-    input: string;
-    expectedOutput: string;
-    actualOutput: string;
-    error?: string;
-  }[];
-  executionTime?: number;
-  memoryUsed?: number;
-}
-```
+- `/admin`
+- `/admin/problems`
+- `/admin/problems/create`
+- `/admin/assignments`
+- `/admin/assignments/create`
+- `/admin/students`
+- `/admin/users`
+- `/admin/announcements`
+- `/admin/handle-attendance`
+- `/setup-admin`
 
 ---
 
-## 🔄 Key Workflows
+## Local Development
 
-### 1. Student Onboarding
+## Prerequisites
 
-```
-1. User signs in with IIITDMJ email (rollNo@iiitdmj.ac.in)
-        ↓
-2. Redirected to /onboarding
-        ↓
-3. Roll number auto-extracted from email
-        ↓
-4. User confirms name and submits
-        ↓
-5. Backend updates Clerk metadata + MongoDB
-        ↓
-6. Redirected to /home (student dashboard)
-```
+Make sure you have:
 
-### 2. Assignment Submission
+- `Node.js 20+`
+- `npm`
+- a MongoDB instance
+- a Clerk application
+- Docker, if you want local Piston execution through containers
 
-```
-1. Student writes code in editor
-        ↓
-2. Clicks "Save" button
-        ↓
-3. Frontend sends code to /api/student/submissions
-        ↓
-4. Backend fetches problem test cases
-        ↓
-5. Calls /api/compile with code + test cases
-        ↓
-6. Piston executes code in Docker sandbox
-        ↓
-7. Results returned with pass/fail per test
-        ↓
-8. Submission saved to MongoDB (if all tests pass)
-        ↓
-9. UI displays detailed results with metrics
-```
-
-### 3. Admin Creation
-
-```
-1. Admin accesses /setup-admin with secret
-        ↓
-2. Enters email and name
-        ↓
-3. Backend creates user with clerkId: "pending_<email>"
-        ↓
-4. Admin signs in with Clerk
-        ↓
-5. Middleware detects pending admin
-        ↓
-6. Updates clerkId and Clerk metadata
-        ↓
-7. Redirects to /admin dashboard
-```
-
----
-
-## 👨‍💼 Admin Management
-
-### Setting Up Initial Admin
-
-#### Method 1: Via Dashboard (Recommended)
-
-1. Navigate to `/setup-admin`
-2. Enter admin email and name
-3. Provide `ADMIN_SETUP_SECRET` from environment
-4. Submit form
-
-#### Method 2: Via API
+## 1. Install dependencies
 
 ```bash
-curl -X POST http://localhost:3000/api/admin/setup \
-  -H "Authorization: Bearer YOUR_ADMIN_SETUP_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@iiitdmj.ac.in",
-    "name": "Admin Name"
-  }'
+npm install
 ```
 
-### Admin Scripts
+## 2. Create `.env.local`
 
-Manage admins with utility scripts:
+Use values like these:
 
-```bash
-# View all users
-node scripts/get-users.js
+```env
+# Clerk
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 
-# Check admin status (pending/active)
-node scripts/cleanup-admins.js
+# Database
+MONGODB_URI=mongodb://localhost:27017/daa-portal
 
-# Fix duplicate key errors
-node scripts/drop-rollno-index.js
+# Code execution
+PISTON_API_URL=http://localhost:2000/api/v2
+
+# Admin setup
+ADMIN_SETUP_SECRET=replace_with_a_strong_secret
+
+# Optional email support
+RESEND_API_KEY=re_...
+FROM_EMAIL=onboarding@your-domain.com
 ```
 
-See [`scripts/README.md`](scripts/README.md) for detailed documentation.
-
----
-
-## 🛠️ Utilities & Scripts
-
-The project includes several utility scripts for database management:
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `get-users.js` | Display all users | `node scripts/get-users.js` |
-| `drop-rollno-index.js` | Remove problematic index | `node scripts/drop-rollno-index.js` |
-| `sync-pending-admins.js` | List pending admins | `node scripts/sync-pending-admins.js` |
-| `cleanup-admins.js` | Full admin audit | `node scripts/cleanup-admins.js` |
-
-**Note:** Update `MONGODB_URI` in each script before running.
-
----
-
-## 📝 Environment Variables
-
-### Required Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `CLERK_SECRET_KEY` | Clerk secret key | `sk_test_...` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | `pk_test_...` |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Sign-in route | `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Sign-up route | `/sign-up` |
-| `MONGODB_URI` | MongoDB connection string | `mongodb://...` |
-| `ADMIN_SETUP_SECRET` | Secret for admin creation | `your_secret` |
-
-### Optional Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_APP_URL` | Application URL | `http://localhost:3000` |
-
----
-
-## 💻 Development
-
-### Available Scripts
+## 3. Start the app
 
 ```bash
-# Start development server
 npm run dev
-
-# Start Inngest dev server (background jobs)
-npm run dev:inngest
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-
-# Run ESLint
-npm run lint
 ```
 
-### Code Style
+The app will be available at [http://localhost:3000](http://localhost:3000).
 
-- **TypeScript** - Strict mode enabled
-- **ESLint** - Next.js recommended config
-- **Prettier** - Auto-formatted on save
+---
 
-### Testing
+## Docker Workflow
+
+This repo includes a ready-to-use local container stack for:
+
+- Next.js app
+- MongoDB
+- Piston
+
+### Start everything
 
 ```bash
-# Run tests (when implemented)
-npm test
+make up
 ```
 
----
-
-## 🚢 Deployment
-
-### Vercel (Recommended)
-
-1. Push code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Add environment variables
-4. Deploy
-
-### Self-Hosted
+or
 
 ```bash
-# Build
-npm run build
-
-# Start
-npm run start
-
-# Or use PM2
-pm2 start npm --name "daa-portal" -- start
+docker compose up -d --build
 ```
 
-### Docker
+### Stop everything
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
+```bash
+make down
 ```
 
----
+### View logs
 
-## 🤝 Contributing
+```bash
+make logs
+```
 
-### How to Contribute
+### Clean containers and volumes
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+make clean
+```
 
-### Code of Conduct
+### Important note
 
-- Be respectful and inclusive
-- Write clear, documented code
-- Test your changes thoroughly
-- Follow the existing code style
+`docker-compose.yml` injects:
 
----
+- `MONGODB_URI=mongodb://mongo:27017/daa-portal`
+- `PISTON_API_URL=http://piston:2000/api/v2`
 
-## 📄 License
-
-This project is proprietary software developed for IIITDMJ's DAA course.
+So if you run through Docker Compose, the app talks to the containerized services automatically.
 
 ---
 
-## 🙏 Acknowledgments
+## Environment Variables
 
-- **[Next.js](https://nextjs.org/)** - The React Framework
-- **[Clerk](https://clerk.com/)** - Authentication platform
-- **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful UI components
-- **[Piston](https://github.com/engineer-man/piston)** - Code execution engine
-- **[MongoDB](https://www.mongodb.com/)** - Database platform
-
----
-
-## 📞 Support
-
-For issues and questions:
-- Create an issue on GitHub
-- Contact the development team
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `CLERK_SECRET_KEY` | Yes | Server-side Clerk authentication |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Client-side Clerk setup |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Recommended | Sign-in route for Clerk |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Recommended | Sign-up route for Clerk |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `PISTON_API_URL` | Yes | Base URL of the Piston API |
+| `ADMIN_SETUP_SECRET` | Recommended | Secret for protected admin creation |
+| `RESEND_API_KEY` | Optional | Required only if using welcome email flow |
+| `FROM_EMAIL` | Optional | Sender address for welcome emails |
 
 ---
 
-**Built with ❤️ by the Algo-Grade Team**  
-*IIITDMJ • Design & Analysis of Algorithms*
+## How Admin Setup Works
+
+The repository includes a protected admin creation flow:
+
+1. An initial admin can be created through `/api/admin/setup`.
+2. If the user has not signed in yet, the app stores a placeholder `clerkId` in the form `pending_<email>`.
+3. On first real login, the app replaces the placeholder with the actual Clerk user ID.
+4. Clerk metadata is updated so the user is treated as an admin on future requests.
+
+This makes the admin onboarding flow safer and easier to control for academic deployments.
+
+---
+
+## API Areas
+
+The API surface is organized by responsibility:
+
+| Area | Examples |
+| --- | --- |
+| Student | `/api/student/dashboard`, `/api/student/assignments`, `/api/student/results` |
+| Admin | `/api/admin/problems`, `/api/admin/assignments`, `/api/admin/students` |
+| Platform | `/api/compile`, `/api/health`, `/api/onboarding/complete` |
+| Attendance | `/api/attendance/sync-assignment` |
+| Email | `/api/admin/email/welcome` |
+| Background / Events | `/api/inngest` |
+
+---
+
+## Scripts
+
+There is a small `scripts/` area for maintenance and admin workflows.
+
+See [scripts/README.md](/Users/adityagarg/Desktop/daa-portal/scripts/README.md) for details.
+
+Current script documentation focuses on:
+
+- auditing users
+- checking pending admins
+- admin cleanup workflows
+- fixing the old `rollNo` index issue
+
+---
+
+## Deployment Notes
+
+- `next.config.ts` uses `output: "standalone"` for container-friendly builds.
+- The `Dockerfile` builds a standalone Next.js image and exposes port `3000`.
+- `/api/health` is available for health checks.
+
+---
+
+## Development Notes
+
+- The project uses **App Router** route groups like `(dashboard)` and `(dashboardAdmin)`.
+- MongoDB connections are cached globally to avoid repeated connections during development.
+- Inngest is already wired for Clerk user sync events.
+- Code execution is intentionally separated behind `src/lib/piston.ts`, which makes the grading flow easier to evolve later.
+
+---
+
+## Best Fit Use Case
+
+This codebase is a strong fit if you want to build or extend:
+
+- a DAA lab portal
+- an auto-grading academic platform
+- a coding assignment system with admin workflows
+- a college internal portal with role-based dashboards
+
+---
+
+## Status
+
+This is not a bare starter template. It is an actively structured academic product with:
+
+- student and admin dashboards
+- real database models
+- protected route flows
+- auto-grading support
+- attendance tracking
+- announcements
+- email and admin utilities
+
+If you want to improve it further, the next natural additions would be test coverage, stronger env validation, and production deployment hardening.
+
+---
+
+## License
+
+Add your preferred license here if this project will be shared publicly.
