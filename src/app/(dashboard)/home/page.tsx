@@ -1,378 +1,473 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { useUser } from "@clerk/nextjs"
 import {
-    BookOpen,
-    ClipboardCheck,
-    Trophy,
-    Bell,
-    CalendarCheck,
-    Clock,
     ArrowRight,
+    Bell,
+    BookOpen,
+    CalendarCheck,
+    ClipboardCheck,
+    Clock,
+    Sparkles,
+    Trophy,
 } from "lucide-react"
 import Link from "next/link"
-import { StatsCard } from "@/components/ui/stats-card"
-import { InfoCard } from "@/components/ui/info-card"
-import { SectionHeader } from "@/components/ui/section-header"
 import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/ui/empty-state"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { format } from "date-fns"
 
+type DashboardData = {
+    stats: {
+        totalAssignments: number
+        pendingAssignments: number
+        completedAssignments: number
+        averageScore: string | number
+    }
+    upcomingAssignments: Array<{
+        title: string
+        due: string
+        status: string
+        _id?: string
+    }>
+    recentResults: Array<{
+        title: string
+        submittedAt: string
+        score: string | number
+    }>
+    attendance?: {
+        percentage?: number
+    }
+}
+
+type Announcement = {
+    _id: string
+    content: string
+}
+
 export default function HomePage() {
     const { user } = useUser()
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<DashboardData | null>(null)
     const [loading, setLoading] = useState(true)
 
     const fetchDashboardData = useCallback(async () => {
         try {
-            const response = await fetch("/api/student/dashboard");
-            const resData = await response.json();
+            const response = await fetch("/api/student/dashboard")
+            const resData = await response.json()
             if (resData.success) {
-                setData(resData.data);
+                setData(resData.data)
             }
         } catch (error) {
-            console.error("Error fetching dashboard data:", error);
-            toast.error("Failed to load dashboard data");
+            console.error("Error fetching dashboard data:", error)
+            toast.error("Failed to load dashboard data")
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    }, []);
+    }, [])
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        const timer = window.setTimeout(() => {
+            void fetchDashboardData()
+        }, 0)
 
-    useRefetchOnFocus(fetchDashboardData);
+        return () => window.clearTimeout(timer)
+    }, [fetchDashboardData])
 
-    const stats = data ? [
-        {
-            title: "Total Assignments",
-            value: data.stats.totalAssignments.toString(),
-            subtitle: "In the portal",
-            icon: BookOpen,
-        },
-        {
-            title: "Pending Assignments",
-            value: data.stats.pendingAssignments.toString(),
-            subtitle: "To be completed",
-            icon: Clock,
-        },
-        {
-            title: "Completed",
-            value: data.stats.completedAssignments.toString(),
-            subtitle: "Solved by you",
-            icon: ClipboardCheck,
-        },
-        {
-            title: "Average Score",
-            value: data.stats.averageScore,
-            subtitle: "Performance",
-            icon: Trophy,
-        },
-    ] : []
+    useRefetchOnFocus(fetchDashboardData)
 
-    const upcomingAssignments = data?.upcomingAssignments || []
-    const recentSubmissions = data?.recentResults || []
+    const stats = useMemo(() => {
+        if (!data) return null
+
+        return {
+            totalAssignments: data.stats.totalAssignments,
+            pendingAssignments: data.stats.pendingAssignments,
+            completedAssignments: data.stats.completedAssignments,
+            averageScore: data.stats.averageScore,
+            attendance: data.attendance?.percentage || 0,
+        }
+    }, [data])
+
+    const dashboardTone = useMemo(() => {
+        if (!stats) return "Your student workspace is getting ready."
+        if (stats.pendingAssignments > 0) {
+            return "You have live work waiting, and this dashboard keeps the next steps clear."
+        }
+        if (stats.completedAssignments > 0) {
+            return "Your recent work is shaping a steady academic rhythm."
+        }
+        return "Your dashboard is clear and ready for the next assignment cycle."
+    }, [stats])
 
     const formatDueDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return format(date, "MMM d, yyyy h:mm a");
+        const date = new Date(dateString)
+        return format(date, "MMM d, yyyy h:mm a")
     }
 
     const formatRelativeTime = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
-        
-        if (diffInDays === 0) return "Today";
-        if (diffInDays === 1) return "Yesterday";
-        return `${diffInDays} days ago`;
+        const date = new Date(dateString)
+        const now = new Date()
+        const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24))
+
+        if (diffInDays === 0) return "Today"
+        if (diffInDays === 1) return "Yesterday"
+        return `${diffInDays} days ago`
     }
 
-    const getStatusClasses = (status: string) => {
+    const getAssignmentStatusStyles = (status: string) => {
         switch (status) {
             case "Active":
-                return "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
             case "Upcoming":
-                return "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                return "border-sky-500/20 bg-sky-500/10 text-sky-500"
             default:
-                return "bg-muted text-muted-foreground"
+                return "border-border/60 bg-background/70 text-foreground"
         }
     }
 
-    return (
-        <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            {/* Enhanced Header */}
-            <SectionHeader
-                title={`Welcome back, ${user?.firstName || "Student"} 👋`}
-                description="Here is an overview of your assignments, submissions, and recent updates"
-            />
-
-            {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" role="region" aria-label="Statistics">
-                {loading ? (
-                    [...Array(4)].map((_, i) => (
-                        <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
-                    ))
-                ) : (
-                    stats.map((item) => (
-                        <StatsCard
-                            key={item.title}
-                            icon={item.icon}
-                            title={item.title}
-                            value={item.value}
-                            subtitle={item.subtitle}
-                        />
-                    ))
-                )}
+    if (loading) {
+        return (
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
+                <HomeDashboardSkeleton />
             </div>
+        )
+    }
 
-            {/* Main Content Grid */}
-            <div className="grid gap-4 xl:grid-cols-3">
-                {/* Upcoming Assignments */}
-                <InfoCard
-                    title="Upcoming Assignments"
+    return (
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
+            <section className="relative overflow-hidden rounded-[32px] border border-border/60 bg-linear-to-br from-card via-card to-cyan-500/8 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.65)]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.12),transparent_30%)]" />
+                <div className="relative grid gap-8 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1.35fr_0.95fr] xl:px-8">
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Badge className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-500 shadow-none">
+                                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                Student Dashboard
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full px-3 py-1">
+                                <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+                                Assignments, attendance, and results in one place
+                            </Badge>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                                Welcome back, {user?.firstName || "Student"}
+                            </h1>
+                            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                                {dashboardTone}
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+                                    Current Focus
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-end gap-3">
+                                    <span className="text-5xl font-black leading-none tracking-[-0.06em] text-cyan-500">
+                                        {stats?.pendingAssignments || 0}
+                                    </span>
+                                    <div className="mb-1 rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-sm text-muted-foreground backdrop-blur">
+                                        pending assignments ready to tackle
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <HeroChip
+                                    label="Assignments"
+                                    value={String(stats?.totalAssignments || 0)}
+                                    tone="slate"
+                                />
+                                <HeroChip
+                                    label="Completed"
+                                    value={String(stats?.completedAssignments || 0)}
+                                    tone="emerald"
+                                />
+                                <HeroChip
+                                    label="Attendance"
+                                    value={`${stats?.attendance || 0}%`}
+                                    tone="sky"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <SummaryPanel
+                            icon={Clock}
+                            label="Pending Work"
+                            value={String(stats?.pendingAssignments || 0)}
+                            helper="Assignments still waiting on your submission"
+                            tone="amber"
+                        />
+                        <SummaryPanel
+                            icon={Trophy}
+                            label="Average Score"
+                            value={String(stats?.averageScore || 0)}
+                            helper="Your current performance trend"
+                            tone="emerald"
+                        />
+                        <SummaryPanel
+                            icon={CalendarCheck}
+                            label="Attendance"
+                            value={`${stats?.attendance || 0}%`}
+                            helper={
+                                (stats?.attendance || 0) >= 75
+                                    ? "Attendance is comfortably on track"
+                                    : "Attendance needs some attention"
+                            }
+                            tone={(stats?.attendance || 0) >= 75 ? "sky" : "amber"}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-4">
+                <SnapshotCard
                     icon={BookOpen}
-                    className="xl:col-span-2"
-                    action={
-                        <Link
-                            href="/assignment"
-                            className="text-sm font-medium text-primary hover:underline"
-                        >
-                            View all →
-                        </Link>
-                    }
+                    label="Total Assignments"
+                    value={String(stats?.totalAssignments || 0)}
+                    helper="Visible in your portal"
+                    tone="sky"
+                />
+                <SnapshotCard
+                    icon={Clock}
+                    label="Pending"
+                    value={String(stats?.pendingAssignments || 0)}
+                    helper="Still waiting on action"
+                    tone="amber"
+                />
+                <SnapshotCard
+                    icon={ClipboardCheck}
+                    label="Completed"
+                    value={String(stats?.completedAssignments || 0)}
+                    helper="Already finished by you"
+                    tone="emerald"
+                />
+                <SnapshotCard
+                    icon={Trophy}
+                    label="Average Score"
+                    value={String(stats?.averageScore || 0)}
+                    helper="Across your reviewed work"
+                    tone="violet"
+                />
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <DashboardCard
+                    eyebrow="Upcoming Assignments"
+                    title="What needs your attention next"
+                    actionHref="/assignment"
+                    actionLabel="View all"
                 >
                     <div className="space-y-3">
-                        {loading ? (
-                            [...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)
-                        ) : upcomingAssignments.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No upcoming assignments</div>
-                        ) : (
-                            upcomingAssignments.map((assignment: any, index: number) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
+                        {data?.upcomingAssignments?.length ? (
+                            data.upcomingAssignments.map((assignment, index) => (
+                                <Link
+                                    key={`${assignment.title}-${index}`}
+                                    href="/assignment"
+                                    className="group block rounded-[24px] border border-border/60 bg-background/60 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
                                 >
-                                    <div>
-                                        <h3 className="font-medium">{assignment.title}</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Due: {formatDueDate(assignment.due)}
-                                        </p>
-                                    </div>
-                                    <Badge
-                                        variant={assignment.status === "Active" ? "secondary" : "outline"}
-                                        className={cn(
-                                            getStatusClasses(assignment.status)
-                                        )}
-                                    >
-                                        {assignment.status}
-                                    </Badge>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </InfoCard>
-
-                {/* Attendance */}
-                <InfoCard title="Attendance" icon={CalendarCheck}>
-                    <div className="space-y-3">
-                        {loading ? (
-                            <div className="h-40 rounded-xl bg-muted animate-pulse" />
-                        ) : (
-                            <>
-                                <Link href="/attendance" className="block group">
-                                    <div className="rounded-xl border p-4 transition-all group-hover:border-primary/50 group-hover:shadow-sm">
-                                        <div className="flex justify-between items-start">
-                                            <p className="text-sm text-muted-foreground">Current Attendance</p>
-                                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h3 className="font-semibold text-foreground">
+                                                {assignment.title}
+                                            </h3>
+                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                Due: {formatDueDate(assignment.due)}
+                                            </p>
                                         </div>
-                                        <h3 className={cn("mt-2 text-3xl font-bold", 
-                                            (data?.attendance?.percentage || 0) >= 75 ? "text-primary" : "text-red-500"
-                                        )}>
-                                            {data?.attendance?.percentage || 0}%
-                                        </h3>
+                                        <Badge
+                                            variant="outline"
+                                            className={cn("rounded-full px-3 py-1", getAssignmentStatusStyles(assignment.status))}
+                                        >
+                                            {assignment.status}
+                                        </Badge>
                                     </div>
                                 </Link>
-                                <div className="rounded-xl border p-4 bg-muted/30">
-                                    <p className="text-sm text-muted-foreground">Summary</p>
-                                    <p className="mt-2 text-xs font-medium">
-                                        {(data?.attendance?.percentage || 0) >= 75 
-                                            ? "Your attendance is well maintained." 
-                                            : "Your attendance is below 75%. Please attend more sessions."}
-                                    </p>
-                                </div>
-                            </>
+                            ))
+                        ) : (
+                            <EmptyState
+                                title="No upcoming assignments"
+                                description="New assignment releases will show up here as soon as they are published."
+                                className="rounded-[24px] border-border/60 bg-background/55 shadow-none"
+                            />
                         )}
                     </div>
-                </InfoCard>
-            </div>
+                </DashboardCard>
 
-            {/* Bottom Grid */}
-            <div className="grid gap-4 xl:grid-cols-2">
-                {/* Recent Results */}
-                <InfoCard
-                    title="Recent Results"
-                    icon={Trophy}
-                    action={
-                        <Link
-                            href="/results"
-                            className="text-sm font-medium text-primary hover:underline"
-                        >
-                            View all →
-                        </Link>
-                    }
+                <DashboardCard
+                    eyebrow="Attendance"
+                    title="Your attendance snapshot"
+                    actionHref="/attendance"
+                    actionLabel="Open attendance"
+                >
+                    <Link href="/attendance" className="block rounded-[24px] border border-border/60 bg-background/60 p-5 transition-all hover:border-primary/30 hover:shadow-sm">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Current attendance</p>
+                                <p
+                                    className={cn(
+                                        "mt-2 text-4xl font-black tracking-[-0.05em]",
+                                        (stats?.attendance || 0) >= 75 ? "text-emerald-500" : "text-amber-500"
+                                    )}
+                                >
+                                    {stats?.attendance || 0}%
+                                </p>
+                            </div>
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background text-muted-foreground">
+                                <ArrowRight className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                            {(stats?.attendance || 0) >= 75
+                                ? "Your attendance is looking healthy and on track."
+                                : "You are below the 75% threshold, so upcoming sessions matter."}
+                        </p>
+                    </Link>
+                </DashboardCard>
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+                <DashboardCard
+                    eyebrow="Recent Results"
+                    title="Latest scored work"
+                    actionHref="/results"
+                    actionLabel="View all"
                 >
                     <div className="space-y-3">
-                        {loading ? (
-                            [...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)
-                        ) : recentSubmissions.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">No submissions yet</div>
-                        ) : (
-                            recentSubmissions.map((submission: any, index: number) => (
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-md"
+                        {data?.recentResults?.length ? (
+                            data.recentResults.map((submission, index) => (
+                                <Link
+                                    key={`${submission.title}-${index}`}
+                                    href="/results"
+                                    className="group flex items-center justify-between gap-4 rounded-[24px] border border-border/60 bg-background/60 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
                                 >
                                     <div>
-                                        <h3 className="font-medium">{submission.title}</h3>
-                                        <p className="text-sm text-muted-foreground">
+                                        <h3 className="font-semibold text-foreground">{submission.title}</h3>
+                                        <p className="mt-2 text-sm text-muted-foreground">
                                             Submitted {formatRelativeTime(submission.submittedAt)}
                                         </p>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-semibold text-primary">{submission.score}</p>
+                                    <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-500">
+                                        {submission.score}
                                     </div>
-                                </div>
+                                </Link>
                             ))
+                        ) : (
+                            <EmptyState
+                                title="No scored submissions yet"
+                                description="Your evaluated results will appear here once work gets reviewed."
+                                className="rounded-[24px] border-border/60 bg-background/55 shadow-none"
+                            />
                         )}
                     </div>
-                </InfoCard>
+                </DashboardCard>
 
-                {/* Announcements */}
-                <InfoCard
-                    title="Announcements"
-                    icon={Bell}
-                    action={
-                        <Link
-                            href="/announcements"
-                            className="text-sm font-medium text-primary hover:underline"
-                        >
-                            View all →
-                        </Link>
-                    }
+                <DashboardCard
+                    eyebrow="Announcements"
+                    title="Latest updates"
+                    actionHref="/announcements"
+                    actionLabel="View all"
                 >
                     <AnnouncementsList />
-                </InfoCard>
-            </div>
+                </DashboardCard>
+            </section>
 
-            {/* Quick Actions */}
-            <InfoCard title="Quick Actions">
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Link
-                        href="/assignment"
-                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
-                    >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                            <BookOpen className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold">View Assignments</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Browse all your assignments
-                            </p>
-                        </div>
-                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </Link>
-
-                    <Link
-                        href="/submission"
-                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
-                    >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                            <ClipboardCheck className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold">My Submissions</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Track your submissions
-                            </p>
-                        </div>
-                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </Link>
-
-                    <Link
-                        href="/results"
-                        className="group flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:shadow-md hover:border-primary/50"
-                    >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                            <Trophy className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="font-semibold">View Results</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Check your grades
-                            </p>
-                        </div>
-                        <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                    </Link>
+            <section className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] sm:p-6">
+                <div className="mb-5 flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                            Quick Actions
+                        </p>
+                        <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+                            Jump into the sections you use most
+                        </h2>
+                    </div>
                 </div>
-            </InfoCard>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                    <QuickLinkCard
+                        href="/assignment"
+                        icon={BookOpen}
+                        title="Assignments"
+                        description="Open your active and upcoming work."
+                    />
+                    <QuickLinkCard
+                        href="/submission"
+                        icon={ClipboardCheck}
+                        title="Submissions"
+                        description="Review everything you have submitted."
+                    />
+                    <QuickLinkCard
+                        href="/results"
+                        icon={Trophy}
+                        title="Results"
+                        description="Check scores and recent performance."
+                    />
+                </div>
+            </section>
         </div>
     )
 }
 
-// Announcements List Component
 function AnnouncementsList() {
-    const [announcements, setAnnouncements] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([])
+    const [loading, setLoading] = useState(true)
 
     const fetchAnnouncements = useCallback(async () => {
         try {
-            const response = await fetch("/api/student/announcements?limit=3");
-            const data = await response.json();
+            const response = await fetch("/api/student/announcements?limit=3")
+            const data = await response.json()
 
             if (data.success) {
-                setAnnouncements(data.data);
+                setAnnouncements(data.data)
             }
         } catch (error) {
-            console.error("Error fetching announcements:", error);
-            toast.error("Failed to fetch announcements");
+            console.error("Error fetching announcements:", error)
+            toast.error("Failed to fetch announcements")
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    }, []);
+    }, [])
 
     useEffect(() => {
-        fetchAnnouncements();
-    }, [fetchAnnouncements]);
+        const timer = window.setTimeout(() => {
+            void fetchAnnouncements()
+        }, 0)
 
-    // Refetch when navigating back via browser back button or window focus
-    useRefetchOnFocus(fetchAnnouncements);
+        return () => window.clearTimeout(timer)
+    }, [fetchAnnouncements])
+
+    useRefetchOnFocus(fetchAnnouncements)
 
     if (loading) {
         return (
             <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="h-16 rounded-xl bg-muted animate-pulse"
-                    />
+                {[...Array(3)].map((_, index) => (
+                    <div key={index} className="rounded-[24px] border border-border/60 bg-background/55 p-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="mt-3 h-4 w-4/5" />
+                    </div>
                 ))}
             </div>
-        );
+        )
     }
 
     if (announcements.length === 0) {
         return (
-            <div className="text-center py-8">
-                <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No announcements yet</p>
-            </div>
-        );
+            <EmptyState
+                title="No announcements yet"
+                description="Recent updates from your institute will show here."
+                icon={<Bell className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-70" />}
+                className="rounded-[24px] border-border/60 bg-background/55 shadow-none"
+            />
+        )
     }
 
     return (
@@ -380,11 +475,234 @@ function AnnouncementsList() {
             {announcements.map((item) => (
                 <div
                     key={item._id}
-                    className="rounded-xl border bg-muted/30 p-4 transition-all hover:shadow-sm"
+                    className="rounded-[24px] border border-border/60 bg-background/60 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
                 >
-                    <p className="text-sm">{item.content}</p>
+                    <p className="text-sm leading-6 text-foreground">{item.content}</p>
                 </div>
             ))}
         </div>
-    );
+    )
+}
+
+function DashboardCard({
+    eyebrow,
+    title,
+    children,
+    actionHref,
+    actionLabel,
+}: {
+    eyebrow: string
+    title: string
+    children: React.ReactNode
+    actionHref?: string
+    actionLabel?: string
+}) {
+    return (
+        <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] sm:p-6">
+            <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                        {eyebrow}
+                    </p>
+                    <h2 className="mt-1 text-2xl font-semibold tracking-tight">{title}</h2>
+                </div>
+                {actionHref && actionLabel ? (
+                    <Link
+                        href={actionHref}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary transition hover:opacity-90"
+                    >
+                        {actionLabel}
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
+                ) : null}
+            </div>
+            {children}
+        </div>
+    )
+}
+
+function QuickLinkCard({
+    href,
+    icon: Icon,
+    title,
+    description,
+}: {
+    href: string
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    description: string
+}) {
+    return (
+        <Link
+            href={href}
+            className="group flex items-start gap-3 rounded-[24px] border border-border/60 bg-background/65 p-4 transition-all hover:border-primary/30 hover:shadow-sm"
+        >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background text-primary">
+                <Icon className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+                <h3 className="font-semibold text-foreground">{title}</h3>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p>
+            </div>
+            <ArrowRight className="mt-1 h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+        </Link>
+    )
+}
+
+function HeroChip({
+    label,
+    value,
+    tone,
+}: {
+    label: string
+    value: string
+    tone: "sky" | "emerald" | "slate"
+}) {
+    const tones = {
+        sky: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+        emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+        slate: "border-border/60 bg-background/70 text-foreground",
+    }
+
+    return (
+        <div className="rounded-2xl border border-border/60 bg-background/60 p-3 backdrop-blur-sm">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                {label}
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-lg font-semibold tracking-tight">{value}</span>
+                <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", tones[tone])}>
+                    Live
+                </span>
+            </div>
+        </div>
+    )
+}
+
+function SummaryPanel({
+    icon: Icon,
+    label,
+    value,
+    helper,
+    tone,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    label: string
+    value: string
+    helper: string
+    tone: "sky" | "emerald" | "amber"
+}) {
+    const tones = {
+        sky: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+        emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+        amber: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+    }
+
+    return (
+        <div className="rounded-[24px] border border-border/60 bg-background/70 p-4 backdrop-blur-sm">
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                    <p className="mt-2 text-3xl font-semibold tracking-tight">{value}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
+                </div>
+                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border", tones[tone])}>
+                    <Icon className="h-5 w-5" />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function SnapshotCard({
+    icon: Icon,
+    label,
+    value,
+    helper,
+    tone,
+}: {
+    icon: React.ComponentType<{ className?: string }>
+    label: string
+    value: string
+    helper: string
+    tone: "sky" | "amber" | "emerald" | "violet"
+}) {
+    const tones = {
+        sky: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+        amber: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+        emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+        violet: "border-violet-500/20 bg-violet-500/10 text-violet-500",
+    }
+
+    return (
+        <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                    <p className="mt-2 text-4xl font-black tracking-[-0.05em] text-foreground">
+                        {value}
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
+                </div>
+                <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border", tones[tone])}>
+                    <Icon className="h-5 w-5" />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function HomeDashboardSkeleton() {
+    return (
+        <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-[32px] border bg-background p-6 shadow-sm sm:p-7">
+                <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap gap-3">
+                            <Skeleton className="h-8 w-36 rounded-full" />
+                            <Skeleton className="h-8 w-64 rounded-full" />
+                        </div>
+                        <div className="space-y-3">
+                            <Skeleton className="h-10 w-2/3" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-4/5" />
+                        </div>
+                        <div className="space-y-3">
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-16 w-20" />
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <Skeleton className="h-20 rounded-2xl" />
+                                <Skeleton className="h-20 rounded-2xl" />
+                                <Skeleton className="h-20 rounded-2xl" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <Skeleton className="h-28 rounded-[24px]" />
+                        <Skeleton className="h-28 rounded-[24px]" />
+                        <Skeleton className="h-28 rounded-[24px]" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-4">
+                <Skeleton className="h-32 rounded-[28px]" />
+                <Skeleton className="h-32 rounded-[28px]" />
+                <Skeleton className="h-32 rounded-[28px]" />
+                <Skeleton className="h-32 rounded-[28px]" />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <Skeleton className="h-[320px] rounded-[28px]" />
+                <Skeleton className="h-[320px] rounded-[28px]" />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+                <Skeleton className="h-[280px] rounded-[28px]" />
+                <Skeleton className="h-[280px] rounded-[28px]" />
+            </div>
+
+            <Skeleton className="h-[220px] rounded-[28px]" />
+        </div>
+    )
 }
