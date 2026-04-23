@@ -6,8 +6,10 @@ export interface ITestResult {
     input: string;
     expectedOutput: string;
     actualOutput: string;
+    isHidden: boolean;
     error?: string;
 }
+
 
 export interface ISubmission extends Document {
     assignmentId: string;
@@ -74,8 +76,10 @@ const SubmissionSchema: Schema = new Schema(
                     input: { type: String, required: true },
                     expectedOutput: { type: String, required: true },
                     actualOutput: { type: String, required: true },
+                    isHidden: { type: Boolean, default: false },
                     error: { type: String },
                 },
+
             ],
             default: [],
         },

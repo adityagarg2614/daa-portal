@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { executeCode, runTestCases, getLanguageConfig } from "@/lib/piston";
+import { executeCode, runTestCases, getLanguageConfig, TestCase } from "@/lib/piston";
+import { connectDB } from "@/lib/db";
+import Problem from "@/models/Problem";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { code, language, testCases, stdin } = body;
+        const { code, language, testCases: providedTestCases, stdin, problemId } = body;
 
         if (!code || !language) {
             return NextResponse.json(
@@ -27,16 +29,41 @@ export async function POST(req: Request) {
             );
         }
 
-        // If test cases are provided, run them all
-        if (testCases && Array.isArray(testCases) && testCases.length > 0) {
-            const result = await runTestCases(code, language, testCases);
+        await connectDB();
+        
+        let testCasesToRun: TestCase[] = Array.isArray(providedTestCases) ? providedTestCases : [];
+        let timeLimit = 2000;
+        let memoryLimit = 128000;
+
+        // If problemId is provided, fetch non-hidden test cases and constraints
+        if (problemId) {
+            const problem = await Problem.findById(problemId);
+            if (problem) {
+                timeLimit = problem.timeLimit || timeLimit;
+                memoryLimit = problem.memoryLimit || memoryLimit;
+                
+                // Only run non-hidden test cases for the general "compile/run" endpoint
+                if (testCasesToRun.length === 0) {
+                    testCasesToRun = (problem.testCases || [])
+                        .filter((tc: any) => !tc.isHidden)
+                        .map((tc: any) => ({
+                            input: tc.input,
+                            output: tc.output
+                        }));
+                }
+            }
+        }
+
+        // If test cases are available, run them
+        if (testCasesToRun.length > 0) {
+            const result = await runTestCases(code, language, testCasesToRun, timeLimit, memoryLimit);
 
             if (result.compilationError) {
                 return NextResponse.json(
                     {
                         success: false,
                         compilationError: true,
-                        message: result.message,
+                        message: result.message || "Compilation failed",
                         error: result.compilationError,
                         results: [],
                     },
@@ -55,8 +82,8 @@ export async function POST(req: Request) {
             });
         }
 
-        // Otherwise, just execute the code (Run Code mode)
-        const result = await executeCode(code, language, stdin || "");
+        // Otherwise, just execute the code with stdin (Manual Test mode)
+        const result = await executeCode(code, language, stdin || "", timeLimit, memoryLimit);
 
         if (!result.success && result.stderr) {
             return NextResponse.json(

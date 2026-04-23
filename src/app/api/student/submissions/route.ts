@@ -74,13 +74,22 @@ export async function POST(req: Request) {
 
         // Run test cases if requested and test cases exist
         if (runTests && problem.testCases && problem.testCases.length > 0) {
-            const testCases = problem.testCases.map((tc: { input: string; output: string; isHidden: boolean }) => ({
+            const testCases = problem.testCases.map((tc: any) => ({
                 input: tc.input,
                 output: tc.output,
+                isHidden: tc.isHidden
             }));
 
+
             // Call Piston directly (no HTTP self-fetch)
-            const compileResult = await runTestCases(code, language, testCases);
+            const compileResult = await runTestCases(
+                code, 
+                language, 
+                testCases, 
+                problem.timeLimit || 2000, 
+                problem.memoryLimit || 128000
+            );
+
 
             // Compilation error — return early without saving
             if (compileResult.compilationError) {
@@ -111,7 +120,19 @@ export async function POST(req: Request) {
             }
 
             testResults = compileResult.results;
+            
+            // LeetCode-style: Reveal ONLY the first failing hidden test case
+            let revealedOneHidden = false;
+            testResults = testResults.map(res => {
+                if (!res.passed && res.isHidden && !revealedOneHidden) {
+                    revealedOneHidden = true;
+                    return { ...res, isHidden: false }; // Reveal this one
+                }
+                return res;
+            });
+
             allTestsPassed = compileResult.allPassed;
+
             executionTime = compileResult.executionTime;
             memoryUsed = compileResult.memoryUsed;
             passedTests = compileResult.passedTests;

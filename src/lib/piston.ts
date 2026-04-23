@@ -2,6 +2,9 @@
 // Using self-hosted Piston instance (Docker)
 
 const PISTON_API = process.env.PISTON_API_URL;
+import { prepareCodeForExecution } from "./code-driver";
+
+
 
 // Language mapping to Piston language names and versions
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
@@ -11,10 +14,28 @@ const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
     javascript: { language: "javascript", version: "18.15.0" },
 };
 
+
+/**
+ * Adjust line numbers in error messages if headers were prepended
+ */
+
+function adjustErrorLines(stderr: string, headerLines: number): string {
+    if (headerLines <= 0) return stderr;
+
+    // Matches patterns like "file.cpp:10:5: error: ..."
+    // Or "main.py\", line 12, in <module>"
+    return stderr.replace(/(\.cpp:|\.java:|\.py:|, line )(\d+)/g, (match, prefix, lineNum) => {
+        const adjusted = parseInt(lineNum) - headerLines;
+        return prefix + (adjusted > 0 ? adjusted : lineNum);
+    });
+}
+
 export interface TestCase {
     input: string;
     output: string;
+    isHidden?: boolean;
 }
+
 
 export interface TestResult {
     testCaseIndex: number;
@@ -22,7 +43,9 @@ export interface TestResult {
     input: string;
     expectedOutput: string;
     actualOutput: string;
+    isHidden: boolean;
     error?: string;
+
     executionTime?: number;
     memoryUsed?: number;
 }
@@ -62,7 +85,10 @@ export function getLanguageConfig(language: string) {
 async function executeWithPiston(
     code: string,
     langConfig: { language: string; version: string },
-    stdin: string = ""
+    stdin: string = "",
+    headerLines: number = 0,
+    timeLimit: number = 2000,
+    memoryLimit: number = 128000
 ): Promise<{ success: boolean; result?: ExecutionResult; error?: string }> {
 
     try {
@@ -71,9 +97,10 @@ async function executeWithPiston(
             version: langConfig.version,
             files: [{ content: code }],
             stdin,
-            run_timeout: 3000, // Max allowed by self-hosted Piston (3 seconds)
-            run_memory_limit: 128000000, // 128 MB
+            run_timeout: timeLimit,
+            run_memory_limit: memoryLimit * 1024, // Convert KB to Bytes
         };
+
 
         const response = await fetch(`${PISTON_API}/execute`, {
             method: "POST",
@@ -96,14 +123,20 @@ async function executeWithPiston(
 
         const result = await response.json();
 
-        const compileStderr = (result.compile?.stderr || "").trim();
+        let compileStderr = (result.compile?.stderr || "").trim();
         const compileStdout = (result.compile?.stdout || "").trim();
         const runStdout = (result.run?.stdout || "").trim();
-        const runStderr = (result.run?.stderr || "").trim();
+        let runStderr = (result.run?.stderr || "").trim();
         const runExitCode = result.run?.code ?? null;
 
+        // Adjust line numbers in errors
+        if (headerLines > 0) {
+            compileStderr = adjustErrorLines(compileStderr, headerLines);
+            runStderr = adjustErrorLines(runStderr, headerLines);
+        }
+
         // Check for compilation errors
-        if (compileStderr && !runStdout && runExitCode !== 0) {
+        if (compileStderr && !runStdout && (result.compile?.code ?? 0) !== 0) {
             return {
                 success: false,
                 result: {
@@ -144,8 +177,11 @@ async function executeWithPiston(
 export async function executeCode(
     code: string,
     language: string,
-    stdin: string = ""
+    stdin: string = "",
+    timeLimit: number = 2000,
+    memoryLimit: number = 128000
 ): Promise<ExecutionResult> {
+
     const langConfig = getLanguageConfig(language);
     if (!langConfig) {
         throw new Error(
@@ -153,7 +189,11 @@ export async function executeCode(
         );
     }
 
-    const pistonResult = await executeWithPiston(code, langConfig, stdin);
+    // Prepare code (headers + drivers)
+    const { wrappedCode, headerLines } = prepareCodeForExecution(code, language);
+
+    const pistonResult = await executeWithPiston(wrappedCode, langConfig, stdin, headerLines, timeLimit, memoryLimit);
+
 
     // If Piston returned a result (even if code failed), use it
     if (pistonResult.result) {
@@ -171,8 +211,11 @@ export async function executeCode(
 export async function runTestCases(
     code: string,
     language: string,
-    testCases: TestCase[]
+    testCases: TestCase[],
+    timeLimit: number = 2000,
+    memoryLimit: number = 128000
 ): Promise<CompileAndTestResult> {
+
     const langConfig = getLanguageConfig(language);
     if (!langConfig) {
         return {
@@ -189,7 +232,8 @@ export async function runTestCases(
 
     // First, do a quick compile check with the first test case input
     try {
-        const firstResult = await executeCode(code, language, testCases[0]?.input || "");
+        const firstResult = await executeCode(code, language, testCases[0]?.input || "", timeLimit, memoryLimit);
+
         if (firstResult.stderr && !firstResult.stdout && firstResult.exitCode !== 0) {
             // Compilation error — return early
             return {
@@ -227,7 +271,8 @@ export async function runTestCases(
         const testCase = testCases[i];
 
         try {
-            const execution = await executeCode(code, language, testCase.input);
+            const execution = await executeCode(code, language, testCase.input, timeLimit, memoryLimit);
+
 
             const actualOutput = execution.stdout;
             const errorMsg = execution.stderr;
@@ -249,10 +294,12 @@ export async function runTestCases(
                 input: testCase.input,
                 expectedOutput: testCase.output,
                 actualOutput: actualOutput || (errorMsg ? `Error: ${errorMsg}` : "(no output)"),
+                isHidden: testCase.isHidden || false,
                 error: errorMsg || undefined,
                 executionTime: Math.round(execution.executionTime),
                 memoryUsed: Math.round(execution.memoryUsed),
             });
+
 
             totalExecutionTime += execution.executionTime;
             totalMemoryUsed += execution.memoryUsed;
@@ -268,8 +315,10 @@ export async function runTestCases(
                 input: testCase.input,
                 expectedOutput: testCase.output,
                 actualOutput: "Execution failed",
+                isHidden: testCase.isHidden || false,
                 error: error instanceof Error ? error.message : "Unknown error",
             });
+
             allPassed = false;
         }
     }

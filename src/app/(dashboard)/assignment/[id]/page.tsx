@@ -562,7 +562,9 @@ export default function SingleAssignmentPage() {
             const response = await axios.post("/api/compile", {
                 code: current.code,
                 language: current.language,
+                problemId,
             })
+
 
             setSubmissionState((prev) => ({
                 ...prev,
@@ -570,11 +572,13 @@ export default function SingleAssignmentPage() {
                     ...prev[problemId],
                     loading: false,
                     loadingAction: undefined,
-                    message: response.data.output || "(no out)",
+                    message: response.data.results ? "Test cases executed" : (response.data.output || "(no output)"),
                     messageType: 'info' as const,
                     compilationError: undefined,
+                    testResults: response.data.results || [],
                     executionTime: response.data.executionTime,
                     memoryUsed: response.data.memoryUsed,
+
                 },
             }))
 
