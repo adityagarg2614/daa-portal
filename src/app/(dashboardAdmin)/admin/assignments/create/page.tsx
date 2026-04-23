@@ -64,12 +64,14 @@ export default function CreateAssignmentPage() {
     const [search, setSearch] = useState("")
     const [difficultyFilter, setDifficultyFilter] = useState("all")
     const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+    const [isSebRequired, setIsSebRequired] = useState(false)
     const [pendingSubmission, setPendingSubmission] = useState<null | {
         title: string
         description: string
         publishAt: string
         dueAt: string
         problemIds: string[]
+        isSebRequired: boolean
     }>(null)
 
     useEffect(() => {
@@ -88,6 +90,28 @@ export default function CreateAssignmentPage() {
 
         fetchProblems()
     }, [])
+
+    const searchParams = useSearchParams()
+    const editId = searchParams.get("id")
+
+    useEffect(() => {
+        const fetchAssignment = async () => {
+            if (!editId) return
+            try {
+                const res = await axios.get(`/api/admin/assignments/${editId}`)
+                const a = res.data.data
+                setTitle(a.title)
+                setDescription(a.description)
+                setPublishAt(new Date(a.publishAt).toISOString().slice(0, 16))
+                setDueAt(new Date(a.dueAt).toISOString().slice(0, 16))
+                setSelectedProblemIds(a.problemIds.map((p: any) => p._id))
+                setIsSebRequired(a.isSebRequired || false)
+            } catch (error) {
+                console.error("Error fetching assignment:", error)
+            }
+        }
+        fetchAssignment()
+    }, [editId])
 
     const handleProblemToggle = (problemId: string) => {
         setSelectedProblemIds((prev) =>
@@ -187,6 +211,7 @@ export default function CreateAssignmentPage() {
             publishAt: new Date(publishAt).toISOString(),
             dueAt: new Date(dueAt).toISOString(),
             problemIds: selectedProblemIds,
+            isSebRequired,
         })
         setShowConfirmDialog(true)
     }
@@ -199,18 +224,23 @@ export default function CreateAssignmentPage() {
             setShowConfirmDialog(false)
             setPendingSubmission(null)
 
-            const res = await axios.post("/api/admin/assignments", pendingSubmission)
+            const res = editId 
+                ? await axios.patch(`/api/admin/assignments/${editId}`, pendingSubmission)
+                : await axios.post("/api/admin/assignments", pendingSubmission)
 
-            setMessage(res.data.message || "Assignment created successfully")
+            setMessage(res.data.message || (editId ? "Assignment updated successfully" : "Assignment created successfully"))
             setMessageType("success")
 
-            setTitle("")
-            setDescription("")
-            setPublishAt("")
-            setDueAt("")
-            setSelectedProblemIds([])
-            setSearch("")
-            setDifficultyFilter("all")
+            if (!editId) {
+                setTitle("")
+                setDescription("")
+                setPublishAt("")
+                setDueAt("")
+                setSelectedProblemIds([])
+                setIsSebRequired(false)
+                setSearch("")
+                setDifficultyFilter("all")
+            }
         } catch (error: unknown) {
             const errorMessage =
                 error instanceof Error && "response" in error

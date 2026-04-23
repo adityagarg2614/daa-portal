@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "dev:inngest": "inngest dev --no-discovery",
     "build": "next build",
     "start": "next start",
@@ -28,7 +28,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
-    "inngest": "^4.0.4",
+    "inngest": "^4.2.4",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.577.0",
     "mongodb": "^7.1.0",

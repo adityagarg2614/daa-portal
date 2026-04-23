@@ -33,24 +33,9 @@ export async function verifyAdmin() {
 
         // 3. Auto-sync if Clerk says Admin but DB is missing or not Admin
         if (isClerkAdmin && (!dbUser || dbUser.role !== "admin")) {
-            console.log(`[Auth] Auto-syncing admin user: ${userId}`);
-            
-            if (!dbUser) {
-                // Fetch full user details from Clerk to populate DB
-                const client = await clerkClient();
-                const clerkUser = await client.users.getUser(userId);
-                
-                dbUser = await User.create({
-                    clerkId: userId,
-                    email: clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase(),
-                    name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Admin User",
-                    role: "admin",
-                });
-            } else {
-                dbUser.role = "admin";
-                await dbUser.save();
-            }
+            dbUser = await syncAdminUser(userId, dbUser);
         }
+
 
         // 4. Final authorization check
         if (isClerkAdmin || dbUser?.role === "admin") {
@@ -77,5 +62,41 @@ export async function verifyAdmin() {
                 { status: 500 }
             ),
         };
+    }
+}
+
+/**
+ * Helper to sync Clerk user data with MongoDB.
+ * Handles re-linking by email to prevent duplicate key errors.
+ */
+async function syncAdminUser(userId: string, existingUser: any | null) {
+    console.log(`[Auth] Auto-syncing admin user: ${userId}`);
+    
+    if (!existingUser) {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(userId);
+        const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
+
+        // Check if user exists with this email but different clerkId
+        let dbUser = email ? await User.findOne({ email }) : null;
+
+        if (dbUser) {
+            console.log(`[Auth] Re-linking existing user record (${email}) to new Clerk ID: ${userId}`);
+            dbUser.clerkId = userId;
+            dbUser.role = "admin";
+            await dbUser.save();
+            return dbUser;
+        } else {
+            return await User.create({
+                clerkId: userId,
+                email,
+                name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Admin User",
+                role: "admin",
+            });
+        }
+    } else {
+        existingUser.role = "admin";
+        await existingUser.save();
+        return existingUser;
     }
 }

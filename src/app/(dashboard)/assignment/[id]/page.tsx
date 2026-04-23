@@ -4,6 +4,7 @@ import { CodeEditor } from "@/components/editor/code-editor"
 import axios from "axios"
 import { useParams, useRouter } from "next/navigation"
 import React, { useEffect, useState, useCallback, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { toast } from "sonner"
 import {
@@ -26,6 +27,9 @@ import {
     Save,
     Send,
     Terminal,
+    ChevronRight,
+    Trophy,
+    ArrowRight
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -39,6 +43,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardFooter,
+} from "@/components/ui/card"
+import {
+    AlertTitle,
+    AlertDescription,
+} from "@/components/ui/alert"
 import {
     Tabs,
     TabsContent,
@@ -252,33 +268,61 @@ export default function SingleAssignmentPage() {
         if (!id) return
 
         try {
-            const [assignmentRes, userRes] = await Promise.all([
-                axios.get(`/api/student/assignments/${id}`),
+            setLoading(true);
+            setIsError(false);
+
+            // 1. Fetch Assignment First (Critical for SEB/Access checks)
+            let assignmentRes;
+            try {
+                assignmentRes = await axios.get(`/api/student/assignments/${id}`);
+            } catch (error: any) {
+                if (error.response?.status === 403) {
+                    const data = error.response.data;
+                    if (data.sebError) {
+                        setSebError({
+                            message: data.message,
+                            errorCode: data.sebError,
+                            title: data.assignmentTitle,
+                            submittedAt: data.submittedAt
+                        });
+                        setIsError(false);
+                        return;
+                    }
+                }
+                throw error; // Re-throw if not a handled SEB 403
+            }
+
+            // 2. Fetch User & Submissions
+            const [userRes, submissionsRes] = await Promise.all([
                 axios.get("/api/users/me"),
-            ])
+                axios.get(`/api/student/submissions/by-assignment/${id}`)
+            ]);
 
             if (!assignmentRes.data?.assignment || !userRes.data?.user?._id) {
                 return
             }
 
-            const fetchedAssignment = assignmentRes.data.assignment
-            const fetchedUserId = userRes.data.user._id
+            if (!fetchedUserId) {
+                throw new Error("User not authenticated");
+            }
 
-            setAssignment(fetchedAssignment)
-            setDbUserId(fetchedUserId)
+            setAssignment(fetchedAssignment);
+            setDbUserId(fetchedUserId);
+            setSebError(null);
+            setIsError(false);
 
             const now = new Date()
             const publishDate = new Date(fetchedAssignment.publishAt)
             const dueDate = new Date(fetchedAssignment.dueAt)
 
             if (now < publishDate) {
-                setAccessStatus("not-published")
+                setAccessStatus("not-published");
             } else if (now > dueDate) {
                 setAccessStatus("expired")
                 await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionStateRef.current)
                 return
             } else {
-                setAccessStatus("active")
+                setAccessStatus("active");
             }
 
             const submissionsRes = await axios.get(
@@ -288,8 +332,7 @@ export default function SingleAssignmentPage() {
             const submissions: Submission[] = submissionsRes.data.submissions || []
 
             if (Object.keys(submissionStateRef.current).length === 0) {
-                const initialState: SubmissionState = {}
-
+                const initialState: SubmissionState = {};
                 fetchedAssignment.problems.forEach((problem: Problem) => {
                     const existingSubmission = submissions.find(
                         (submission) => submission.problemId === problem._id
@@ -301,23 +344,39 @@ export default function SingleAssignmentPage() {
                         FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
 
                     initialState[problem._id] = {
-                        code: existingSubmission?.code || starterForSavedLanguage,
+                        code: existingSubmission?.code || starter,
                         language: savedLanguage,
                         loading: false,
-                        message: existingSubmission
-                            ? "Loaded your latest saved submission"
-                            : "",
-                    }
-                })
-
-                setSubmissionState(initialState)
+                        message: existingSubmission ? "Loaded your latest saved submission" : "",
+                    };
+                });
+                setSubmissionState(initialState);
             }
-        } catch (error) {
-            console.error("Error fetching assignment or user:", error)
+        } catch (error: any) {
+            // Silence all 4xx errors as they are likely security blocks (403) or not found (404)
+            // which we handle via specialized UI states rather than toasts.
+            if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+                const data = error.response.data;
+                if (data?.sebError) {
+                    setSebError({
+                        message: data.message,
+                        errorCode: data.sebError,
+                        title: data.assignmentTitle,
+                        submittedAt: data.submittedAt
+                    });
+                }
+                setIsError(false);
+                setLoading(false);
+                return;
+            }
+
+            console.error("Error fetching assignment data:", error);
+            setIsError(true);
+            toast.error("An unexpected error occurred while loading the assignment.");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }, [id, handleAutoSubmitMemo])
+    }, [id, handleAutoSubmitMemo]);
 
     useEffect(() => {
         if (assignment && dbUserId && accessStatus === "active") {
@@ -480,7 +539,9 @@ export default function SingleAssignmentPage() {
             const response = await axios.post("/api/compile", {
                 code: current.code,
                 language: current.language,
+                problemId,
             })
+
 
             setSubmissionState((prev) => ({
                 ...prev,
@@ -491,6 +552,7 @@ export default function SingleAssignmentPage() {
                     message: response.data.output || "(no output)",
                     messageType: "info",
                     compilationError: undefined,
+                    testResults: response.data.results || [],
                     executionTime: response.data.executionTime,
                     memoryUsed: response.data.memoryUsed,
                     testResults: undefined,
@@ -648,7 +710,7 @@ export default function SingleAssignmentPage() {
             })
 
             setSubmitAssignmentDialogOpen(false)
-            router.push("/assignment")
+            router.push(`/exam/finished?score=${response.data.totalScore}&maxScore=${response.data.maxScore}&title=${encodeURIComponent(assignment.title)}`)
         } catch (error) {
             console.error("Final submission error:", error)
             toast.error("Failed to submit assignment", {
@@ -683,6 +745,227 @@ export default function SingleAssignmentPage() {
 
     if (loading) {
         return <AssignmentDetailSkeleton />
+    }
+
+    if (sebError && sebError.errorCode === "ALREADY_SUBMITTED") {
+        return (
+            <div className="flex flex-1 items-center justify-center p-6 bg-linear-to-b from-transparent to-zinc-50/50 dark:to-zinc-950/20 min-h-[85vh]">
+                <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="w-full max-w-2xl"
+                >
+                    <Card className="border-none shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] bg-white dark:bg-zinc-900/90 backdrop-blur-xl overflow-hidden rounded-3xl">
+                        <div className="h-2 bg-linear-to-r from-green-400 to-emerald-600" />
+                        <CardHeader className="text-center pt-12 pb-8 px-8">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.2 }}
+                                className="mx-auto w-24 h-24 bg-linear-to-br from-green-500/20 to-emerald-600/10 rounded-3xl rotate-12 flex items-center justify-center mb-8 shadow-inner"
+                            >
+                                <CheckCircle2 className="h-12 w-12 text-green-500 -rotate-12" />
+                            </motion.div>
+                            <CardTitle className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white mb-4">
+                                Well Done!
+                            </CardTitle>
+                            <CardDescription className="text-xl font-semibold text-zinc-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+                                Your solutions for <span className="text-zinc-900 dark:text-white">{sebError.title || "the assignment"}</span> have been submitted!
+                            </CardDescription>
+                        </CardHeader>
+
+                        <CardContent className="px-10 pb-12 overflow-visible">
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.4 }}
+                                className="bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl p-8 border border-zinc-100 dark:border-zinc-800/50 mb-10 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 relative"
+                            >
+                                <div className="space-y-4 text-center sm:text-left">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em]">Completion Status</p>
+                                        <div className="flex items-center justify-center sm:justify-start gap-2">
+                                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                            <p className="text-xl font-black text-green-600 dark:text-green-400">Success</p>
+                                        </div>
+                                    </div>
+
+                                    {sebError.submittedAt && (
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em]">Timestamp</p>
+                                            <p className="text-lg font-bold text-zinc-700 dark:text-zinc-300">
+                                                {new Date(sebError.submittedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} at {new Date(sebError.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex -space-x-3 opacity-50 select-none sm:flex">
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className="w-12 h-12 rounded-full border-4 border-white dark:border-zinc-900 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                                            <Trophy className="w-5 h-5 text-zinc-400" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </motion.div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                                    <Button
+                                        className="w-full h-14 rounded-2xl text-lg font-black shadow-2xl shadow-green-500/30 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-none transition-all group"
+                                        onClick={() => router.push("/results")}
+                                    >
+                                        Review Progress
+                                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                </motion.div>
+                                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full h-14 rounded-2xl text-lg font-black border-2 border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                        onClick={() => router.push("/home")}
+                                    >
+                                        Dashboard
+                                    </Button>
+                                </motion.div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="flex flex-col items-center gap-4 mt-12"
+                    >
+                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800/50 rounded-full">
+                            <Clock className="w-5 h-5 text-zinc-400" />
+                        </div>
+                        <p className="text-center font-bold text-zinc-400 dark:text-zinc-500 text-sm tracking-wide">
+                            YOUR EXAM SESSION IS CLOSED. YOU MAY SAFELY EXIT NOW.
+                        </p>
+                    </motion.div>
+                </motion.div>
+            </div>
+        )
+    }
+
+    if (sebError) {
+        return (
+            <div className="flex flex-1 flex-col items-center justify-center p-8 bg-muted/30">
+                <Card className="w-full max-w-lg border-none shadow-2xl">
+                    <CardHeader className="text-center pb-2">
+                        <div className={`mx-auto w-20 h-20 ${sebError.errorCode === "ALREADY_SUBMITTED" ? "bg-green-500/10" : "bg-destructive/10"} rounded-full flex items-center justify-center mb-4`}>
+                            {sebError.errorCode === "ALREADY_SUBMITTED" ? (
+                                <CheckCircle2 className="h-10 w-10 text-green-500" />
+                            ) : (
+                                <ShieldAlert className="h-10 w-10 text-destructive" />
+                            )}
+                        </div>
+                        <CardTitle className="text-2xl font-bold">
+                            {sebError.errorCode === "ALREADY_SUBMITTED" ? "Submission Complete" : "Secure Exam Access Required"}
+                        </CardTitle>
+                        <CardDescription className="text-base mt-2">
+                            {sebError.title || "This assignment"} is protected by Safe Exam Browser.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-center py-6">
+                        <Alert variant={sebError.errorCode === "ALREADY_SUBMITTED" ? "default" : "destructive"} className={sebError.errorCode === "ALREADY_SUBMITTED" ? "bg-green-500/10 text-green-700 border-green-500/20" : "bg-destructive/10 text-destructive border-destructive/20"}>
+                            {sebError.errorCode === "ALREADY_SUBMITTED" ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            ) : (
+                                <AlertCircle className="h-4 w-4" />
+                            )}
+                            <AlertTitle className="font-bold">
+                                {sebError.errorCode === "ALREADY_SUBMITTED" ? "Success" : "Access Denied"}
+                            </AlertTitle>
+                            <AlertDescription className="text-sm font-medium">
+                                {sebError.message}
+                                {sebError.submittedAt && (
+                                    <div className="mt-2 text-xs opacity-80 italic">
+                                        Submitted on: {new Date(sebError.submittedAt).toLocaleString()}
+                                    </div>
+                                )}
+                            </AlertDescription>
+                        </Alert>
+
+                        <div className="space-y-4 text-sm text-muted-foreground bg-muted/50 p-4 rounded-xl border border-dashed">
+                            <p className="font-semibold text-foreground">Next Steps to Access:</p>
+                            <ul className="list-decimal list-inside text-left space-y-2 max-w-xs mx-auto">
+                                <li>Launch the **Safe Exam Browser** app</li>
+                                <li>Log in to your portal inside SEB</li>
+                                <li>Navigate to this assignment and click **Enter Exam**</li>
+                            </ul>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-3 p-6">
+                        {sebError.errorCode === "ALREADY_SUBMITTED" ? (
+                            <Button
+                                className="w-full h-11 font-bold shadow-lg bg-green-600 hover:bg-green-700"
+                                onClick={() => router.push("/results")}
+                            >
+                                View Detailed Results
+                            </Button>
+                        ) : (sebError.errorCode === "SEB_REQUIRED" || sebError.errorCode === "ATTEMPT_REQUIRED") ? (
+                            <Button
+                                className="w-full h-11 font-bold shadow-lg bg-green-600 hover:bg-green-700"
+                                onClick={handleStartExam}
+                                disabled={isStarting}
+                            >
+                                {isStarting ? "Initializing..." : "Start Exam Attempt Now"}
+                            </Button>
+                        ) : (
+                            <Button
+                                className="w-full h-11 font-bold shadow-lg"
+                                onClick={() => router.push(`/exam/start/${id}`)}
+                            >
+                                Return to Exam Instructions
+                            </Button>
+                        )}
+                        <Button
+                            variant="ghost"
+                            className="w-full text-muted-foreground"
+                            onClick={() => router.push("/home")}
+                        >
+                            Back to Dashboard
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        )
+    }
+
+    if (isError) {
+        return (
+            <div className="flex flex-1 items-center justify-center p-8 bg-background/95 backdrop-blur-sm min-h-[60vh]">
+                <Card className="w-full max-w-md border-none shadow-2xl bg-card">
+                    <CardHeader className="text-center pb-2">
+                        <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                            <AlertCircle className="h-10 w-10 text-destructive" />
+                        </div>
+                        <CardTitle className="text-2xl font-bold tracking-tight">Failed to load assignment</CardTitle>
+                        <CardDescription className="text-base mt-2">
+                            An unexpected error occurred while connecting to the server.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex flex-col gap-3 p-6 text-center">
+                        <Button
+                            className="w-full"
+                            onClick={fetchAssignmentAndUser}
+                        >
+                            Retry Loading
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => router.push("/home")}
+                        >
+                            Return to Dashboard
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        )
     }
 
     if (!assignment) {

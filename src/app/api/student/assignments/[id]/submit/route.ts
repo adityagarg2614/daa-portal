@@ -1,7 +1,9 @@
 import { connectDB } from "@/lib/db";
 import Submission from "@/models/Submission";
 import Assignment from "@/models/Assignment";
+import ExamAttempt from "@/models/ExamAttempt";
 import { NextResponse } from "next/server";
+import { verifySebSession } from "@/lib/seb";
 
 export async function POST(
     req: Request,
@@ -46,6 +48,21 @@ export async function POST(
             );
         }
 
+        // SEB Verification
+        if (assignment.isSebRequired) {
+            const sebCheck = await verifySebSession(assignmentId, userId);
+            if (!sebCheck.success) {
+                return NextResponse.json(
+                    { 
+                        success: false, 
+                        message: sebCheck.message,
+                        sebError: sebCheck.errorCode 
+                    },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Find all submissions for this assignment and user
         const submissions = await Submission.find({
             assignmentId,
@@ -63,6 +80,16 @@ export async function POST(
 
         // Calculate total score
         const totalScore = submissions.reduce((sum, sub) => sum + (sub.score || 0), 0);
+
+        // Update ExamAttempt
+        await ExamAttempt.findOneAndUpdate(
+            { studentId: userId, assignmentId: assignmentId },
+            { 
+                status: "submitted",
+                submittedAt: new Date(),
+                finalScore: totalScore
+            }
+        );
 
         return NextResponse.json({
             success: true,

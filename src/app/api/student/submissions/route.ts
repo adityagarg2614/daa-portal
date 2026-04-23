@@ -4,6 +4,8 @@ import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
 import { runTestCases } from "@/lib/piston";
 import { ITestResult } from "@/models/Submission";
+import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
+import { headers } from "next/headers";
 
 
 export async function POST(req: Request) {
@@ -31,6 +33,29 @@ export async function POST(req: Request) {
             );
         }
 
+        // SEB Verification
+        const sebCheck = await verifySebSession(assignmentId, userId);
+        if (!sebCheck.success) {
+            return NextResponse.json(
+                { 
+                    success: false, 
+                    message: sebCheck.message,
+                    sebError: sebCheck.errorCode 
+                },
+                { status: 403 }
+            );
+        }
+
+        // Mark attempt as started if it's the first submission and using SEB
+        if (sebCheck.attempt) {
+            const head = await headers();
+            await markAttemptAsStarted(
+                sebCheck.attempt._id.toString(), 
+                head.get("user-agent") || "unknown",
+                head.get("x-forwarded-for") || "127.0.0.1"
+            );
+        }
+
         // Fetch problem to get test cases
         const problem = await Problem.findById(problemId);
         if (!problem) {
@@ -49,13 +74,22 @@ export async function POST(req: Request) {
 
         // Run test cases if requested and test cases exist
         if (runTests && problem.testCases && problem.testCases.length > 0) {
-            const testCases = problem.testCases.map((tc: { input: string; output: string; isHidden: boolean }) => ({
+            const testCases = problem.testCases.map((tc: any) => ({
                 input: tc.input,
                 output: tc.output,
+                isHidden: tc.isHidden
             }));
 
+
             // Call Piston directly (no HTTP self-fetch)
-            const compileResult = await runTestCases(code, language, testCases);
+            const compileResult = await runTestCases(
+                code, 
+                language, 
+                testCases, 
+                problem.timeLimit || 2000, 
+                problem.memoryLimit || 128000
+            );
+
 
             // Compilation error — return early without saving
             if (compileResult.compilationError) {
@@ -86,7 +120,19 @@ export async function POST(req: Request) {
             }
 
             testResults = compileResult.results;
+            
+            // LeetCode-style: Reveal ONLY the first failing hidden test case
+            let revealedOneHidden = false;
+            testResults = testResults.map(res => {
+                if (!res.passed && res.isHidden && !revealedOneHidden) {
+                    revealedOneHidden = true;
+                    return { ...res, isHidden: false }; // Reveal this one
+                }
+                return res;
+            });
+
             allTestsPassed = compileResult.allPassed;
+
             executionTime = compileResult.executionTime;
             memoryUsed = compileResult.memoryUsed;
             passedTests = compileResult.passedTests;
