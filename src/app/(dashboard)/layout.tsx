@@ -26,7 +26,7 @@ export default async function DashboardLayout({
       publicMetadata: { onboardingComplete: false }
     });
 
-    // User deleted from DB but Clerk session persists
+    // User deleted from DB but Clerk session persist
     redirect("/onboarding");
   }
 

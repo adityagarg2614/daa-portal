@@ -16,16 +16,28 @@ export default function DashboardLayoutClient({
   rollNo?: string;
 }) {
   const pathname = usePathname();
+  const isFocusedWorkspace = /^\/assignment\/[^/]+$/.test(pathname);
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <Navbar name={name} rollNo={rollNo} />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0" key={pathname}>
-          {children}
-        </div>
-      </SidebarInset>
+      {isFocusedWorkspace ? (
+        <main className="flex min-h-svh w-full flex-col">
+          <Navbar name={name} rollNo={rollNo} />
+          <div className="flex flex-1 flex-col" key={pathname}>
+            {children}
+          </div>
+        </main>
+      ) : (
+        <>
+          <AppSidebar />
+          <SidebarInset>
+            <Navbar name={name} rollNo={rollNo} />
+            <div className="flex flex-1 flex-col gap-4 p-4 pt-0" key={pathname}>
+              {children}
+            </div>
+          </SidebarInset>
+        </>
+      )}
     </SidebarProvider>
   );
 }
