@@ -1,6 +1,8 @@
 // Piston code execution library
 // Using self-hosted Piston instance (Docker)
 
+import { prepareCodeForExecution } from "@/lib/code-driver";
+
 const PISTON_API = process.env.PISTON_API_URL;
 import { prepareCodeForExecution } from "./code-driver";
 
@@ -189,11 +191,8 @@ export async function executeCode(
         );
     }
 
-    // Prepare code (headers + drivers)
-    const { wrappedCode, headerLines } = prepareCodeForExecution(code, language);
-
-    const pistonResult = await executeWithPiston(wrappedCode, langConfig, stdin, headerLines, timeLimit, memoryLimit);
-
+    const { wrappedCode } = prepareCodeForExecution(code, language);
+    const pistonResult = await executeWithPiston(wrappedCode, langConfig, stdin);
 
     // If Piston returned a result (even if code failed), use it
     if (pistonResult.result) {
