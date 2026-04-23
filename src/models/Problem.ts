@@ -20,7 +20,10 @@ export interface IProblem extends Document {
     difficulty: "Easy" | "Medium" | "Hard";
     tags: string[];
     marks: number;
+    timeLimit: number; // in ms
+    memoryLimit: number; // in KB
     examples: IExample[];
+
     testCases: ITestCase[];
     createdBy?: string;
     createdAt: Date;
@@ -86,7 +89,16 @@ const ProblemSchema = new Schema<IProblem>(
             required: true,
             default: 10,
         },
+        timeLimit: {
+            type: Number,
+            default: 2000,
+        },
+        memoryLimit: {
+            type: Number,
+            default: 128000,
+        },
         examples: {
+
             type: [ExampleSchema],
             default: [],
         },
