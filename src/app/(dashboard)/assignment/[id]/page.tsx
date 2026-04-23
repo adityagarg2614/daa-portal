@@ -7,26 +7,26 @@ import React, { useEffect, useState, useCallback, useRef } from "react"
 import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { toast } from "sonner"
 import {
-    CalendarDays,
-    Clock3,
-    FileText,
-    Award,
-    Clock,
-    CheckCircle2,
     AlertCircle,
-    Lightbulb,
-    Code2,
-    Save,
-    RotateCcw,
-    Loader2,
+    ArrowLeft,
+    Award,
     BookOpen,
-    Tag,
-    Send,
-    ClipboardCheck,
+    CalendarDays,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Clock3,
+    Code2,
+    FileText,
+    Lightbulb,
+    Loader2,
     Play,
+    RotateCcw,
+    Save,
+    Send,
     Terminal,
 } from "lucide-react"
-import { RotateCCWIcon } from "@/components/ui/rotate-ccw"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Alert } from "@/components/ui/alert"
@@ -50,7 +50,6 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ChevronDown } from "lucide-react"
 import { useTimeRemaining } from "@/hooks/use-time-remaining"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { AssignmentDetailSkeleton } from "@/components/ui/skeleton"
@@ -63,6 +62,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 type Example = {
     input: string
@@ -105,9 +105,9 @@ type SubmissionState = {
         code: string
         language: string
         loading: boolean
-        loadingAction?: 'running' | 'submitting'
+        loadingAction?: "running" | "submitting"
         message: string
-        messageType?: 'success' | 'error' | 'info' | 'compile-error'
+        messageType?: "success" | "error" | "info" | "compile-error"
         compilationError?: string
         testResults?: TestResult[]
         executionTime?: number
@@ -137,12 +137,12 @@ const FALLBACK_STARTER_CODE = {
 
 function formatDate(dateString: string) {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
     })
 }
 
@@ -157,11 +157,12 @@ export default function SingleAssignmentPage() {
     const [submissionState, setSubmissionState] = useState<SubmissionState>({})
     const [accessStatus, setAccessStatus] = useState<"not-published" | "active" | "expired">("active")
     const [autoSubmitting, setAutoSubmitting] = useState(false)
-    const [previousAccessStatus, setPreviousAccessStatus] = useState<"not-published" | "active" | "expired">("active")
     const [submitAssignmentDialogOpen, setSubmitAssignmentDialogOpen] = useState(false)
     const [submittingAssignment, setSubmittingAssignment] = useState(false)
+    const [activeProblemIndex, setActiveProblemIndex] = useState(0)
+    const [leftTab, setLeftTab] = useState("description")
+    const [bottomTab, setBottomTab] = useState("console")
 
-    // Ref to access the latest submissionState without causing re-renders
     const submissionStateRef = useRef(submissionState)
     useEffect(() => {
         submissionStateRef.current = submissionState
@@ -169,12 +170,16 @@ export default function SingleAssignmentPage() {
 
     const { timeRemaining, isExpiringSoon } = useTimeRemaining(assignment?.dueAt || "")
 
-    // Count submitted problems
     const submittedCount = Object.values(submissionState).filter(
         (state) => state.messageType === "success"
     ).length
 
-    // Memoized version of handleAutoSubmit for use in useCallback
+    const safeActiveProblemIndex = assignment?.problems?.length
+        ? Math.min(activeProblemIndex, assignment.problems.length - 1)
+        : 0
+    const activeProblem = assignment?.problems?.[safeActiveProblemIndex] || null
+    const activeSubmission = activeProblem ? submissionState[activeProblem._id] : undefined
+
     const handleAutoSubmitMemo = useCallback(async (currentAssignment: Assignment, currentUserId: string, currentState: SubmissionState) => {
         if (autoSubmitting) return
 
@@ -186,9 +191,7 @@ export default function SingleAssignmentPage() {
                 const codeToSubmit = problemState?.code || problem.starterCode?.cpp || ""
                 const languageToSubmit = problemState?.language || "cpp"
 
-                // Validate before submitting
                 if (!codeToSubmit || !languageToSubmit) {
-                    console.error(`Invalid code or language for problem ${problem._id}`)
                     return Promise.resolve(null)
                 }
 
@@ -198,15 +201,12 @@ export default function SingleAssignmentPage() {
                     userId: currentUserId,
                     code: codeToSubmit,
                     language: languageToSubmit,
-                    runTests: false, // Skip test validation on auto-submit
-                }).catch((error) => {
-                    console.error(`Failed to auto-submit problem ${problem._id}:`, error.response?.data || error.message)
-                    return null
-                })
+                    runTests: false,
+                }).catch(() => null)
             })
 
             const results = await Promise.all(submissionPromises)
-            const successfulSubmissions = results.filter(r => r !== null)
+            const successfulSubmissions = results.filter((result) => result !== null)
 
             toast.success("Assignment submitted successfully", {
                 description: `Successfully submitted ${successfulSubmissions.length}/${currentAssignment.problems.length} problems.`,
@@ -224,7 +224,6 @@ export default function SingleAssignmentPage() {
         }
     }, [autoSubmitting, router])
 
-    // Function to check and update access status in real-time
     const checkAccessStatus = useCallback(() => {
         if (!assignment || !dbUserId) return
 
@@ -240,21 +239,17 @@ export default function SingleAssignmentPage() {
             newStatus = "expired"
         }
 
-        // Only trigger actions if status actually changed
         if (newStatus !== accessStatus) {
-            setPreviousAccessStatus(accessStatus)
             setAccessStatus(newStatus)
 
-            // Trigger auto-submit if transitioning from active to expired
             if (newStatus === "expired" && accessStatus === "active") {
-                handleAutoSubmitMemo(assignment, dbUserId, submissionStateRef.current)
+                void handleAutoSubmitMemo(assignment, dbUserId, submissionStateRef.current)
             }
         }
     }, [assignment, accessStatus, dbUserId, handleAutoSubmitMemo])
 
-    // Fetch assignment data when id changes
     const fetchAssignmentAndUser = useCallback(async () => {
-        if (!id) return;
+        if (!id) return
 
         try {
             const [assignmentRes, userRes] = await Promise.all([
@@ -262,15 +257,7 @@ export default function SingleAssignmentPage() {
                 axios.get("/api/users/me"),
             ])
 
-            // Validate assignment response
-            if (!assignmentRes.data?.assignment) {
-                console.error("Assignment data not found in response")
-                return
-            }
-
-            // Validate user response
-            if (!userRes.data?.user?._id) {
-                console.error("User data not found in response - user may not be authenticated")
+            if (!assignmentRes.data?.assignment || !userRes.data?.user?._id) {
                 return
             }
 
@@ -280,7 +267,6 @@ export default function SingleAssignmentPage() {
             setAssignment(fetchedAssignment)
             setDbUserId(fetchedUserId)
 
-            // Set initial access status (will be monitored by real-time checker)
             const now = new Date()
             const publishDate = new Date(fetchedAssignment.publishAt)
             const dueDate = new Date(fetchedAssignment.dueAt)
@@ -289,7 +275,6 @@ export default function SingleAssignmentPage() {
                 setAccessStatus("not-published")
             } else if (now > dueDate) {
                 setAccessStatus("expired")
-                // If already expired on page load, auto-submit immediately
                 await handleAutoSubmitMemo(fetchedAssignment, fetchedUserId, submissionStateRef.current)
                 return
             } else {
@@ -302,8 +287,6 @@ export default function SingleAssignmentPage() {
 
             const submissions: Submission[] = submissionsRes.data.submissions || []
 
-            // Only initialize submission state if it's empty (first load)
-            // This prevents overwriting user's code when refetching
             if (Object.keys(submissionStateRef.current).length === 0) {
                 const initialState: SubmissionState = {}
 
@@ -312,9 +295,7 @@ export default function SingleAssignmentPage() {
                         (submission) => submission.problemId === problem._id
                     )
 
-                    const savedLanguage =
-                        existingSubmission?.language || "cpp"
-
+                    const savedLanguage = existingSubmission?.language || "cpp"
                     const starterForSavedLanguage =
                         problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
                         FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
@@ -338,62 +319,58 @@ export default function SingleAssignmentPage() {
         }
     }, [id, handleAutoSubmitMemo])
 
-    // Attendance Sync
     useEffect(() => {
         if (assignment && dbUserId && accessStatus === "active") {
             const syncAttendance = async () => {
                 try {
                     await axios.post("/api/attendance/sync-assignment", {
-                        assignmentId: assignment._id
+                        assignmentId: assignment._id,
                     })
                 } catch (error) {
                     console.error("Attendance sync failed:", error)
                 }
             }
-            syncAttendance()
+            void syncAttendance()
         }
-    }, [assignment?._id, dbUserId, accessStatus])
+    }, [assignment, dbUserId, accessStatus])
 
-    // Initial data fetch
     useEffect(() => {
-        fetchAssignmentAndUser()
+        const timer = window.setTimeout(() => {
+            void fetchAssignmentAndUser()
+        }, 0)
+
+        return () => window.clearTimeout(timer)
     }, [fetchAssignmentAndUser])
 
-    // Refetch when navigating back via browser back button or window focus
     useRefetchOnFocus(fetchAssignmentAndUser)
 
-    // Real-time access status checker - runs every second
     useEffect(() => {
         if (!assignment) return
 
-        // Check immediately on mount
-        checkAccessStatus()
-
-        // Set up interval to check every second
-        const interval = setInterval(checkAccessStatus, 1000)
-
-        // Cleanup on unmount
-        return () => clearInterval(interval)
+        const timer = window.setTimeout(() => {
+            checkAccessStatus()
+        }, 0)
+        const interval = window.setInterval(checkAccessStatus, 1000)
+        return () => {
+            window.clearTimeout(timer)
+            window.clearInterval(interval)
+        }
     }, [assignment, checkAccessStatus])
 
     const getDifficultyVariant = (difficulty: string) => {
         switch (difficulty) {
             case "Easy":
-                return "border-green-500/50 bg-green-500/10 text-green-600 dark:text-green-400"
+                return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
             case "Medium":
-                return "border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                return "border-amber-500/20 bg-amber-500/10 text-amber-500"
             case "Hard":
-                return "border-red-500/50 bg-red-500/10 text-red-600 dark:text-red-400"
+                return "border-rose-500/20 bg-rose-500/10 text-rose-500"
             default:
-                return "border-muted bg-muted text-muted-foreground"
+                return "border-border/60 bg-background/70 text-foreground"
         }
     }
 
-    const handleInputChange = (
-        problemId: string,
-        field: "code" | "language",
-        value: string
-    ) => {
+    const handleInputChange = (problemId: string, field: "code" | "language", value: string) => {
         setSubmissionState((prev) => ({
             ...prev,
             [problemId]: {
@@ -422,8 +399,12 @@ export default function SingleAssignmentPage() {
                     starterCode?.[language as keyof typeof starterCode] ||
                     FALLBACK_STARTER_CODE[language as keyof typeof FALLBACK_STARTER_CODE],
                 message: "",
+                messageType: undefined,
+                compilationError: undefined,
+                testResults: undefined,
             },
         }))
+        setBottomTab("console")
     }
 
     const handleResetCode = (
@@ -446,11 +427,14 @@ export default function SingleAssignmentPage() {
                 ...prev[problemId],
                 code,
                 message: "Code reset to starter template",
+                messageType: "info",
+                compilationError: undefined,
+                testResults: undefined,
             },
         }))
+        setBottomTab("console")
     }
 
-    // Run Code — compile & execute without saving (uses /api/compile)
     const handleRunCode = async (problemId: string) => {
         const current = submissionState[problemId]
 
@@ -460,7 +444,7 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     message: "Code is required",
-                    messageType: 'error' as const,
+                    messageType: "error",
                 },
             }))
             return
@@ -472,19 +456,20 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     message: "Programming language is required",
-                    messageType: 'error' as const,
+                    messageType: "error",
                 },
             }))
             return
         }
 
         try {
+            setBottomTab("console")
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     loading: true,
-                    loadingAction: 'running' as const,
+                    loadingAction: "running",
                     message: "",
                     messageType: undefined,
                     compilationError: undefined,
@@ -503,15 +488,16 @@ export default function SingleAssignmentPage() {
                     ...prev[problemId],
                     loading: false,
                     loadingAction: undefined,
-                    message: response.data.output || "(no out)",
-                    messageType: 'info' as const,
+                    message: response.data.output || "(no output)",
+                    messageType: "info",
                     compilationError: undefined,
                     executionTime: response.data.executionTime,
                     memoryUsed: response.data.memoryUsed,
+                    testResults: undefined,
                 },
             }))
 
-            toast.success("Code ran successfully!")
+            toast.success("Code ran successfully")
         } catch (error: unknown) {
             const errData = axios.isAxiosError(error) ? error.response?.data : null
 
@@ -522,24 +508,17 @@ export default function SingleAssignmentPage() {
                     loading: false,
                     loadingAction: undefined,
                     message: errData?.message || "Failed to run code",
-                    messageType: errData?.compilationError ? 'compile-error' as const : 'error' as const,
+                    messageType: errData?.compilationError ? "compile-error" : "error",
                     compilationError: errData?.compilationError ? errData.error : undefined,
+                    testResults: undefined,
                 },
             }))
 
-            if (errData?.compilationError) {
-                toast.error("Compilation failed", {
-                    description: "Fix the errors and try again.",
-                })
-            } else {
-                toast.error(errData?.message || "Failed to run code")
-            }
+            toast.error(errData?.compilationError ? "Compilation failed" : "Failed to run code")
         }
     }
 
-    // Submit — compile, run all test cases, and save only if all pass
     const handleSubmitSolution = async (problemId: string) => {
-        // Prevent submission if assignment is not active
         if (accessStatus !== "active") {
             setSubmissionState((prev) => ({
                 ...prev,
@@ -548,7 +527,7 @@ export default function SingleAssignmentPage() {
                     message: accessStatus === "not-published"
                         ? "Assignment is not yet available for submission"
                         : "Assignment deadline has passed",
-                    messageType: 'error' as const,
+                    messageType: "error",
                 },
             }))
             return
@@ -562,7 +541,7 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     message: "Code is required",
-                    messageType: 'error' as const,
+                    messageType: "error",
                 },
             }))
             return
@@ -574,19 +553,20 @@ export default function SingleAssignmentPage() {
                 [problemId]: {
                     ...prev[problemId],
                     message: "Programming language is required",
-                    messageType: 'error' as const,
+                    messageType: "error",
                 },
             }))
             return
         }
 
         try {
+            setBottomTab("tests")
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
                     ...prev[problemId],
                     loading: true,
-                    loadingAction: 'submitting' as const,
+                    loadingAction: "submitting",
                     message: "",
                     messageType: undefined,
                     compilationError: undefined,
@@ -608,8 +588,8 @@ export default function SingleAssignmentPage() {
                     ...prev[problemId],
                     loading: false,
                     loadingAction: undefined,
-                    message: "All test cases passed! Submission saved successfully.",
-                    messageType: 'success' as const,
+                    message: "All test cases passed. Submission saved successfully.",
+                    messageType: "success",
                     compilationError: undefined,
                     testResults: response.data.testResults || [],
                     executionTime: response.data.executionTime,
@@ -617,12 +597,13 @@ export default function SingleAssignmentPage() {
                 },
             }))
 
-            toast.success("All test cases passed! ✅", {
+            toast.success("All test cases passed", {
                 description: `Your solution passed ${response.data.passedTests || 0}/${response.data.totalTests || 0} test cases and was submitted.`,
             })
         } catch (error: unknown) {
             const errData = axios.isAxiosError(error) ? error.response?.data : null
 
+            setBottomTab("tests")
             setSubmissionState((prev) => ({
                 ...prev,
                 [problemId]: {
@@ -630,7 +611,7 @@ export default function SingleAssignmentPage() {
                     loading: false,
                     loadingAction: undefined,
                     message: errData?.message || "Failed to submit",
-                    messageType: errData?.compilationError ? 'compile-error' as const : 'error' as const,
+                    messageType: errData?.compilationError ? "compile-error" : "error",
                     compilationError: errData?.compilationError ? errData.error : undefined,
                     testResults: errData?.testResults || [],
                     executionTime: errData?.executionTime || 0,
@@ -662,7 +643,7 @@ export default function SingleAssignmentPage() {
                 userId: dbUserId,
             })
 
-            toast.success("Assignment submitted successfully!", {
+            toast.success("Assignment submitted successfully", {
                 description: `Score: ${response.data.totalScore}/${response.data.maxScore}`,
             })
 
@@ -678,22 +659,27 @@ export default function SingleAssignmentPage() {
         }
     }
 
-    // Keyboard shortcuts for save and reset
     useKeyboardShortcuts({
         onSave: () => {
-            const firstProblemId = assignment?.problems[0]?._id
-            if (firstProblemId) {
-                handleSubmitSolution(firstProblemId)
+            if (activeProblem) {
+                void handleSubmitSolution(activeProblem._id)
             }
         },
         onReset: () => {
-            const firstProblemId = assignment?.problems[0]?._id
-            if (firstProblemId) {
-                handleResetCode(firstProblemId, assignment.problems[0].starterCode)
+            if (activeProblem) {
+                handleResetCode(activeProblem._id, activeProblem.starterCode)
             }
         },
-        enabled: accessStatus === "active" && !!assignment,
+        enabled: accessStatus === "active" && !!activeProblem,
     })
+
+    const moveProblem = (direction: "prev" | "next") => {
+        setActiveProblemIndex((prev) => {
+            const nextIndex = direction === "next" ? prev + 1 : prev - 1
+            return Math.max(0, Math.min(nextIndex, (assignment?.problems.length || 1) - 1))
+        })
+        setLeftTab("description")
+    }
 
     if (loading) {
         return <AssignmentDetailSkeleton />
@@ -701,498 +687,470 @@ export default function SingleAssignmentPage() {
 
     if (!assignment) {
         return (
-            <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
-                    <h2 className="text-lg font-semibold">Assignment not found</h2>
-                </div>
-            </div>
+            <CenteredState
+                icon={<FileText className="h-12 w-12 text-muted-foreground" />}
+                title="Assignment not found"
+                description="We couldn&apos;t load this assignment."
+            />
         )
     }
 
     if (accessStatus === "not-published") {
-        const publishDate = new Date(assignment.publishAt)
         return (
-            <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
-                    <CalendarDays className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h2 className="mt-4 text-lg font-semibold">Assignment Not Yet Available</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        This assignment will be available on{" "}
-                        <span className="font-medium text-foreground">
-                            {publishDate.toLocaleString()}
-                        </span>
-                    </p>
-                    <p className="mt-4 text-sm text-muted-foreground">
-                        Please check back later to view and submit your solutions.
-                    </p>
-                </div>
-            </div>
+            <CenteredState
+                icon={<CalendarDays className="h-12 w-12 text-muted-foreground" />}
+                title="Assignment not yet available"
+                description={`This assignment will be available on ${new Date(assignment.publishAt).toLocaleString()}.`}
+            />
         )
     }
 
     if (accessStatus === "expired" || autoSubmitting) {
         return (
-            <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-                <div className="rounded-2xl border bg-background p-10 text-center shadow-sm">
-                    <Clock3 className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h2 className="mt-4 text-lg font-semibold">
-                        {autoSubmitting ? "Submitting your assignment..." : "Assignment Deadline Passed"}
-                    </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        {autoSubmitting
-                            ? "Please wait while we submit your code."
-                            : "Redirecting you to the assignments page..."}
-                    </p>
-                </div>
-            </div>
+            <CenteredState
+                icon={<Clock3 className="h-12 w-12 text-muted-foreground" />}
+                title={autoSubmitting ? "Submitting your assignment..." : "Assignment deadline passed"}
+                description={
+                    autoSubmitting
+                        ? "Please wait while we submit your latest work."
+                        : "Your assignment has closed. Redirecting you back to the assignment list."
+                }
+            />
         )
     }
 
-    return (
-        <div className="flex flex-1 flex-col gap-6 p-4 pt-2">
-            {/* Enhanced Header */}
-            <div className="relative overflow-hidden rounded-2xl border bg-linear-to-br from-background to-muted p-8 shadow-sm">
-                {/* Decorative background */}
-                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
+    if (!activeProblem) {
+        return (
+            <CenteredState
+                icon={<BookOpen className="h-12 w-12 text-muted-foreground" />}
+                title="No problems available"
+                description="This assignment does not contain any problems yet."
+            />
+        )
+    }
 
-                <div className="relative z-10">
-                    {/* Header with icon */}
-                    <div className="flex items-start gap-4">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
-                            <FileText className="h-7 w-7" />
+    const problemProgress = assignment.problems.map((problem) => ({
+        problem,
+        saved: submissionState[problem._id]?.messageType === "success",
+    }))
+
+    return (
+        <div className="flex flex-col gap-4 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
+            <section className="rounded-[24px] border border-border/60 bg-card/80 shadow-[0_20px_56px_-36px_rgba(0,0,0,0.55)]">
+                <div className="flex flex-col gap-4 p-4 sm:p-5">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-500 shadow-none">
+                                    <Code2 className="mr-1.5 h-3.5 w-3.5" />
+                                    Solving Workspace
+                                </Badge>
+                                <Badge variant="outline" className="rounded-full px-3 py-1">
+                                    {assignment.totalProblems} problems
+                                </Badge>
+                                <Badge variant="outline" className="rounded-full px-3 py-1">
+                                    {assignment.totalMarks} marks
+                                </Badge>
+                            </div>
+
+                            <div>
+                                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                                    {assignment.title}
+                                </h1>
+                                <p className="mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                    {assignment.description}
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold tracking-tight">{assignment.title}</h1>
-                            <p className="mt-2 text-sm text-muted-foreground">{assignment.description}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <Badge variant="outline" className="gap-1">
-                                <BookOpen className="h-3 w-3" />
-                                {assignment.totalProblems} Problems
-                            </Badge>
+
+                        <div className="flex flex-wrap items-center gap-2">
                             <Button
-                                onClick={() => setSubmitAssignmentDialogOpen(true)}
-                                className="gap-2"
-                                size="sm"
+                                variant="outline"
+                                className="rounded-2xl"
+                                onClick={() => router.push("/assignment")}
                             >
-                                <Send className="h-4 w-4" />
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back
+                            </Button>
+                            <Button
+                                className="rounded-2xl"
+                                onClick={() => setSubmitAssignmentDialogOpen(true)}
+                            >
+                                <Send className="mr-2 h-4 w-4" />
                                 Submit Assignment
                             </Button>
                         </div>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="mt-6">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium text-muted-foreground">Submission Progress</span>
-                            <span className="font-medium text-primary">
-                                {submittedCount}/{assignment.totalProblems} Completed
-                            </span>
-                        </div>
-                        <Progress
-                            value={(submittedCount / assignment.totalProblems) * 100}
-                            className="mt-2 h-2"
-                        />
-                    </div>
-
-                    {/* Enhanced Stats Grid */}
-                    <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-xl border bg-primary/5 p-4 transition-all duration-300 hover:shadow-md">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
-                                    <Award className="h-5 w-5 icon-hover-scale" />
-                                </div>
+                    <div className="grid gap-3 md:grid-cols-[1.1fr_0.9fr_0.8fr]">
+                        <div className="rounded-[20px] border border-border/60 bg-background/55 px-4 py-3">
+                            <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-xs font-medium text-muted-foreground">Total Marks</p>
-                                    <p className="text-2xl font-bold text-primary">{assignment.totalMarks}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl border bg-background p-4 transition-all duration-300 hover:shadow-md">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
-                                    <CalendarDays className="h-5 w-5 icon-hover-scale" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-muted-foreground">Published</p>
-                                    <p className="text-sm font-medium">{formatDate(assignment.publishAt)}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl border bg-background p-4 transition-all duration-300 hover:shadow-md">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
-                                    <Clock3 className="h-5 w-5 icon-hover-scale" />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-muted-foreground">Due Date</p>
-                                    <p className="text-sm font-medium">{formatDate(assignment.dueAt)}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className={`rounded-xl border p-4 transition-all duration-300 hover:shadow-md ${isExpiringSoon
-                            ? "border-yellow-500/50 bg-yellow-500/10"
-                            : "border-green-500/50 bg-green-500/10"
-                            }`}>
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50">
-                                    <Clock className={`h-5 w-5 icon-pulse ${isExpiringSoon ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400"
-                                        }`} />
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium text-muted-foreground">Time Remaining</p>
-                                    <p className={`text-sm font-bold ${isExpiringSoon ? "text-yellow-600 dark:text-yellow-400" : "text-green-600 dark:text-green-400"
-                                        }`}>
-                                        {timeRemaining}
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                        Progress
+                                    </p>
+                                    <p className="mt-1 text-lg font-semibold text-foreground">
+                                        {submittedCount}/{assignment.totalProblems} saved
                                     </p>
                                 </div>
+                                <Badge variant="outline" className="rounded-full px-3 py-1">
+                                    Problem {safeActiveProblemIndex + 1}
+                                </Badge>
                             </div>
+                            <Progress value={(submittedCount / assignment.totalProblems) * 100} className="mt-3 h-2" />
+                        </div>
+
+                        <div className="rounded-[20px] border border-border/60 bg-background/55 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                Time Remaining
+                            </p>
+                            <p className={cn(
+                                "mt-1 text-lg font-semibold",
+                                isExpiringSoon ? "text-amber-500" : "text-foreground"
+                            )}>
+                                {timeRemaining}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {isExpiringSoon ? "Deadline is close, submit carefully." : "You still have working time available."}
+                            </p>
+                        </div>
+
+                        <div className="rounded-[20px] border border-border/60 bg-background/55 px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                Current Question
+                            </p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                                {safeActiveProblemIndex + 1}. {activeProblem.title}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {activeProblem.marks} marks
+                            </p>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {/* Problem Cards */}
-            <div className="grid gap-6">
-                {assignment.problems?.map((problem, index) => {
-                    const isSubmitted = submissionState[problem._id]?.messageType === "success"
+            <section className="rounded-[24px] border border-border/60 bg-card/80 p-4 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] sm:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Problem Navigator
+                        </p>
+                        <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                            Move between questions without leaving the page
+                        </h2>
+                    </div>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                        {safeActiveProblemIndex + 1} active
+                    </Badge>
+                </div>
 
-                    return (
-                        <div
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                    {problemProgress.map(({ problem, saved }, index) => (
+                        <button
                             key={problem._id}
-                            className="group relative overflow-hidden rounded-2xl border bg-background shadow-sm transition-all duration-300 hover:shadow-md"
-                        >
-                            {/* Submission Status Indicator */}
-                            {isSubmitted && (
-                                <div className="absolute -right-1 -top-1 z-10">
-                                    <div className="flex items-center gap-1 rounded-bl-xl rounded-tr-xl bg-green-500 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                        Saved
-                                    </div>
-                                </div>
+                            type="button"
+                            onClick={() => {
+                                setActiveProblemIndex(index)
+                                setLeftTab("description")
+                            }}
+                            className={cn(
+                                "min-w-[220px] rounded-[20px] border px-4 py-3 text-left transition-all",
+                                index === safeActiveProblemIndex
+                                    ? "border-primary/30 bg-primary/5 shadow-sm"
+                                    : "border-border/60 bg-background/55 hover:border-primary/20 hover:shadow-sm"
                             )}
-
-                            <div className="p-6">
-                                {/* Enhanced Header */}
-                                <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                                                {index + 1}
-                                            </span>
-                                            <h2 className="text-xl font-semibold">{problem.title}</h2>
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Badge
-                                                variant="outline"
-                                                className={`gap-1 ${getDifficultyVariant(problem.difficulty)}`}
-                                            >
-                                                {problem.difficulty === 'Easy' && <CheckCircle2 className="h-3 w-3" />}
-                                                {problem.difficulty === 'Medium' && <AlertCircle className="h-3 w-3" />}
-                                                {problem.difficulty === 'Hard' && <Lightbulb className="h-3 w-3" />}
-                                                {problem.difficulty}
-                                            </Badge>
-                                            <Badge variant="secondary" className="gap-1">
-                                                <Award className="h-3 w-3" />
-                                                {problem.marks} marks
-                                            </Badge>
-                                            {isSubmitted && (
-                                                <Badge variant="success" className="gap-1">
-                                                    <CheckCircle2 className="h-3 w-3" />
-                                                    Submitted
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Tabs for Description, Examples */}
-                                <Tabs defaultValue="description" className="mb-6">
-                                    <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="description" className="gap-2">
-                                            <FileText className="h-4 w-4" />
-                                            Description
-                                        </TabsTrigger>
-                                        <TabsTrigger value="examples" className="gap-2">
-                                            <Lightbulb className="h-4 w-4" />
-                                            Examples
-                                        </TabsTrigger>
-                                    </TabsList>
-
-                                    {/* Description Tab */}
-                                    <TabsContent value="description" className="space-y-4">
-                                        <div>
-                                            <h3 className="mb-2 flex items-center gap-2 font-medium">
-                                                <BookOpen className="h-4 w-4 text-muted-foreground" />
-                                                Problem Statement
-                                            </h3>
-                                            <p className="text-sm leading-7 text-muted-foreground">
-                                                {problem.description}
-                                            </p>
-                                        </div>
-
-                                        {problem.constraints?.length > 0 && (
-                                            <Collapsible defaultOpen={false}>
-                                                <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 p-3 text-sm font-medium hover:bg-muted/80 transition-colors">
-                                                    <span className="flex items-center gap-2">
-                                                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                                                        Constraints ({problem.constraints.length})
-                                                    </span>
-                                                    <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent>
-                                                    <ul className="mt-3 space-y-2 rounded-lg border bg-background p-4">
-                                                        {problem.constraints.map((constraint, idx) => (
-                                                            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                                                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                                                                {constraint}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </CollapsibleContent>
-                                            </Collapsible>
-                                        )}
-
-                                        {problem.tags?.length > 0 && (
-                                            <div>
-                                                <h3 className="mb-2 flex items-center gap-2 font-medium">
-                                                    <Code2 className="h-4 w-4 text-muted-foreground" />
-                                                    Topics
-                                                </h3>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {problem.tags.map((tag, idx) => (
-                                                        <Badge
-                                                            key={idx}
-                                                            variant="outline"
-                                                            className="gap-1 hover:bg-muted transition-colors cursor-default"
-                                                        >
-                                                            <Tag className="h-3 w-3" />
-                                                            {tag}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </TabsContent>
-
-                                    {/* Examples Tab */}
-                                    <TabsContent value="examples" className="space-y-4">
-                                        {problem.examples?.map((example, idx) => (
-                                            <ExampleCard
-                                                key={idx}
-                                                example={example}
-                                                exampleNumber={idx + 1}
-                                            />
-                                        ))}
-                                    </TabsContent>
-                                </Tabs>
-
-                                {/* Enhanced Code Editor Area */}
-                                <div className="rounded-xl border bg-muted/30 p-4">
-                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <label className="text-sm font-medium">Language</label>
-                                            <Select
-                                                value={submissionState[problem._id]?.language || "cpp"}
-                                                onValueChange={(lang) => handleLanguageChange(problem._id, lang, problem.starterCode)}
-                                            >
-                                                <SelectTrigger className="w-[160px] gap-2">
-                                                    <Code2 className="h-4 w-4" />
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="cpp">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-2 w-2 rounded-full bg-blue-500" />
-                                                            C++
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem value="java">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-2 w-2 rounded-full bg-red-500" />
-                                                            Java
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem value="python">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                                                            Python
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem value="javascript">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-2 w-2 rounded-full bg-green-500" />
-                                                            JavaScript
-                                                        </div>
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleResetCode(problem._id, problem.starterCode)}
-                                                className="gap-1.5"
-                                                disabled={submissionState[problem._id]?.loading || accessStatus !== "active"}
-                                            >
-                                                <RotateCcw className="h-4 w-4 icon-hover-scale" />
-                                                Reset
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => handleRunCode(problem._id)}
-                                                disabled={submissionState[problem._id]?.loading}
-                                                className="gap-1.5"
-                                                size="sm"
-                                            >
-                                                {submissionState[problem._id]?.loading && submissionState[problem._id]?.loadingAction === 'running' ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 icon-spin" />
-                                                        Compiling...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Play className="h-4 w-4 icon-hover-scale" />
-                                                        Run Code
-                                                    </>
-                                                )}
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleSubmitSolution(problem._id)}
-                                                disabled={submissionState[problem._id]?.loading || accessStatus !== "active"}
-                                                className="gap-1.5"
-                                                size="sm"
-                                            >
-                                                {submissionState[problem._id]?.loading && submissionState[problem._id]?.loadingAction === 'submitting' ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 icon-spin" />
-                                                        Testing & Submitting...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Send className="h-4 w-4 icon-hover-scale" />
-                                                        Submit
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <CodeEditor
-                                        language={submissionState[problem._id]?.language || "cpp"}
-                                        value={submissionState[problem._id]?.code || ""}
-                                        onChange={(value) => handleInputChange(problem._id, "code", value)}
-                                    />
-
-                                    {/* Compilation Error Display */}
-                                    {submissionState[problem._id]?.compilationError && (
-                                        <div className="mt-4 rounded-xl border border-red-500/50 bg-red-500/5 p-4">
-                                            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
-                                                <Terminal className="h-4 w-4" />
-                                                Compilation Error
-                                            </div>
-                                            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-red-950/10 dark:bg-red-950/30 p-3 font-mono text-xs text-red-700 dark:text-red-300">
-                                                {submissionState[problem._id]?.compilationError}
-                                            </pre>
-                                        </div>
-                                    )}
-
-                                    {/* Status Message */}
-                                    {submissionState[problem._id]?.message && !submissionState[problem._id]?.compilationError && (
-                                        <Alert
-                                            variant={
-                                                submissionState[problem._id]?.messageType === "success"
-                                                    ? "success"
-                                                    : submissionState[problem._id]?.messageType === "info"
-                                                        ? "info"
-                                                        : submissionState[problem._id]?.messageType === "error"
-                                                            ? "destructive"
-                                                            : "default"
-                                            }
-                                            className="mt-4"
+                        >
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/60 bg-background text-xs font-semibold text-muted-foreground">
+                                            {index + 1}
+                                        </span>
+                                        <Badge
+                                            variant="outline"
+                                            className={cn("rounded-full px-2.5 py-1", getDifficultyVariant(problem.difficulty))}
                                         >
-                                            {submissionState[problem._id]?.message}
-                                        </Alert>
-                                    )}
+                                            {problem.difficulty}
+                                        </Badge>
+                                    </div>
+                                    <p className="line-clamp-1 font-medium text-foreground">{problem.title}</p>
+                                    <p className="text-xs text-muted-foreground">{problem.marks} marks</p>
+                                </div>
+                                {saved ? (
+                                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+                                ) : (
+                                    <div className="mt-0.5 h-5 w-5 rounded-full border border-border/60 bg-background" />
+                                )}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </section>
 
-                                    {/* Run Code Output (for Run Code mode) */}
-                                    {submissionState[problem._id]?.messageType === "info" && submissionState[problem._id]?.message && !submissionState[problem._id]?.testResults?.length && (
-                                        <div className="mt-3 rounded-lg border bg-muted/30 p-3">
-                                            <div className="mb-1 text-xs font-medium text-muted-foreground">Output:</div>
-                                            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm">
-                                                {submissionState[problem._id]?.message}
-                                            </pre>
-                                        </div>
-                                    )}
-
-                                    {/* Test Results Display */}
-                                    {submissionState[problem._id]?.testResults && submissionState[problem._id]?.testResults!.length > 0 && (
-                                        <TestResultsDisplay
-                                            results={submissionState[problem._id]?.testResults!}
-                                            totalExecutionTime={submissionState[problem._id]?.executionTime}
-                                            totalMemoryUsed={submissionState[problem._id]?.memoryUsed}
-                                        />
-                                    )}
+            <section className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr] xl:items-start">
+                <section className="rounded-[24px] border border-border/60 bg-card/80 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+                    <div className="border-b border-border/60 p-4 sm:p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div className="space-y-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className={cn("rounded-full px-3 py-1", getDifficultyVariant(activeProblem.difficulty))}>
+                                        {activeProblem.difficulty}
+                                    </Badge>
+                                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                                        <Award className="mr-1.5 h-3.5 w-3.5" />
+                                        {activeProblem.marks} marks
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-semibold tracking-tight">
+                                        {safeActiveProblemIndex + 1}. {activeProblem.title}
+                                    </h2>
+                                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                                        Focus on one question at a time, then move to the next when you are ready.
+                                    </p>
                                 </div>
                             </div>
-                        </div>
-                    )
-                })}
-            </div>
 
-            {/* Submit Assignment Dialog */}
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    className="rounded-2xl"
+                                    disabled={safeActiveProblemIndex === 0}
+                                    onClick={() => moveProblem("prev")}
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-2xl"
+                                    disabled={safeActiveProblemIndex === assignment.problems.length - 1}
+                                    onClick={() => moveProblem("next")}
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 sm:p-5">
+                        <Tabs value={leftTab} onValueChange={setLeftTab} className="space-y-4">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="description">Description</TabsTrigger>
+                                <TabsTrigger value="examples">Examples</TabsTrigger>
+                                <TabsTrigger value="notes">Constraints</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="description" className="mt-0 space-y-4">
+                                <div>
+                                    <h3 className="mb-2 flex items-center gap-2 font-medium">
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                        Problem statement
+                                    </h3>
+                                    <div className="rounded-[20px] border border-border/60 bg-background/40 p-4">
+                                        <p className="whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
+                                            {activeProblem.description}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {activeProblem.tags?.length > 0 && (
+                                    <div>
+                                        <h3 className="mb-2 flex items-center gap-2 font-medium">
+                                            <Code2 className="h-4 w-4 text-muted-foreground" />
+                                            Topics
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            {activeProblem.tags.map((tag, idx) => (
+                                                <Badge key={idx} variant="outline" className="rounded-full px-3 py-1">
+                                                    {tag}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="examples" className="mt-0 space-y-4">
+                                {activeProblem.examples?.length > 0 ? (
+                                    activeProblem.examples.map((example, idx) => (
+                                        <ExampleCard key={idx} example={example} exampleNumber={idx + 1} />
+                                    ))
+                                ) : (
+                                    <EmptyPanel message="No examples were provided for this problem." />
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="notes" className="mt-0 space-y-3">
+                                {activeProblem.constraints?.length > 0 ? (
+                                    activeProblem.constraints.map((constraint, idx) => (
+                                        <Collapsible key={idx} defaultOpen={idx === 0}>
+                                            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-2xl border border-border/60 bg-background/65 p-3 text-left text-sm font-medium">
+                                                <span className="flex items-center gap-2">
+                                                    <Lightbulb className="h-4 w-4 text-muted-foreground" />
+                                                    Constraint {idx + 1}
+                                                </span>
+                                                <ChevronRight className="h-4 w-4 transition-transform data-[state=open]:rotate-90" />
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent className="px-1 pt-2">
+                                                <div className="rounded-2xl border border-border/60 bg-background/55 p-4 text-sm leading-6 text-muted-foreground">
+                                                    {constraint}
+                                                </div>
+                                            </CollapsibleContent>
+                                        </Collapsible>
+                                    ))
+                                ) : (
+                                    <EmptyPanel message="No extra constraints were provided for this problem." />
+                                )}
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </section>
+
+                <section className="rounded-[24px] border border-border/60 bg-card/80 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+                    <div className="border-b border-border/60 p-4 sm:p-5">
+                        <div className="flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Select
+                                    value={activeSubmission?.language || "cpp"}
+                                    onValueChange={(lang) => handleLanguageChange(activeProblem._id, lang, activeProblem.starterCode)}
+                                >
+                                    <SelectTrigger className="h-11 w-[170px] rounded-2xl gap-2">
+                                        <Code2 className="h-4 w-4" />
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cpp">C++</SelectItem>
+                                        <SelectItem value="java">Java</SelectItem>
+                                        <SelectItem value="python">Python</SelectItem>
+                                        <SelectItem value="javascript">JavaScript</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Badge variant="outline" className="h-11 rounded-full px-4">
+                                    <Clock className="mr-1.5 h-3.5 w-3.5" />
+                                    {timeRemaining}
+                                </Badge>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    className="rounded-2xl"
+                                    onClick={() => handleResetCode(activeProblem._id, activeProblem.starterCode)}
+                                    disabled={activeSubmission?.loading || accessStatus !== "active"}
+                                >
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    Reset
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="rounded-2xl"
+                                    onClick={() => handleRunCode(activeProblem._id)}
+                                    disabled={activeSubmission?.loading}
+                                >
+                                    {activeSubmission?.loading && activeSubmission?.loadingAction === "running" ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Play className="mr-2 h-4 w-4" />
+                                    )}
+                                    Run
+                                </Button>
+                                <Button
+                                    className="rounded-2xl"
+                                    onClick={() => handleSubmitSolution(activeProblem._id)}
+                                    disabled={activeSubmission?.loading || accessStatus !== "active"}
+                                >
+                                    {activeSubmission?.loading && activeSubmission?.loadingAction === "submitting" ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="mr-2 h-4 w-4" />
+                                    )}
+                                    Submit
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 sm:p-5">
+                        <div>
+                            <CodeEditor
+                                language={activeSubmission?.language || "cpp"}
+                                value={activeSubmission?.code || ""}
+                                onChange={(value) => handleInputChange(activeProblem._id, "code", value)}
+                            />
+                        </div>
+
+                        <div className="mt-5 border-t border-border/60 pt-5">
+                            <Tabs value={bottomTab} onValueChange={setBottomTab} className="space-y-4">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="console">
+                                        <Terminal className="mr-2 h-4 w-4" />
+                                        Console
+                                    </TabsTrigger>
+                                    <TabsTrigger value="tests">
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Test Results
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="console" className="mt-0">
+                                    <ConsolePanel state={activeSubmission} />
+                                </TabsContent>
+
+                                <TabsContent value="tests" className="mt-0">
+                                    {activeSubmission?.testResults?.length ? (
+                                        <div>
+                                            <TestResultsDisplay
+                                                results={activeSubmission.testResults}
+                                                totalExecutionTime={activeSubmission.executionTime}
+                                                totalMemoryUsed={activeSubmission.memoryUsed}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <EmptyPanel message="Submit your solution to see full test case results here." />
+                                    )}
+                                </TabsContent>
+                            </Tabs>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
             <Dialog open={submitAssignmentDialogOpen} onOpenChange={setSubmitAssignmentDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <ClipboardCheck className="h-5 w-5" />
-                            Submit Assignment
-                        </DialogTitle>
+                        <DialogTitle>Submit Assignment</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to submit your assignment? This will finalize your submission.
+                            You are about to finalize this assignment. Saved problem submissions will be counted.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="py-4">
-                        <div className="rounded-lg border bg-muted/50 p-4">
+                        <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Problems Completed</span>
-                                    <span className="font-medium">
-                                        {submittedCount}/{assignment?.totalProblems}
+                                    <span className="text-muted-foreground">Saved problems</span>
+                                    <span className="font-medium text-foreground">
+                                        {submittedCount}/{assignment.totalProblems}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-muted-foreground">Status</span>
-                                    <Badge
-                                        variant={submittedCount === assignment?.totalProblems ? "success" : "outline"}
-                                    >
-                                        {submittedCount === assignment?.totalProblems
-                                            ? "All problems attempted"
-                                            : "Some problems pending"}
-                                    </Badge>
+                                    <span className="text-muted-foreground">Deadline</span>
+                                    <span className="font-medium text-foreground">
+                                        {formatDate(assignment.dueAt)}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {submittedCount !== assignment?.totalProblems && (
-                            <Alert variant="default" className="mt-4">
-                                <AlertCircle className="h-4 w-4" />
-                                <div className="ml-2">
-                                    <p className="text-sm">
-                                        You haven&apos;t attempted all problems yet. Your current submissions will be submitted as-is.
-                                    </p>
-                                </div>
+                        {submittedCount !== assignment.totalProblems && (
+                            <Alert className="mt-4">
+                                Some problems are still unsaved. Your current saved solutions will be submitted as they are.
                             </Alert>
                         )}
                     </div>
 
-                    <DialogFooter className="gap-2 sm:gap-0">
+                    <DialogFooter>
                         <Button
                             variant="outline"
                             onClick={() => setSubmitAssignmentDialogOpen(false)}
@@ -1200,26 +1158,98 @@ export default function SingleAssignmentPage() {
                         >
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleFinalSubmit}
-                            disabled={submittingAssignment}
-                            className="gap-2"
-                        >
+                        <Button onClick={handleFinalSubmit} disabled={submittingAssignment}>
                             {submittingAssignment ? (
                                 <>
-                                    <Loader2 className="h-4 w-4 icon-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Submitting...
                                 </>
                             ) : (
                                 <>
-                                    <Send className="h-4 w-4" />
-                                    Submit & Redirect
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Final Submit
                                 </>
                             )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        </div>
+    )
+}
+
+function ConsolePanel({
+    state,
+}: {
+    state?: SubmissionState[string]
+}) {
+    if (!state?.message && !state?.compilationError) {
+        return <EmptyPanel message="Run your code to see console output here." />
+    }
+
+    if (state.compilationError) {
+        return (
+            <div className="rounded-[22px] border border-rose-500/20 bg-rose-500/5 p-4">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-rose-500">
+                    <AlertCircle className="h-4 w-4" />
+                    Compilation error
+                </div>
+                <pre className="overflow-x-auto whitespace-pre-wrap rounded-2xl bg-background/80 p-4 font-mono text-xs text-rose-400">
+                    {state.compilationError}
+                </pre>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-3">
+            {(state.executionTime !== undefined || state.memoryUsed !== undefined) && (
+                <div className="flex flex-wrap gap-2">
+                    {state.executionTime !== undefined && (
+                        <Badge variant="outline" className="rounded-full px-3 py-1">
+                            {state.executionTime} ms
+                        </Badge>
+                    )}
+                    {state.memoryUsed !== undefined && state.memoryUsed > 0 && (
+                        <Badge variant="outline" className="rounded-full px-3 py-1">
+                            {state.memoryUsed} KB
+                        </Badge>
+                    )}
+                </div>
+            )}
+            <div className="rounded-[22px] border border-border/60 bg-background/60 p-4">
+                <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-foreground">
+                    {state.message}
+                </pre>
+            </div>
+        </div>
+    )
+}
+
+function EmptyPanel({ message }: { message: string }) {
+    return (
+        <div className="flex h-full min-h-[140px] items-center justify-center rounded-[22px] border border-dashed border-border/60 bg-background/45 p-6 text-center text-sm text-muted-foreground">
+            {message}
+        </div>
+    )
+}
+
+function CenteredState({
+    icon,
+    title,
+    description,
+}: {
+    icon: React.ReactNode
+    title: string
+    description: string
+}) {
+    return (
+        <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center px-4 pb-6 pt-2 sm:px-6 xl:px-8">
+            <div className="w-full max-w-xl rounded-[28px] border border-border/60 bg-card/80 p-10 text-center shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+                <div className="flex justify-center">{icon}</div>
+                <h2 className="mt-4 text-xl font-semibold">{title}</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+            </div>
         </div>
     )
 }
