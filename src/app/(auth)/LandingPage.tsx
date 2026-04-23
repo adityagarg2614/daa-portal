@@ -1,439 +1,461 @@
 "use client";
 
 import Link from "next/link";
-import { SignInModalButton } from "../../components/SignInModalButton";
-import { Sparkles, Code2, BarChart3, Users, Zap, Shield, ArrowRight, Github, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
+import {
+    ArrowRight,
+    BarChart3,
+    BookOpenCheck,
+    CalendarDays,
+    CheckCheck,
+    ChevronRight,
+    Code2,
+    Cpu,
+    Layers3,
+    ShieldCheck,
+    Sparkles,
+    Zap,
+} from "lucide-react";
+import { SignInModalButton } from "../../components/SignInModalButton";
 import styles from "./LandingPage.module.css";
 
-// Animation variants
-const fadeInUp = {
-    hidden: { opacity: 0, y: 60 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+const fadeUp = {
+    hidden: { opacity: 0, y: 32 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.65 } },
 };
 
-const scaleIn = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } }
-};
-
-const staggerContainer = {
+const stagger = {
     hidden: { opacity: 0 },
     visible: {
         opacity: 1,
-        transition: { staggerChildren: 0.15, delayChildren: 0.2 }
-    }
+        transition: { staggerChildren: 0.12, delayChildren: 0.12 },
+    },
 };
 
-const floatAnimation = {
-    y: [0, -20, 0],
-    transition: { duration: 4, repeat: Infinity }
+const floatCard = {
+    y: [0, -10, 0],
+    rotate: [0, 0.6, 0],
+    transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
 };
 
-const featureVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: (i: number) => ({
-        opacity: 1,
-        y: 0,
-        transition: { delay: 0.3 + i * 0.15, duration: 0.6 }
-    })
-};
+const features = [
+    {
+        icon: Code2,
+        title: "Code, run, and submit in one flow",
+        body: "Students move from reading the problem to testing and submitting without switching tools or losing context.",
+        tone: "cyan",
+        meta: "Browser-first workflow",
+    },
+    {
+        icon: Cpu,
+        title: "Auto-grading backed by real execution",
+        body: "Solutions are evaluated against structured test cases so feedback is immediate, consistent, and objective.",
+        tone: "amber",
+        meta: "Multi-language support",
+    },
+    {
+        icon: BarChart3,
+        title: "Performance visibility that helps teaching",
+        body: "Dashboards surface assignment progress, scores, and activity trends for both students and course admins.",
+        tone: "emerald",
+        meta: "Insightful analytics",
+    },
+    {
+        icon: ShieldCheck,
+        title: "Role-aware access out of the box",
+        body: "Students, admins, onboarding, and protected routes all fit into a clear identity and permissions model.",
+        tone: "slate",
+        meta: "Secure by design",
+    },
+];
+
+const workflow = [
+    {
+        step: "01",
+        title: "Sign in with your institution identity",
+        body: "Students and admins land in the right flow quickly with Clerk-powered authentication.",
+    },
+    {
+        step: "02",
+        title: "Access structured assignments and problem sets",
+        body: "Problems, deadlines, and grading expectations are centralized in one focused workspace.",
+    },
+    {
+        step: "03",
+        title: "Track results, attendance, and engagement",
+        body: "The portal keeps academic progress visible instead of scattering it across forms and chats.",
+    },
+];
 
 export default function LandingPage() {
     return (
-        <div className={styles.landingRoot}>
-            {/* Animated background */}
-            <div className={styles.bgGrid} aria-hidden="true" />
-            <div className={`${styles.gradientOrb} ${styles.orb1}`} aria-hidden="true" />
-            <div className={`${styles.gradientOrb} ${styles.orb2}`} aria-hidden="true" />
-            <div className={`${styles.gradientOrb} ${styles.orb3}`} aria-hidden="true" />
+        <div className={styles.page}>
+            <div className={styles.bgMesh} aria-hidden="true" />
+            <div className={styles.bgNoise} aria-hidden="true" />
+            <div className={`${styles.glow} ${styles.glowA}`} aria-hidden="true" />
+            <div className={`${styles.glow} ${styles.glowB}`} aria-hidden="true" />
+            <div className={`${styles.glow} ${styles.glowC}`} aria-hidden="true" />
 
-            {/* Navigation */}
-            <motion.nav
-                initial={{ y: -100, opacity: 0 }}
+            <motion.header
+                initial={{ y: -32, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={styles.navContainer}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className={styles.navShell}
             >
-                <div className={styles.navContent}>
-                    <Link href="/" className={styles.logoLink}>
-                        <motion.div
-                            className={styles.logoIcon}
-                            whileHover={{ scale: 1.1, rotate: 5 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Sparkles className={styles.logoSparkle} />
-                        </motion.div>
-                        <div className={styles.logoText}>
-                            <span className={styles.logoTitle}>Algo-Grade</span>
-                            <span className={styles.logoSubtitle}>Code Together</span>
+                <div className={styles.nav}>
+                    <Link href="/" className={styles.brand}>
+                        <div className={styles.brandMark}>
+                            <Sparkles className={styles.brandIcon} />
+                        </div>
+                        <div className={styles.brandText}>
+                            <span className={styles.brandTitle}>Algo-Grade</span>
+                            <span className={styles.brandSubtitle}>DAA Course Operating System</span>
                         </div>
                     </Link>
 
+                    <nav className={styles.navLinks}>
+                        <Link href="#capabilities" className={styles.navLink}>
+                            Capabilities
+                        </Link>
+                        <Link href="#workflow" className={styles.navLink}>
+                            Workflow
+                        </Link>
+                        <Link href="#why" className={styles.navLink}>
+                            Why It Works
+                        </Link>
+                    </nav>
+
                     <div className={styles.navActions}>
-                        <Link href="#features" className={styles.navLink}>Features</Link>
-                        <Link href="#how-it-works" className={styles.navLink}>How It Works</Link>
-                        <SignInModalButton className={styles.btnPrimary} />
+                        <Link href="#capabilities" className={styles.ghostBtn}>
+                            Explore
+                        </Link>
+                        <SignInModalButton className={styles.primaryBtn} />
                     </div>
                 </div>
-            </motion.nav>
+            </motion.header>
 
-            {/* Hero Section */}
-            <main className={styles.mainContent}>
-                <section className={styles.heroSection}>
-                    {/* Floating code blocks decoration */}
+            <main className={styles.main}>
+                <section className={styles.hero}>
                     <motion.div
-                        className={`${styles.codeDecoration} ${styles.code1}`}
-                        animate={floatAnimation}
-                        transition={{ delay: 0.5 }}
-                        aria-hidden="true"
-                    >
-                        <Code2 className={styles.decorationIcon} />
-                    </motion.div>
-                    <motion.div
-                        className={`${styles.codeDecoration} ${styles.code2}`}
-                        animate={floatAnimation}
-                        transition={{ delay: 1.5 }}
-                        aria-hidden="true"
-                    >
-                        <Zap className={styles.decorationIcon} />
-                    </motion.div>
-
-                    <motion.div
-                        className={styles.heroContent}
+                        className={styles.heroGrid}
                         initial="hidden"
                         animate="visible"
-                        variants={staggerContainer}
+                        variants={stagger}
                     >
-                        <motion.div variants={fadeInUp} className={styles.heroBadge}>
-                            <span className={styles.badgeDot} />
-                            Design & Analysis of Algorithms Portal
+                        <div className={styles.heroCopy}>
+                            <motion.div variants={fadeUp} className={styles.eyebrow}>
+                                <span className={styles.eyebrowDot} />
+                                Built for algorithm courses that need clarity, speed, and scale
+                            </motion.div>
+
+                            <motion.h1 variants={fadeUp} className={styles.heroTitle}>
+                                The academic portal where{" "}
+                                <span className={styles.accentText}>assignments</span>,{" "}
+                                <span className={styles.accentTextAlt}>grading</span>, and{" "}
+                                <span className={styles.accentText}>progress</span> finally feel connected.
+                            </motion.h1>
+
+                            <motion.p variants={fadeUp} className={styles.heroText}>
+                                Algo-Grade gives students and instructors one unified experience
+                                for DAA coursework: browse assignments, write code, run solutions,
+                                submit answers, manage attendance, and follow performance without
+                                the usual admin sprawl.
+                            </motion.p>
+
+                            <motion.div variants={fadeUp} className={styles.heroActions}>
+                                <SignInModalButton className={styles.primaryBtnHero}>
+                                    Start With Your Account
+                                    <ArrowRight className={styles.btnIcon} />
+                                </SignInModalButton>
+                                <Link href="#workflow" className={styles.secondaryBtn}>
+                                    See How It Works
+                                </Link>
+                            </motion.div>
+
+                            <motion.div variants={fadeUp} className={styles.metricStrip}>
+                                <Metric label="Assignment flow" value="Structured" />
+                                <Metric label="Feedback loop" value="Immediate" />
+                                <Metric label="Admin control" value="Centralized" />
+                            </motion.div>
+                        </div>
+
+                        <motion.div variants={fadeUp} className={styles.heroVisual}>
+                            <motion.div
+                                className={`${styles.floatingCard} ${styles.floatingTop}`}
+                                animate={floatCard}
+                            >
+                                <div className={styles.floatingLabel}>Live grading</div>
+                                <div className={styles.floatingValue}>12 / 12 tests passed</div>
+                            </motion.div>
+
+                            <motion.div
+                                className={`${styles.floatingCard} ${styles.floatingBottom}`}
+                                animate={{ ...floatCard, transition: { ...floatCard.transition, delay: 0.9 } }}
+                            >
+                                <div className={styles.floatingLabel}>Class engagement</div>
+                                <div className={styles.floatingValue}>92% attendance this week</div>
+                            </motion.div>
+
+                            <div className={styles.showcase}>
+                                <div className={styles.showcaseHeader}>
+                                    <div className={styles.showcaseDots}>
+                                        <span />
+                                        <span />
+                                        <span />
+                                    </div>
+                                    <div className={styles.showcasePath}>/dashboard/overview</div>
+                                </div>
+
+                                <div className={styles.showcaseBody}>
+                                    <div className={styles.showcaseSidebar}>
+                                        <div className={styles.sidebarBrand}>Algo-Grade</div>
+                                        <div className={styles.sidebarGroup}>
+                                            <span className={styles.sidebarLabel}>Workspace</span>
+                                            <div className={styles.sidebarItemActive}>
+                                                <BookOpenCheck className={styles.sidebarIcon} />
+                                                Assignments
+                                            </div>
+                                            <div className={styles.sidebarItem}>
+                                                <BarChart3 className={styles.sidebarIcon} />
+                                                Results
+                                            </div>
+                                            <div className={styles.sidebarItem}>
+                                                <CalendarDays className={styles.sidebarIcon} />
+                                                Attendance
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.showcaseContent}>
+                                        <div className={styles.showcasePanel}>
+                                            <div className={styles.panelTop}>
+                                                <div>
+                                                    <p className={styles.panelEyebrow}>Current assignment</p>
+                                                    <h3 className={styles.panelTitle}>Greedy + DP Studio</h3>
+                                                </div>
+                                                <span className={styles.panelBadge}>Open</span>
+                                            </div>
+
+                                            <div className={styles.statRow}>
+                                                <div className={styles.statCard}>
+                                                    <span className={styles.statCardLabel}>Problems</span>
+                                                    <span className={styles.statCardValue}>6</span>
+                                                </div>
+                                                <div className={styles.statCard}>
+                                                    <span className={styles.statCardLabel}>Marks</span>
+                                                    <span className={styles.statCardValue}>120</span>
+                                                </div>
+                                                <div className={styles.statCard}>
+                                                    <span className={styles.statCardLabel}>Due</span>
+                                                    <span className={styles.statCardValue}>Fri 11:59</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.codeShell}>
+                                            <div className={styles.codeHeader}>
+                                                <div className={styles.codeTabs}>
+                                                    <span className={styles.codeTabActive}>solution.cpp</span>
+                                                    <span className={styles.codeTab}>tests</span>
+                                                </div>
+                                                <div className={styles.codeMeta}>C++</div>
+                                            </div>
+
+                                            <pre className={styles.codeBlock}>
+                                                <code>{`priority_queue<int> pq;
+while (k-- && !pq.empty()) {
+  score += pq.top();
+  pq.pop();
+}
+cout << score << "\\n";`}</code>
+                                            </pre>
+                                        </div>
+
+                                        <div className={styles.resultRail}>
+                                            <div className={styles.resultRow}>
+                                                <div className={styles.resultIconPass}>
+                                                    <CheckCheck className={styles.resultIconSvg} />
+                                                </div>
+                                                <div>
+                                                    <p className={styles.resultTitle}>Execution complete</p>
+                                                    <p className={styles.resultText}>Feedback returned in 1.8s</p>
+                                                </div>
+                                            </div>
+                                            <div className={styles.resultProgress}>
+                                                <span className={styles.resultProgressFill} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                </section>
+
+                <section id="capabilities" className={styles.section}>
+                    <motion.div
+                        className={styles.sectionIntro}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-120px" }}
+                        variants={stagger}
+                    >
+                        <motion.p variants={fadeUp} className={styles.sectionKicker}>
+                            Platform capabilities
+                        </motion.p>
+                        <motion.h2 variants={fadeUp} className={styles.sectionTitle}>
+                            Built for the full rhythm of coursework, not just submissions
+                        </motion.h2>
+                        <motion.p variants={fadeUp} className={styles.sectionText}>
+                            The portal is designed to support the real classroom cycle:
+                            assignment release, solution work, evaluation, attendance, and
+                            analytics in one consistent product language.
+                        </motion.p>
+                    </motion.div>
+
+                    <motion.div
+                        className={styles.featureGrid}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-80px" }}
+                        variants={stagger}
+                    >
+                        {features.map((feature) => {
+                            const Icon = feature.icon;
+                            return (
+                                <motion.article
+                                    key={feature.title}
+                                    variants={fadeUp}
+                                    className={`${styles.featureCard} ${styles[`feature${feature.tone}`]}`}
+                                >
+                                    <div className={styles.featureTop}>
+                                        <div className={styles.featureIconWrap}>
+                                            <Icon className={styles.featureIcon} />
+                                        </div>
+                                        <span className={styles.featureMeta}>{feature.meta}</span>
+                                    </div>
+                                    <h3 className={styles.featureTitle}>{feature.title}</h3>
+                                    <p className={styles.featureBody}>{feature.body}</p>
+                                </motion.article>
+                            );
+                        })}
+                    </motion.div>
+                </section>
+
+                <section id="workflow" className={styles.section}>
+                    <div className={styles.workflowShell}>
+                        <motion.div
+                            className={styles.sectionIntro}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: "-120px" }}
+                            variants={stagger}
+                        >
+                            <motion.p variants={fadeUp} className={styles.sectionKicker}>
+                                Workflow
+                            </motion.p>
+                            <motion.h2 variants={fadeUp} className={styles.sectionTitle}>
+                                A three-step flow that keeps academic work moving
+                            </motion.h2>
                         </motion.div>
 
-                        <motion.h1 variants={fadeInUp} className={styles.heroTitle}>
-                            Master Algorithms.
-                            <br />
-                            <span className={styles.gradientText}>Track Progress.</span>
-                            <br />
-                            <span className={`${styles.gradientText} ${styles.gradient2}`}>Excel Faster.</span>
-                        </motion.h1>
+                        <motion.div
+                            className={styles.timeline}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: "-80px" }}
+                            variants={stagger}
+                        >
+                            {workflow.map((item) => (
+                                <motion.article key={item.step} variants={fadeUp} className={styles.timelineCard}>
+                                    <div className={styles.timelineStep}>{item.step}</div>
+                                    <h3 className={styles.timelineTitle}>{item.title}</h3>
+                                    <p className={styles.timelineBody}>{item.body}</p>
+                                </motion.article>
+                            ))}
+                        </motion.div>
+                    </div>
+                </section>
 
-                        <motion.p variants={fadeInUp} className={styles.heroDescription}>
-                            The all-in-one grading platform for DAA coursework — submit solutions,
-                            get instant feedback, and watch your skills grow with real-time analytics
-                            and automated grading powered by cutting-edge technology.
-                        </motion.p>
+                <section id="why" className={styles.section}>
+                    <div className={styles.valueBand}>
+                        <div className={styles.valueCopy}>
+                            <p className={styles.sectionKicker}>Why it works</p>
+                            <h2 className={styles.sectionTitle}>
+                                Less friction for admins. More momentum for students.
+                            </h2>
+                            <p className={styles.sectionText}>
+                                Algo-Grade removes the broken handoffs between spreadsheets, email,
+                                manual grading, and scattered dashboards. The result is a calmer
+                                academic workflow that still feels modern and fast.
+                            </p>
+                        </div>
 
-                        <motion.div variants={fadeInUp} className={styles.heroCta}>
-                            <SignInModalButton className={`${styles.btnPrimary} ${styles.btnLg}`}>
-                                Get Started Free
+                        <div className={styles.valueList}>
+                            <div className={styles.valueItem}>
+                                <Layers3 className={styles.valueIcon} />
+                                <div>
+                                    <h3 className={styles.valueTitle}>One system, multiple roles</h3>
+                                    <p className={styles.valueText}>
+                                        Student and admin experiences stay separate while sharing the
+                                        same source of truth.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className={styles.valueItem}>
+                                <Zap className={styles.valueIcon} />
+                                <div>
+                                    <h3 className={styles.valueTitle}>Feedback arrives while focus is high</h3>
+                                    <p className={styles.valueText}>
+                                        Fast execution and clearer status views shorten the loop between
+                                        attempt and understanding.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className={styles.valueItem}>
+                                <ShieldCheck className={styles.valueIcon} />
+                                <div>
+                                    <h3 className={styles.valueTitle}>Institution-ready foundations</h3>
+                                    <p className={styles.valueText}>
+                                        Authentication, onboarding, attendance, and course operations are
+                                        already part of the platform.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className={styles.finalCta}>
+                    <div className={styles.finalCtaCard}>
+                        <div>
+                            <p className={styles.sectionKicker}>Ready to enter the portal?</p>
+                            <h2 className={styles.finalTitle}>
+                                Sign in and move straight into your course workspace.
+                            </h2>
+                        </div>
+                        <div className={styles.finalActions}>
+                            <SignInModalButton className={styles.primaryBtnHero}>
+                                Continue With Sign In
                                 <ArrowRight className={styles.btnIcon} />
                             </SignInModalButton>
-                            <Link href="#features" className={`${styles.btnSecondary} ${styles.btnLg}`}>
-                                Explore Features
+                            <Link href="#capabilities" className={styles.inlineLink}>
+                                View capabilities
+                                <ChevronRight className={styles.inlineIcon} />
                             </Link>
-                        </motion.div>
-
-                        {/* Stats */}
-                        <motion.div variants={fadeInUp} className={styles.heroStats}>
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>1000+</span>
-                                <span className={styles.statLabel}>Students</span>
-                            </div>
-                            <div className={styles.statDivider} />
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>50+</span>
-                                <span className={styles.statLabel}>Assignments</span>
-                            </div>
-                            <div className={styles.statDivider} />
-                            <div className={styles.statItem}>
-                                <span className={styles.statValue}>99%</span>
-                                <span className={styles.statLabel}>Accuracy</span>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                </section>
-
-                {/* Features Section */}
-                <section id="features" className={styles.featuresSection}>
-                    <motion.div
-                        className={styles.sectionHeader}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, margin: "-100px" }}
-                        variants={staggerContainer}
-                    >
-                        <motion.h2 variants={fadeInUp} className={styles.sectionTitle}>
-                            Everything You Need to
-                            <span className={styles.gradientText}> Succeed</span>
-                        </motion.h2>
-                        <motion.p variants={fadeInUp} className={styles.sectionSubtitle}>
-                            Powerful features designed for modern algorithm learning and assessment
-                        </motion.p>
-                    </motion.div>
-
-                    <motion.div
-                        className={styles.featuresGrid}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, margin: "-50px" }}
-                        variants={staggerContainer}
-                    >
-                        {/* Feature 1 */}
-                        <motion.div
-                            custom={0}
-                            variants={featureVariants}
-                            className={styles.featureCard}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconPurple}`}>
-                                <Code2 className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>Auto-Graded Submissions</h3>
-                            <p className={styles.featureDescription}>
-                                Submit your algorithm implementations and receive instant, accurate feedback
-                                with automated test cases. Support for multiple languages including C++, Python, and Java.
-                            </p>
-                            <div className={styles.featureTags}>
-                                <span className={styles.featureTag}>Instant Feedback</span>
-                                <span className={styles.featureTag}>Multi-language</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Feature 2 */}
-                        <motion.div
-                            custom={1}
-                            variants={featureVariants}
-                            className={styles.featureCard}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconBlue}`}>
-                                <BarChart3 className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>Real-time Analytics</h3>
-                            <p className={styles.featureDescription}>
-                                Track your class performance, submission trends, and algorithmic complexity
-                                metrics with live dashboards and detailed progress reports.
-                            </p>
-                            <div className={styles.featureTags}>
-                                <span className={styles.featureTag}>Live Dashboards</span>
-                                <span className={styles.featureTag}>Progress Tracking</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Feature 3 */}
-                        <motion.div
-                            custom={2}
-                            variants={featureVariants}
-                            className={styles.featureCard}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconViolet}`}>
-                                <Users className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>Role-based Access</h3>
-                            <p className={styles.featureDescription}>
-                                Secure portals tailored for students and admins, each with the right tools
-                                and permissions for their role. Built with enterprise-grade security.
-                            </p>
-                            <div className={styles.featureTags}>
-                                <span className={styles.featureTag}>Secure</span>
-                                <span className={styles.featureTag}>Role Management</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Feature 4 */}
-                        <motion.div
-                            custom={3}
-                            variants={featureVariants}
-                            className={styles.featureCard}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconCyan}`}>
-                                <Zap className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>Lightning Fast</h3>
-                            <p className={styles.featureDescription}>
-                                Powered by Piston API for rapid code execution. Get your results in seconds,
-                                not minutes. Optimized for performance and reliability.
-                            </p>
-                            <div className={styles.featureTags}>
-                                <span className={styles.featureTag}>&lt; 2s Execution</span>
-                                <span className={styles.featureTag}>99.9% Uptime</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Feature 5 */}
-                        <motion.div
-                            custom={4}
-                            variants={featureVariants}
-                            className={styles.featureCard}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconPink}`}>
-                                <Shield className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>Enterprise Security</h3>
-                            <p className={styles.featureDescription}>
-                                Built with Clerk authentication and MongoDB for secure data storage.
-                                Your code and submissions are protected with industry-standard encryption.
-                            </p>
-                            <div className={styles.featureTags}>
-                                <span className={styles.featureTag}>Clerk Auth</span>
-                                <span className={styles.featureTag}>Encrypted</span>
-                            </div>
-                        </motion.div>
-
-                        {/* Feature 6 */}
-                        <motion.div
-                            custom={5}
-                            variants={featureVariants}
-                            className={`${styles.featureCard} ${styles.featureCardCta}`}
-                            whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                        >
-                            <div className={`${styles.featureIconWrapper} ${styles.iconGradient}`}>
-                                <Sparkles className={styles.featureIcon} />
-                            </div>
-                            <h3 className={styles.featureTitle}>And Much More</h3>
-                            <p className={styles.featureDescription}>
-                                Discover additional features like code comparison, plagiarism detection,
-                                custom test cases, and collaborative learning tools.
-                            </p>
-                            <Link href="#how-it-works" className={styles.featureLink}>
-                                Learn more
-                                <ChevronRight className={styles.linkIcon} />
-                            </Link>
-                        </motion.div>
-                    </motion.div>
-                </section>
-
-                {/* How It Works Section */}
-                <section id="how-it-works" className={styles.howItWorksSection}>
-                    <motion.div
-                        className={styles.sectionHeader}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, margin: "-100px" }}
-                        variants={staggerContainer}
-                    >
-                        <motion.h2 variants={fadeInUp} className={styles.sectionTitle}>
-                            How It
-                            <span className={styles.gradientText}> Works</span>
-                        </motion.h2>
-                        <motion.p variants={fadeInUp} className={styles.sectionSubtitle}>
-                            Get started in three simple steps
-                        </motion.p>
-                    </motion.div>
-
-                    <motion.div
-                        className={styles.stepsContainer}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                    >
-                        <motion.div custom={0} variants={featureVariants} className={styles.stepCard}>
-                            <div className={styles.stepNumber}>01</div>
-                            <h3 className={styles.stepTitle}>Sign Up</h3>
-                            <p className={styles.stepDescription}>
-                                Create your account using your institution credentials.
-                                Quick setup with Clerk authentication.
-                            </p>
-                        </motion.div>
-
-                        <motion.div custom={1} variants={featureVariants} className={styles.stepCard}>
-                            <div className={styles.stepNumber}>02</div>
-                            <h3 className={styles.stepTitle}>Complete Onboarding</h3>
-                            <p className={styles.stepDescription}>
-                                Enter your roll number and complete the onboarding process
-                                to get access to your personalized dashboard.
-                            </p>
-                        </motion.div>
-
-                        <motion.div custom={2} variants={featureVariants} className={styles.stepCard}>
-                            <div className={styles.stepNumber}>03</div>
-                            <h3 className={styles.stepTitle}>Start Coding</h3>
-                            <p className={styles.stepDescription}>
-                                Access assignments, submit solutions, and get instant
-                                feedback with our automated grading system.
-                            </p>
-                        </motion.div>
-                    </motion.div>
-                </section>
-
-                {/* CTA Section */}
-                <section className={styles.ctaSection}>
-                    <motion.div
-                        className={styles.ctaContent}
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, margin: "-50px" }}
-                        variants={staggerContainer}
-                    >
-                        <motion.div variants={fadeInUp} className={styles.ctaBadge}>
-                            Ready to Get Started?
-                        </motion.div>
-                        <motion.h2 variants={fadeInUp} className={styles.ctaTitle}>
-                            Join the Algorithm
-                            <br />
-                            <span className={styles.gradientText}>Mastery Journey</span>
-                        </motion.h2>
-                        <motion.p variants={fadeInUp} className={styles.ctaDescription}>
-                            Start your journey today and experience the future of algorithm learning and assessment.
-                        </motion.p>
-                        <motion.div variants={fadeInUp} className={styles.ctaActions}>
-                            <SignInModalButton className={`${styles.btnPrimary} ${styles.btnXl}`}>
-                                Start Free Trial
-                                <ArrowRight className={styles.btnIcon} />
-                            </SignInModalButton>
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
                 </section>
             </main>
+        </div>
+    );
+}
 
-            {/* Footer */}
-            <footer className={styles.footer}>
-                <div className={styles.footerContent}>
-                    <div className={styles.footerBrand}>
-                        <Link href="/" className={styles.footerLogo}>
-                            <div className={styles.footerLogoIcon}>
-                                <Sparkles className={styles.sparkleIcon} />
-                            </div>
-                            <span className={styles.footerLogoText}>Algo-Grade</span>
-                        </Link>
-                        <p className={styles.footerDescription}>
-                            The premier platform for Design & Analysis of Algorithms education.
-                        </p>
-                    </div>
-
-                    <div className={styles.footerLinks}>
-                        <div className={styles.footerColumn}>
-                            <h4 className={styles.footerHeading}>Product</h4>
-                            <Link href="#features" className={styles.footerLink}>Features</Link>
-                            <Link href="#how-it-works" className={styles.footerLink}>How It Works</Link>
-                        </div>
-                        <div className={styles.footerColumn}>
-                            <h4 className={styles.footerHeading}>Resources</h4>
-                            <a href="#" className={styles.footerLink}>Documentation</a>
-                            <a href="#" className={styles.footerLink}>API Reference</a>
-                        </div>
-                        <div className={styles.footerColumn}>
-                            <h4 className={styles.footerHeading}>Legal</h4>
-                            <a href="#" className={styles.footerLink}>Privacy Policy</a>
-                            <a href="#" className={styles.footerLink}>Terms of Service</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div className={styles.footerBottom}>
-                    <p className={styles.copyright}>© {new Date().getFullYear()} Algo-Grade. All rights reserved.</p>
-                    <div className={styles.socialLinks}>
-                        <a href="#" className={styles.socialLink} aria-label="GitHub">
-                            <Github className={styles.socialIcon} />
-                        </a>
-                    </div>
-                </div>
-            </footer>
+function Metric({ label, value }: { label: string; value: string }) {
+    return (
+        <div className={styles.metric}>
+            <span className={styles.metricValue}>{value}</span>
+            <span className={styles.metricLabel}>{label}</span>
         </div>
     );
 }
