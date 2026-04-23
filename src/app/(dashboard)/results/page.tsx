@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { FilterTabs } from "@/components/ui/filter-tabs"
 import { ResultCard } from "@/components/ui/result-card"
 import {
-    PageHeaderSkeleton,
+    ResultsDashboardSkeleton,
     ResultCardSkeleton,
     StatsCardSkeleton,
 } from "@/components/ui/skeleton"
@@ -129,7 +129,7 @@ export default function ResultsPage() {
     if (loading) {
         return (
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 xl:p-8">
-                <PageHeaderSkeleton />
+                <ResultsDashboardSkeleton />
                 <div className="grid gap-4 lg:grid-cols-3">
                     <StatsCardSkeleton />
                     <StatsCardSkeleton />
@@ -266,11 +266,11 @@ export default function ResultsPage() {
 
             <section className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-6">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                             Explore Results
                         </p>
-                        <h2 className="text-2xl font-semibold tracking-tight">
+                        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                             Search and filter your performance history
                         </h2>
                     </div>
