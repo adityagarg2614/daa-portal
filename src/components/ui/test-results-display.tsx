@@ -1,5 +1,6 @@
 import React from "react";
-import { CheckCircle2, XCircle, ChevronRight, Clock, MemoryStick } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronRight, Clock, MemoryStick, ShieldAlert } from "lucide-react";
+
 import {
     Collapsible,
     CollapsibleContent,
@@ -14,7 +15,9 @@ export interface TestResult {
     input: string;
     expectedOutput: string;
     actualOutput: string;
+    isHidden: boolean;
     error?: string;
+
     executionTime?: number;
     memoryUsed?: number;
 }
@@ -97,66 +100,81 @@ export function TestResultsDisplay({
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                             <div className="mt-2 space-y-3 rounded-lg border bg-muted/30 p-3 text-sm">
-                                {/* Input */}
-                                <div>
-                                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                        <span>Input:</span>
+                                {result.isHidden ? (
+                                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                                        <ShieldAlert className="mb-2 h-8 w-8 text-muted-foreground/50" />
+                                        <p className="text-xs font-medium text-muted-foreground">
+                                            Hidden Test Case
+                                        </p>
+                                        <p className="mt-1 text-[10px] text-muted-foreground/70">
+                                            Input and output are hidden for this test case to maintain problem integrity.
+                                        </p>
                                     </div>
-                                    <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-xs">
-                                        {result.input || "(empty input)"}
-                                    </pre>
-                                </div>
-
-                                {/* Expected Output */}
-                                <div>
-                                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-green-600 dark:text-green-400">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        <span>Expected Output:</span>
-                                    </div>
-                                    <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-xs text-green-700 dark:text-green-300">
-                                        {result.expectedOutput || "(empty output)"}
-                                    </pre>
-                                </div>
-
-                                {/* Actual Output */}
-                                <div>
-                                    <div className="mb-1 flex items-center gap-2 text-xs font-medium">
-                                        {result.passed ? (
-                                            <span className="text-green-600 dark:text-green-400">
-                                                Your Output:
-                                            </span>
-                                        ) : (
-                                            <span className="text-red-600 dark:text-red-400">
-                                                Your Output:
-                                            </span>
-                                        )}
-                                    </div>
-                                    <pre
-                                        className={cn(
-                                            "overflow-x-auto rounded bg-background p-2 font-mono text-xs",
-                                            result.passed
-                                                ? "text-green-700 dark:text-green-300"
-                                                : "text-red-700 dark:text-red-300"
-                                        )}
-                                    >
-                                        {result.actualOutput}
-                                    </pre>
-                                </div>
-
-                                {/* Error Message */}
-                                {result.error && (
-                                    <div>
-                                        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400">
-                                            <XCircle className="h-3 w-3" />
-                                            <span>Error:</span>
+                                ) : (
+                                    <>
+                                        {/* Input */}
+                                        <div>
+                                            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                                <span>Input:</span>
+                                            </div>
+                                            <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-xs">
+                                                {result.input || "(empty input)"}
+                                            </pre>
                                         </div>
-                                        <pre className="overflow-x-auto rounded bg-red-50 dark:bg-red-950/20 p-2 font-mono text-xs text-red-700 dark:text-red-300">
-                                            {result.error}
-                                        </pre>
-                                    </div>
+
+                                        {/* Expected Output */}
+                                        <div>
+                                            <div className="mb-1 flex items-center gap-2 text-xs font-medium text-green-600 dark:text-green-400">
+                                                <CheckCircle2 className="h-3 w-3" />
+                                                <span>Expected Output:</span>
+                                            </div>
+                                            <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-xs text-green-700 dark:text-green-300">
+                                                {result.expectedOutput || "(empty output)"}
+                                            </pre>
+                                        </div>
+
+                                        {/* Actual Output */}
+                                        <div>
+                                            <div className="mb-1 flex items-center gap-2 text-xs font-medium">
+                                                {result.passed ? (
+                                                    <span className="text-green-600 dark:text-green-400">
+                                                        Your Output:
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-red-600 dark:text-red-400">
+                                                        Your Output:
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <pre
+                                                className={cn(
+                                                    "overflow-x-auto rounded bg-background p-2 font-mono text-xs",
+                                                    result.passed
+                                                        ? "text-green-700 dark:text-green-300"
+                                                        : "text-red-700 dark:text-red-300"
+                                                )}
+                                            >
+                                                {result.actualOutput}
+                                            </pre>
+                                        </div>
+
+                                        {/* Error Message */}
+                                        {result.error && (
+                                            <div>
+                                                <div className="mb-1 flex items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400">
+                                                    <XCircle className="h-3 w-3" />
+                                                    <span>Error:</span>
+                                                </div>
+                                                <pre className="overflow-x-auto rounded bg-red-50 dark:bg-red-950/20 p-2 font-mono text-xs text-red-700 dark:text-red-300">
+                                                    {result.error}
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </CollapsibleContent>
+
                     </Collapsible>
                 ))}
             </div>
