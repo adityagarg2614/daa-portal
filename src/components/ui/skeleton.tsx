@@ -35,25 +35,25 @@ function StatsCardSkeleton() {
  */
 function AssignmentCardSkeleton() {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border bg-background p-5 shadow-sm">
+    <div className="group relative overflow-hidden rounded-[28px] border bg-background p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-3 flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-6 w-28 rounded-full" />
           </div>
+          <Skeleton className="h-7 w-3/5" />
           <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-          <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-4/5" />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
           </div>
         </div>
         <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-          <Skeleton className="h-9 w-32 rounded-xl" />
-          <Skeleton className="h-9 w-32 rounded-xl" />
+          <Skeleton className="h-11 w-36 rounded-2xl" />
         </div>
       </div>
     </div>
@@ -66,23 +66,24 @@ function AssignmentCardSkeleton() {
  */
 function SubmissionCardSkeleton() {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border bg-background p-5 shadow-sm">
+    <div className="group relative overflow-hidden rounded-[28px] border bg-background p-5 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="space-y-3 flex-1">
           <div className="flex flex-wrap items-center gap-3">
-            <Skeleton className="h-6 w-64" />
             <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-6 w-20 rounded-full" />
           </div>
-          <Skeleton className="h-4 w-48" />
-          <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-3">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-7 w-3/5" />
+          <Skeleton className="h-4 w-2/5" />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
+            <Skeleton className="h-24 rounded-[22px]" />
           </div>
         </div>
         <div className="flex min-w-[180px] flex-col items-start gap-3 xl:items-end">
-          <Skeleton className="h-9 w-20 rounded-xl" />
-          <Skeleton className="h-9 w-28 rounded-xl" />
+          <Skeleton className="h-10 w-28 rounded-2xl" />
         </div>
       </div>
     </div>
@@ -250,6 +251,183 @@ function PageHeaderSkeleton() {
   )
 }
 
+function AssignmentsDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-[32px] border bg-background p-6 shadow-sm sm:p-7">
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-3">
+              <Skeleton className="h-8 w-36 rounded-full" />
+              <Skeleton className="h-8 w-56 rounded-full" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 w-20" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border bg-background p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-72" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-2xl xl:w-80" />
+        </div>
+        <div className="mt-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-16 rounded-full" />
+            <Skeleton className="h-10 w-20 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-28 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-28 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SubmissionsDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-[32px] border bg-background p-6 shadow-sm sm:p-7">
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-3">
+              <Skeleton className="h-8 w-40 rounded-full" />
+              <Skeleton className="h-8 w-64 rounded-full" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 w-20" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border bg-background p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-72" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-2xl xl:w-80" />
+        </div>
+        <div className="mt-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-16 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-24 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ResultsDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-[32px] border bg-background p-6 shadow-sm sm:p-7">
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Skeleton className="h-8 w-40 rounded-full" />
+              <Skeleton className="h-8 w-48 rounded-full" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-4/5" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-16 w-32" />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+            <Skeleton className="h-28 rounded-[24px]" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border bg-background p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-8 w-72" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-2xl xl:w-80" />
+        </div>
+        <div className="mt-5 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-20 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-24 rounded-full" />
+            <Skeleton className="h-10 w-40 rounded-full" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-8 w-24 rounded-full" />
+            <Skeleton className="h-8 w-20 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * AssignmentDetailSkeleton - Loading skeleton for assignment detail page
  * Used in /assignment/[id] page
@@ -303,5 +481,8 @@ export {
   InfoCardSkeleton,
   ListSkeleton,
   PageHeaderSkeleton,
+  AssignmentsDashboardSkeleton,
+  SubmissionsDashboardSkeleton,
+  ResultsDashboardSkeleton,
   AssignmentDetailSkeleton,
 }

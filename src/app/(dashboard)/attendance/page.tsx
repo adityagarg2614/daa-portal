@@ -141,7 +141,7 @@ export default function StudentAttendancePage() {
 
     if (loading) {
         return (
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 xl:p-8">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
                 <Skeleton className="h-36 rounded-[28px]" />
                 <div className="grid gap-4 lg:grid-cols-3">
                     {[1, 2, 3].map((item) => (
@@ -155,7 +155,7 @@ export default function StudentAttendancePage() {
     }
 
     return (
-        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 xl:p-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
             <section className="relative overflow-hidden rounded-[32px] border border-border/60 bg-linear-to-br from-card via-card to-emerald-500/8 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.65)]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
                 <div className="relative grid gap-8 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1.4fr_0.95fr] xl:px-8">
@@ -653,4 +653,3 @@ function InsightRow({
         </div>
     );
 }
-
