@@ -424,7 +424,7 @@ function SnapshotCard({
     }
 
     return (
-        <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+        <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-6">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">{label}</p>
