@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { EditorView } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { indentationMarkers } from "@replit/codemirror-indentation-markers";
-import { getLanguageExtension } from "../extensions/ language-extension";
+import { getLanguageExtension } from "../extensions/language-extension";
 import { customSetup } from "../extensions/custom-setup";
 
 interface Props {
