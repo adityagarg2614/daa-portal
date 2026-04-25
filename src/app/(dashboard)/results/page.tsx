@@ -271,7 +271,7 @@ export default function ResultsPage() {
                             Explore Results
                         </p>
                         <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                            Search and filter your performance history
+                            Search assignments...
                         </h2>
                     </div>
 

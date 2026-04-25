@@ -223,12 +223,10 @@ export default function AttendancePage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Manage attendance
+                                Manage Attendance
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                                Create class sessions, update records, and instantly see who is
-                                regular, who is at risk, and how each attendance event is shaping
-                                student engagement.
+                                Oversee all class sessions, adjust attendance records, and monitor student engagement levels with comprehensive analytics.
                             </p>
                         </div>
 
@@ -609,8 +607,8 @@ export default function AttendancePage() {
             </section>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="w-[min(96vw,1200px)] max-w-none max-h-[94vh] overflow-y-auto rounded-[28px] p-0">
-                    <div className="border-b border-border/60 px-5 py-5 sm:px-6">
+                <DialogContent className="max-h-[92vh] w-[95vw] max-w-[1400px] overflow-y-auto rounded-[30px] border border-border/60 bg-card/95 p-0 shadow-[0_32px_110px_-48px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                    <div className="border-b border-border/60 px-5 py-5 sm:px-7">
                         <DialogHeader>
                             <DialogTitle className="text-2xl tracking-tight">
                                 {editingSession
@@ -625,7 +623,7 @@ export default function AttendancePage() {
                         </DialogHeader>
                     </div>
 
-                    <div className="px-5 py-5 sm:px-6">
+                    <div className="px-5 py-5 sm:px-7">
                         <AttendanceForm
                             key={editingSession?._id || "new-attendance-session"}
                             initialSession={editingSession}
