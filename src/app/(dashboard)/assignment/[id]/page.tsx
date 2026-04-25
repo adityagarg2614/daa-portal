@@ -1,15 +1,14 @@
 'use client'
 
 import { CodeEditor } from "@/components/editor/code-editor"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { useParams, useRouter } from "next/navigation"
 import React, { useEffect, useState, useCallback, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { useRefetchOnFocus } from "@/hooks/use-refetch-on-focus"
 import { toast } from "sonner"
 import {
     AlertCircle,
-    ArrowLeft,
     Award,
     BookOpen,
     CalendarDays,
@@ -26,8 +25,8 @@ import {
     RotateCcw,
     Save,
     Send,
+    ShieldAlert,
     Terminal,
-    ChevronRight,
     Trophy,
     ArrowRight
 } from "lucide-react"
@@ -144,6 +143,20 @@ type Submission = {
     createdAt: string
 }
 
+type SebAccessErrorResponse = {
+    sebError?: string
+    message?: string
+    assignmentTitle?: string
+    submittedAt?: string
+}
+
+type SebAccessState = {
+    message: string
+    errorCode: string
+    title?: string
+    submittedAt?: string
+}
+
 const FALLBACK_STARTER_CODE = {
     cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your C++ code here\n    return 0;\n}",
     java: "public class Main {\n    public static void main(String[] args) {\n        // Write your Java code here\n    }\n}",
@@ -171,6 +184,9 @@ export default function SingleAssignmentPage() {
     const [loading, setLoading] = useState(true)
     const [dbUserId, setDbUserId] = useState("")
     const [submissionState, setSubmissionState] = useState<SubmissionState>({})
+    const [sebError, setSebError] = useState<SebAccessState | null>(null)
+    const [isError, setIsError] = useState(false)
+    const [isStarting, setIsStarting] = useState(false)
     const [accessStatus, setAccessStatus] = useState<"not-published" | "active" | "expired">("active")
     const [autoSubmitting, setAutoSubmitting] = useState(false)
     const [submitAssignmentDialogOpen, setSubmitAssignmentDialogOpen] = useState(false)
@@ -240,6 +256,11 @@ export default function SingleAssignmentPage() {
         }
     }, [autoSubmitting, router])
 
+    const handleStartExam = useCallback(async () => {
+        setIsStarting(true)
+        router.push(`/exam/start/${id}`)
+    }, [id, router])
+
     const checkAccessStatus = useCallback(() => {
         if (!assignment || !dbUserId) return
 
@@ -275,12 +296,14 @@ export default function SingleAssignmentPage() {
             let assignmentRes;
             try {
                 assignmentRes = await axios.get(`/api/student/assignments/${id}`);
-            } catch (error: any) {
-                if (error.response?.status === 403) {
-                    const data = error.response.data;
+            } catch (error: unknown) {
+                const axiosError = error as AxiosError<SebAccessErrorResponse>
+
+                if (axiosError.response?.status === 403) {
+                    const data = axiosError.response.data
                     if (data.sebError) {
                         setSebError({
-                            message: data.message,
+                            message: data.message || "Secure exam access is required for this assignment.",
                             errorCode: data.sebError,
                             title: data.assignmentTitle,
                             submittedAt: data.submittedAt
@@ -292,15 +315,15 @@ export default function SingleAssignmentPage() {
                 throw error; // Re-throw if not a handled SEB 403
             }
 
-            // 2. Fetch User & Submissions
-            const [userRes, submissionsRes] = await Promise.all([
-                axios.get("/api/users/me"),
-                axios.get(`/api/student/submissions/by-assignment/${id}`)
-            ]);
+            // 2. Fetch User details for personalized submission state
+            const userRes = await axios.get("/api/users/me")
 
             if (!assignmentRes.data?.assignment || !userRes.data?.user?._id) {
                 return
             }
+
+            const fetchedAssignment: Assignment = assignmentRes.data.assignment
+            const fetchedUserId = userRes.data.user._id as string
 
             if (!fetchedUserId) {
                 throw new Error("User not authenticated");
@@ -344,7 +367,7 @@ export default function SingleAssignmentPage() {
                         FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
 
                     initialState[problem._id] = {
-                        code: existingSubmission?.code || starter,
+                        code: existingSubmission?.code || starterForSavedLanguage,
                         language: savedLanguage,
                         loading: false,
                         message: existingSubmission ? "Loaded your latest saved submission" : "",
@@ -352,16 +375,22 @@ export default function SingleAssignmentPage() {
                 });
                 setSubmissionState(initialState);
             }
-        } catch (error: any) {
-            // Silence all 4xx errors as they are likely security blocks (403) or not found (404)
-            // which we handle via specialized UI states rather than toasts.
-            if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
-                const data = error.response.data;
-                if (data?.sebError) {
-                    setSebError({
-                        message: data.message,
-                        errorCode: data.sebError,
-                        title: data.assignmentTitle,
+            } catch (error: unknown) {
+                const axiosError = error as AxiosError<SebAccessErrorResponse>
+
+                // Silence all 4xx errors as they are likely security blocks (403) or not found (404)
+                // which we handle via specialized UI states rather than toasts.
+                if (
+                    axiosError.response?.status &&
+                    axiosError.response.status >= 400 &&
+                    axiosError.response.status < 500
+                ) {
+                    const data = axiosError.response.data
+                    if (data?.sebError) {
+                        setSebError({
+                            message: data.message || "Secure exam access is required for this assignment.",
+                            errorCode: data.sebError,
+                            title: data.assignmentTitle,
                         submittedAt: data.submittedAt
                     });
                 }
@@ -552,7 +581,6 @@ export default function SingleAssignmentPage() {
                     message: response.data.output || "(no output)",
                     messageType: "info",
                     compilationError: undefined,
-                    testResults: response.data.results || [],
                     executionTime: response.data.executionTime,
                     memoryUsed: response.data.memoryUsed,
                     testResults: undefined,
@@ -1047,14 +1075,6 @@ export default function SingleAssignmentPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                            <Button
-                                variant="outline"
-                                className="rounded-2xl"
-                                onClick={() => router.push("/assignment")}
-                            >
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back
-                            </Button>
                             <Button
                                 className="rounded-2xl"
                                 onClick={() => setSubmitAssignmentDialogOpen(true)}

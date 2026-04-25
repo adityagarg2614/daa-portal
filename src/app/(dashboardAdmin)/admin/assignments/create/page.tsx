@@ -14,6 +14,7 @@ import {
     Plus,
     Search,
     Send,
+    Shield,
     Sparkles,
     Trash2,
     X,
@@ -37,7 +38,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation"
 
 type Problem = {
     _id: string
@@ -46,6 +49,17 @@ type Problem = {
     difficulty: "Easy" | "Medium" | "Hard"
     marks: number
     tags: string[]
+}
+
+type AssignmentDetailsResponse = {
+    data: {
+        title: string
+        description: string
+        publishAt: string
+        dueAt: string
+        problemIds: Array<Pick<Problem, "_id">>
+        isSebRequired?: boolean
+    }
 }
 
 export default function CreateAssignmentPage() {
@@ -98,13 +112,15 @@ export default function CreateAssignmentPage() {
         const fetchAssignment = async () => {
             if (!editId) return
             try {
-                const res = await axios.get(`/api/admin/assignments/${editId}`)
+                const res = await axios.get<AssignmentDetailsResponse>(
+                    `/api/admin/assignments/${editId}`
+                )
                 const a = res.data.data
                 setTitle(a.title)
                 setDescription(a.description)
                 setPublishAt(new Date(a.publishAt).toISOString().slice(0, 16))
                 setDueAt(new Date(a.dueAt).toISOString().slice(0, 16))
-                setSelectedProblemIds(a.problemIds.map((p: any) => p._id))
+                setSelectedProblemIds(a.problemIds.map((problem) => problem._id))
                 setIsSebRequired(a.isSebRequired || false)
             } catch (error) {
                 console.error("Error fetching assignment:", error)
@@ -224,7 +240,7 @@ export default function CreateAssignmentPage() {
             setShowConfirmDialog(false)
             setPendingSubmission(null)
 
-            const res = editId 
+            const res = editId
                 ? await axios.patch(`/api/admin/assignments/${editId}`, pendingSubmission)
                 : await axios.post("/api/admin/assignments", pendingSubmission)
 
@@ -245,8 +261,13 @@ export default function CreateAssignmentPage() {
             const errorMessage =
                 error instanceof Error && "response" in error
                     ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
-                    : "Failed to create assignment"
-            setMessage(errorMessage || "Failed to create assignment")
+                    : editId
+                        ? "Failed to update assignment"
+                        : "Failed to create assignment"
+            setMessage(
+                errorMessage ||
+                (editId ? "Failed to update assignment" : "Failed to create assignment")
+            )
             setMessageType("destructive")
         } finally {
             setSubmitting(false)
@@ -272,7 +293,7 @@ export default function CreateAssignmentPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Create assignments with less clutter and more control
+                                Create Assignments
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Define the schedule, write the instructions, and build a balanced
@@ -420,6 +441,37 @@ export default function CreateAssignmentPage() {
                                     required
                                 />
                             </FormField>
+
+                            <div className="mt-4 rounded-[24px] border border-border/60 bg-background/65 p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600">
+                                                <Shield className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-foreground">
+                                                    Safe Exam Browser
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Require a verified SEB session before students can open
+                                                    and submit this assignment.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Students will need to start the exam flow first, then continue
+                                            inside Safe Exam Browser.
+                                        </p>
+                                    </div>
+
+                                    <Switch
+                                        checked={isSebRequired}
+                                        onCheckedChange={setIsSebRequired}
+                                        aria-label="Require Safe Exam Browser for this assignment"
+                                    />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -482,6 +534,36 @@ export default function CreateAssignmentPage() {
                                             ? "Both publish and due dates are set."
                                             : "Add both dates to make the assignment ready."}
                                     </p>
+                                </div>
+
+                                <div className="rounded-[24px] border border-border/60 bg-background/65 p-4 sm:col-span-2">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                                        Exam mode
+                                    </p>
+                                    <div className="mt-2 flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-lg font-semibold tracking-tight text-foreground">
+                                                {isSebRequired ? "SEB required" : "Standard browser access"}
+                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {isSebRequired
+                                                    ? "Protected assignments only allow verified Safe Exam Browser attempts."
+                                                    : "Students can open and submit from the normal portal."}
+                                            </p>
+                                        </div>
+                                        <Badge
+                                            variant="outline"
+                                            className={cn(
+                                                "rounded-full px-3 py-1",
+                                                isSebRequired
+                                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                                    : "border-border/60 bg-background text-muted-foreground"
+                                            )}
+                                        >
+                                            <Shield className="mr-1.5 h-3.5 w-3.5" />
+                                            {isSebRequired ? "Secure" : "Open"}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
 

@@ -174,7 +174,7 @@ export default function StudentAttendancePage() {
                         <div className="space-y-3">
                             <div>
                                 <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                    Your attendance, designed to be readable at a glance
+                                    Attendance
                                 </h1>
                                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                     Follow your class participation and assignment engagement with

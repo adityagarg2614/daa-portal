@@ -127,7 +127,7 @@ export default function AnnouncementsPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Stay on top of every announcement without scanning a cluttered feed
+                                Stay on top of every Announcement
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Important notices, assignment updates, events, and general messages

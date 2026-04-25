@@ -101,10 +101,10 @@ export default function SubmissionPage() {
         const evaluatedCount = submissions.filter((submission) => submission.status === "Evaluated").length
         const averageScore = evaluatedCount
             ? Math.round(
-                  submissions
-                      .filter((submission) => submission.status === "Evaluated")
-                      .reduce((sum, submission) => sum + (submission.score ?? 0), 0) / evaluatedCount
-              )
+                submissions
+                    .filter((submission) => submission.status === "Evaluated")
+                    .reduce((sum, submission) => sum + (submission.score ?? 0), 0) / evaluatedCount
+            )
             : 0
         const languages = new Set(submissions.map((submission) => submission.language)).size
 
@@ -112,8 +112,8 @@ export default function SubmissionPage() {
             evaluatedCount > 0
                 ? "Your reviewed work is building a clear performance trail."
                 : submittedCount > 0
-                  ? "You have active work waiting to be evaluated."
-                  : "Your submission history will grow as you solve more problems."
+                    ? "You have active work waiting to be evaluated."
+                    : "Your submission history will grow as you solve more problems."
 
         return {
             attemptedCount,
@@ -162,7 +162,7 @@ export default function SubmissionPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                A cleaner timeline of every solution you have worked on
+                                My Submissions
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Review what you have attempted, what is waiting for evaluation,
@@ -428,7 +428,7 @@ function SnapshotCard({
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                    <p className="mt-2 text-4xl font-black tracking-[-0.05em] text-foreground">
+                    <p className="mt-2 text-4xl font-black tracking-tighter text-foreground">
                         {value}
                     </p>
                     <p className="mt-2 text-sm text-muted-foreground">{helper}</p>

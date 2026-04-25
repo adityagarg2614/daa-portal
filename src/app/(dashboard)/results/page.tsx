@@ -86,8 +86,8 @@ export default function ResultsPage() {
     const insights = useMemo(() => {
         const averagePercentage = results.length
             ? Math.round(
-                  results.reduce((sum, result) => sum + result.percentage, 0) / results.length
-              )
+                results.reduce((sum, result) => sum + result.percentage, 0) / results.length
+            )
             : 0
 
         const totalMarksEarned = results.reduce(
@@ -112,8 +112,8 @@ export default function ResultsPage() {
             averagePercentage >= 85
                 ? "Outstanding academic momentum"
                 : averagePercentage >= 65
-                  ? "Strong, stable performance"
-                  : "More consistency will unlock better scores"
+                    ? "Strong, stable performance"
+                    : "More consistency will unlock better scores"
 
         return {
             averagePercentage,
@@ -161,7 +161,7 @@ export default function ResultsPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                A cleaner, sharper view of your academic performance
+                                Assignments Results
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Review your assignment scores, completion quality, and overall
@@ -181,8 +181,8 @@ export default function ResultsPage() {
                                             "text-6xl font-black leading-none tracking-[-0.06em]",
                                             insights.averagePercentage >= 85 && "text-emerald-500",
                                             insights.averagePercentage >= 65 &&
-                                                insights.averagePercentage < 85 &&
-                                                "text-sky-500",
+                                            insights.averagePercentage < 85 &&
+                                            "text-sky-500",
                                             insights.averagePercentage < 65 && "text-amber-500"
                                         )}
                                     >
@@ -432,7 +432,7 @@ function SnapshotCard({
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                             {label}
                         </p>
-                        <p className="mt-3 text-4xl font-black tracking-[-0.05em] text-foreground">
+                        <p className="mt-3 text-4xl font-black tracking-tighter text-foreground">
                             {value}
                         </p>
                         <p className="mt-2 text-sm text-muted-foreground">{helper}</p>

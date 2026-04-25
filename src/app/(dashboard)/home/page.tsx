@@ -313,7 +313,7 @@ export default function HomePage() {
                                 <p className="text-sm text-muted-foreground">Current attendance</p>
                                 <p
                                     className={cn(
-                                        "mt-2 text-4xl font-black tracking-[-0.05em]",
+                                        "mt-2 text-4xl font-black tracking-tighter",
                                         (stats?.attendance || 0) >= 75 ? "text-emerald-500" : "text-amber-500"
                                     )}
                                 >
@@ -639,7 +639,7 @@ function SnapshotCard({
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                    <p className="mt-2 text-4xl font-black tracking-[-0.05em] text-foreground">
+                    <p className="mt-2 text-4xl font-black tracking-tighter text-foreground">
                         {value}
                     </p>
                     <p className="mt-2 text-sm text-muted-foreground">{helper}</p>

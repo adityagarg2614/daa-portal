@@ -172,7 +172,7 @@ export default function AdminAssignmentsPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Manage assignment publishing with a clearer overview
+                                Manage Assignments
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Review timelines, monitor active work, and open the right assignment
@@ -256,7 +256,7 @@ export default function AdminAssignmentsPage() {
                             Explore Assignments
                         </p>
                         <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                            Search, filter, and jump into any created assignment
+                            Search and filter Assignments
                         </h2>
                     </div>
 

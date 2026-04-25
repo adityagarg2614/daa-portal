@@ -92,8 +92,8 @@ export default function AssignmentPage() {
             activeCount > 0
                 ? "You have live work ready to attempt."
                 : upcomingCount > 0
-                  ? "New assignments are scheduled to open soon."
-                  : "Your assignment workspace is currently quiet."
+                    ? "New assignments are scheduled to open soon."
+                    : "Your assignment workspace is currently quiet."
 
         return {
             activeCount,
@@ -147,7 +147,7 @@ export default function AssignmentPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                A sharper view of everything you need to solve next
+                                Assignments
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Track open assignments, revisit completed work, and see your current
@@ -311,8 +311,8 @@ export default function AssignmentPage() {
                                     onAction={
                                         canView
                                             ? () => {
-                                                  window.location.href = `/assignment/${assignment._id}`
-                                              }
+                                                window.location.href = `/assignment/${assignment._id}`
+                                            }
                                             : undefined
                                     }
                                 />
@@ -420,7 +420,7 @@ function SnapshotCard({
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                    <p className="mt-2 text-4xl font-black tracking-[-0.05em] text-foreground">
+                    <p className="mt-2 text-4xl font-black tracking-tighter text-foreground">
                         {value}
                     </p>
                     <p className="mt-2 text-sm text-muted-foreground">{helper}</p>

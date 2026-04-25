@@ -148,10 +148,10 @@ export default function AttendancePage() {
         const totalSessions = sessions.length;
         const averageAttendance = sessions.length
             ? sessions.reduce((sum, session) => {
-                  const total = session.records.length || 1;
-                  const present = session.records.filter((record) => record.present).length;
-                  return sum + (present / total) * 100;
-              }, 0) / sessions.length
+                const total = session.records.length || 1;
+                const present = session.records.filter((record) => record.present).length;
+                return sum + (present / total) * 100;
+            }, 0) / sessions.length
             : 0;
         const latestSession = sessions[0];
         const recentPresentCount = latestSession
@@ -223,7 +223,7 @@ export default function AttendancePage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Manage attendance with clarity, speed, and less admin friction
+                                Manage attendance
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
                                 Create class sessions, update records, and instantly see who is
@@ -322,9 +322,9 @@ export default function AttendancePage() {
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                             Admin Workspace
                         </p>
-                        <h2 className="text-2xl font-semibold tracking-tight">
+                        <h3 className="text-2xl font-semibold tracking-tight">
                             Switch between sessions and student analytics
-                        </h2>
+                        </h3>
                     </div>
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -586,12 +586,12 @@ export default function AttendancePage() {
                                                             className={cn(
                                                                 "rounded-full px-3 py-1",
                                                                 student.percentage >= 85 &&
-                                                                    "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+                                                                "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
                                                                 student.percentage >= 75 &&
-                                                                    student.percentage < 85 &&
-                                                                    "border-sky-500/20 bg-sky-500/10 text-sky-500",
+                                                                student.percentage < 85 &&
+                                                                "border-sky-500/20 bg-sky-500/10 text-sky-500",
                                                                 student.percentage < 75 &&
-                                                                    "border-amber-500/20 bg-amber-500/10 text-amber-500"
+                                                                "border-amber-500/20 bg-amber-500/10 text-amber-500"
                                                             )}
                                                         >
                                                             {student.percentage.toFixed(1)}%
@@ -739,7 +739,7 @@ function SnapshotCard({
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                             {label}
                         </p>
-                        <p className="mt-3 text-4xl font-black tracking-[-0.05em] text-foreground">
+                        <p className="mt-3 text-4xl font-black tracking-tighter text-foreground">
                             {value}
                         </p>
                         <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
