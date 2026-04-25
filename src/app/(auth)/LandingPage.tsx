@@ -35,7 +35,7 @@ const stagger = {
 const floatCard = {
     y: [0, -10, 0],
     rotate: [0, 0.6, 0],
-    transition: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+    transition: { duration: 7, repeat: Infinity, ease: "easeInOut" as const },
 };
 
 const features = [
