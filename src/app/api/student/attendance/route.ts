@@ -3,8 +3,16 @@ import { auth } from "@clerk/nextjs/server";
 import Attendance from "@/models/Attendance";
 import User from "@/models/User";
 import { connectDB } from "@/lib/db";
+import { getIndiaDateKey } from "@/lib/attendance-date";
 
-export async function GET(request: Request) {
+type AttendanceRecord = {
+    userId: {
+        toString(): string
+    }
+    present: boolean
+}
+
+export async function GET() {
     try {
         await connectDB();
         const { userId: clerkId } = await auth();
@@ -31,7 +39,11 @@ export async function GET(request: Request) {
             title: session.title,
             date: session.date,
             type: session.type,
-            present: session.records.find((r: any) => r.userId.toString() === userId.toString())?.present || false
+            present:
+                session.records.find(
+                    (record: AttendanceRecord) =>
+                        record.userId.toString() === userId.toString()
+                )?.present || false
         }));
 
         // Calculate Stats
@@ -50,7 +62,7 @@ export async function GET(request: Request) {
         // If ALL sessions were "absent", mark as red.
         const heatmap: Record<string, string> = {};
         sessions.forEach(s => {
-            const dateStr = new Date(s.date).toISOString().split('T')[0];
+            const dateStr = getIndiaDateKey(s.date);
             if (!heatmap[dateStr]) {
                 heatmap[dateStr] = s.present ? "present" : "absent";
             } else if (s.present) {

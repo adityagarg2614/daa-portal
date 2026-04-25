@@ -4,6 +4,14 @@ import Assignment from "@/models/Assignment";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import User from "@/models/User";
+import { getIndiaDayBounds } from "@/lib/attendance-date";
+
+type AttendanceRecord = {
+    userId: {
+        toString(): string
+    }
+    present: boolean
+}
 
 // POST - Sync assignment attendance (called when a student views an assignment)
 export async function POST(request: Request) {
@@ -36,20 +44,22 @@ export async function POST(request: Request) {
 
         // 3. Find or create attendance session for this assignment on this date
         // We track assignment attendance daily. If they open it multiple times a day, it's one record.
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const { start, end } = getIndiaDayBounds();
 
         let session = await Attendance.findOne({
             assignmentId,
             type: "assignment",
-            date: today
+            date: {
+                $gte: start,
+                $lt: end,
+            },
         });
 
         if (!session) {
             session = await Attendance.create({
                 type: "assignment",
                 title: `Assignment: ${assignment.title}`,
-                date: today,
+                date: start,
                 assignmentId,
                 records: [],
                 createdBy: dbUser._id, // System tracked, but assigned to someone
@@ -58,7 +68,7 @@ export async function POST(request: Request) {
 
         // 4. Mark student as present if not already
         const studentRecord = session.records.find(
-            (r: any) => r.userId.toString() === dbUser._id.toString()
+            (record: AttendanceRecord) => record.userId.toString() === dbUser._id.toString()
         );
 
         if (!studentRecord) {
@@ -70,10 +80,13 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ success: true, message: "Attendance synced" });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error syncing assignment attendance:", error);
         return NextResponse.json(
-            { success: false, message: error.message || "Sync failed" },
+            {
+                success: false,
+                message: error instanceof Error ? error.message : "Sync failed",
+            },
             { status: 500 }
         );
     }
