@@ -4,10 +4,6 @@
 import { prepareCodeForExecution } from "@/lib/code-driver";
 
 const PISTON_API = process.env.PISTON_API_URL;
-import { prepareCodeForExecution } from "./code-driver";
-
-
-
 // Language mapping to Piston language names and versions
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
     cpp: { language: "c++", version: "10.2.0" },
@@ -192,7 +188,14 @@ export async function executeCode(
     }
 
     const { wrappedCode } = prepareCodeForExecution(code, language);
-    const pistonResult = await executeWithPiston(wrappedCode, langConfig, stdin);
+    const pistonResult = await executeWithPiston(
+        wrappedCode,
+        langConfig,
+        stdin,
+        0,
+        timeLimit,
+        memoryLimit
+    );
 
     // If Piston returned a result (even if code failed), use it
     if (pistonResult.result) {
