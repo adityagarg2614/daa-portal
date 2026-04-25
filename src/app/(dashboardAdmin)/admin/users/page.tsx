@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { SectionHeader } from "@/components/ui/section-header";
-import { StatsCard } from "@/components/ui/stats-card";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { UsersTable } from "@/components/admin/users-table";
 import { UsersFilters } from "@/components/admin/users-filters";
 import { UsersPagination } from "@/components/admin/users-pagination";
@@ -11,9 +9,21 @@ import { UserRoleDialog } from "@/components/admin/user-role-dialog";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 import { SendEmailDialog } from "@/components/admin/send-email-dialog";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { Users, Shield, GraduationCap, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+    GraduationCap,
+    Search,
+    Shield,
+    Sparkles,
+    UserPlus,
+    Users,
+    UserCog,
+    Trophy,
+    ShieldCheck,
+} from "lucide-react";
 
 interface User {
     _id: string;
@@ -56,6 +66,7 @@ export default function UsersManagementPage() {
         hasNext: false,
         hasPrev: false,
     });
+    const [initialLoading, setInitialLoading] = useState(true);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "student">("all");
@@ -63,7 +74,6 @@ export default function UsersManagementPage() {
     const [order, setOrder] = useState("desc");
     const [limit, setLimit] = useState(20);
 
-    // Dialog states
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
@@ -73,7 +83,6 @@ export default function UsersManagementPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-    // Email dialog state
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
     const [pendingEmailData, setPendingEmailData] = useState<{
         name: string;
@@ -83,14 +92,12 @@ export default function UsersManagementPage() {
         rollNo?: string;
     } | null>(null);
 
-    // User counts by role
     const [userCounts, setUserCounts] = useState({
         all: 0,
         admin: 0,
         student: 0,
     });
 
-    // Fetch users
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
@@ -109,11 +116,10 @@ export default function UsersManagementPage() {
             if (data.success) {
                 setUsers(data.data.users);
                 setPagination(data.data.pagination);
-                setUserCounts({
+                setUserCounts((prev) => ({
+                    ...prev,
                     all: data.data.pagination.totalUsers,
-                    admin: 0,
-                    student: 0,
-                });
+                }));
             } else {
                 toast.error(data.message || "Failed to fetch users");
             }
@@ -122,10 +128,10 @@ export default function UsersManagementPage() {
             toast.error("Failed to fetch users data");
         } finally {
             setLoading(false);
+            setInitialLoading(false);
         }
     }, [pagination.currentPage, limit, search, roleFilter, sortBy, order]);
 
-    // Fetch user counts for all roles
     const fetchUserCounts = useCallback(async () => {
         try {
             const [adminRes, studentRes] = await Promise.all([
@@ -147,14 +153,21 @@ export default function UsersManagementPage() {
     }, [pagination.totalUsers]);
 
     useEffect(() => {
-        fetchUsers();
+        const timer = window.setTimeout(() => {
+            void fetchUsers();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [fetchUsers]);
 
     useEffect(() => {
-        fetchUserCounts();
-    }, [fetchUserCounts, pagination.totalUsers]);
+        const timer = window.setTimeout(() => {
+            void fetchUserCounts();
+        }, 0);
 
-    // Fetch user detail
+        return () => window.clearTimeout(timer);
+    }, [fetchUserCounts]);
+
     const fetchUserDetail = async (userId: string) => {
         setDetailLoading(true);
         try {
@@ -175,10 +188,9 @@ export default function UsersManagementPage() {
         }
     };
 
-    // Handlers
     const handleViewDetails = (userId: string) => {
         setSelectedUserId(userId);
-        fetchUserDetail(userId);
+        void fetchUserDetail(userId);
     };
 
     const handleChangeRole = (userId: string, user: User) => {
@@ -205,7 +217,7 @@ export default function UsersManagementPage() {
 
             if (data.success) {
                 toast.success(data.message || "User deleted successfully");
-                fetchUsers();
+                void fetchUsers();
                 setDeleteDialogOpen(false);
             } else {
                 toast.error(data.message || "Failed to delete user");
@@ -242,12 +254,12 @@ export default function UsersManagementPage() {
     };
 
     const handleRoleUpdateSuccess = () => {
-        fetchUsers();
+        void fetchUsers();
         setRoleDialogOpen(false);
     };
 
     const handleCreateSuccess = () => {
-        fetchUsers();
+        void fetchUsers();
     };
 
     const handleUserCreated = (userData: {
@@ -274,81 +286,262 @@ export default function UsersManagementPage() {
         setUserDetail(null);
     };
 
-    // Calculate stats
-    const adminCount = userCounts.admin;
-    const studentCount = userCounts.student;
+    const insights = useMemo(() => {
+        const adminsVisible = users.filter((user) => user.role === "admin").length;
+        const studentsVisible = users.filter((user) => user.role === "student").length;
+        const newestUser = users.length > 0 ? [...users].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0] : null;
+        const activeTone =
+            search.trim().length > 0
+                ? `Showing filtered results for "${search}".`
+                : roleFilter !== "all"
+                    ? `Viewing only ${roleFilter} records right now.`
+                    : pagination.totalUsers > 0
+                        ? "Manage roles, open detail dialogs, and keep account access organized."
+                        : "User records will appear here once accounts are created.";
+
+        return {
+            adminsVisible,
+            studentsVisible,
+            newestUser,
+            activeTone,
+        };
+    }, [users, search, roleFilter, pagination.totalUsers]);
+
+    const pageRange = useMemo(() => {
+        if (pagination.totalUsers === 0) {
+            return { start: 0, end: 0 };
+        }
+
+        const start = (pagination.currentPage - 1) * limit + 1;
+        const end = Math.min(pagination.currentPage * limit, pagination.totalUsers);
+
+        return { start, end };
+    }, [pagination.currentPage, pagination.totalUsers, limit]);
+
+    if (initialLoading) {
+        return (
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
+                <UsersHeroSkeleton />
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <MetricSkeleton />
+                    <MetricSkeleton />
+                    <MetricSkeleton />
+                </div>
+                <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm sm:p-6">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="space-y-2">
+                            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+                            <div className="h-8 w-72 animate-pulse rounded bg-muted" />
+                        </div>
+                        <div className="h-11 w-full animate-pulse rounded-2xl bg-muted xl:w-80" />
+                    </div>
+                </div>
+                <div className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm sm:p-6">
+                    <div className="space-y-3">
+                        <div className="h-10 animate-pulse rounded bg-muted" />
+                        <div className="h-10 animate-pulse rounded bg-muted" />
+                        <div className="h-10 animate-pulse rounded bg-muted" />
+                        <div className="h-10 animate-pulse rounded bg-muted" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6 pb-8">
-            {/* Header */}
-            <SectionHeader
-                title="User Management"
-                description="View and manage all users (admins and students)"
-                icon={Users}
-                action={
-                    <Button
-                        onClick={() => setCreateDialogOpen(true)}
-                        className="gap-2"
-                    >
-                        <UserPlus className="h-4 w-4" />
-                        Create User
-                    </Button>
-                }
-            />
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 pb-8 pt-2 sm:px-6 xl:px-8">
+            <section className="relative overflow-hidden rounded-[32px] border border-border/60 bg-linear-to-br from-card via-card to-violet-500/8 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.65)]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_30%)]" />
+                <div className="relative grid gap-8 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1.35fr_0.95fr] xl:px-8">
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <Badge className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-violet-500 shadow-none">
+                                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                User Management
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full px-3 py-1">
+                                <UserCog className="mr-1.5 h-3.5 w-3.5" />
+                                Admin and student account control
+                            </Badge>
+                        </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatsCard
+                        <div className="space-y-3">
+                            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                                Manage Accounts
+                            </h1>
+                            <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                                Manage all registered users and handle access changes from one cleaner account management workspace.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+                                    Access Signal
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-end gap-3">
+                                    <span className="text-5xl font-black leading-none tracking-[-0.06em] text-violet-500">
+                                        {pagination.totalUsers}
+                                    </span>
+                                    <div className="mb-1 rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-sm text-muted-foreground backdrop-blur">
+                                        {insights.activeTone}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                                <HeroChip label="Visible" value={String(users.length)} tone="sky" />
+                                <HeroChip label="Admins" value={String(userCounts.admin)} tone="violet" />
+                                <HeroChip label="Students" value={String(userCounts.student)} tone="emerald" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <SummaryPanel
+                            icon={Users}
+                            label="Total Users"
+                            value={String(pagination.totalUsers)}
+                            helper="All registered admin and student accounts"
+                            tone="sky"
+                        />
+                        <SummaryPanel
+                            icon={ShieldCheck}
+                            label="Admin Access"
+                            value={String(userCounts.admin)}
+                            helper="Accounts with elevated admin capabilities"
+                            tone="violet"
+                        />
+                        <SummaryPanel
+                            icon={Trophy}
+                            label="Newest Visible"
+                            value={insights.newestUser?.name || "N/A"}
+                            helper={
+                                insights.newestUser
+                                    ? `${new Date(insights.newestUser.createdAt).toLocaleDateString()} joined`
+                                    : "No visible users on this page"
+                            }
+                            tone="amber"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <section className="grid gap-4 lg:grid-cols-3">
+                <SnapshotCard
                     icon={Users}
-                    title="Total Users"
-                    value={pagination.totalUsers}
-                    subtitle="All registered users"
+                    label="Accounts"
+                    value={String(pagination.totalUsers)}
+                    helper="Total platform user records"
+                    tone="sky"
                 />
-                <StatsCard
+                <SnapshotCard
                     icon={Shield}
-                    title="Admins"
-                    value={adminCount}
-                    subtitle="Users with admin access"
+                    label="Admin Users"
+                    value={String(userCounts.admin)}
+                    helper="Accounts with management access"
+                    tone="violet"
                 />
-                <StatsCard
+                <SnapshotCard
                     icon={GraduationCap}
-                    title="Students"
-                    value={studentCount}
-                    subtitle="Enrolled students"
+                    label="Student Users"
+                    value={String(userCounts.student)}
+                    helper="Enrolled learner accounts"
+                    tone="emerald"
                 />
-            </div>
+            </section>
 
-            {/* Filters */}
-            <UsersFilters
-                onSearchChange={handleSearchChange}
-                onSortChange={handleSortChange}
-                onRoleFilterChange={handleRoleFilterChange}
-                users={users}
-                roleFilter={roleFilter}
-                userCounts={userCounts}
-            />
+            <section className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:p-6">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="space-y-1.5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                            Explore Users
+                        </p>
+                        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                            Search, filter, sort, and create accounts from one control surface
+                        </h2>
+                    </div>
 
-            {/* Table */}
-            <UsersTable
-                users={users}
-                onViewDetails={handleViewDetails}
-                onChangeRole={handleChangeRole}
-                onDelete={handleDelete}
-            />
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+                            Showing {pageRange.start} to {pageRange.end} of {pagination.totalUsers}
+                        </div>
+                        <Button
+                            onClick={() => setCreateDialogOpen(true)}
+                            className="h-11 rounded-2xl gap-2"
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            Create User
+                        </Button>
+                    </div>
+                </div>
 
-            {/* Pagination */}
+                <div className="mt-5">
+                    <UsersFilters
+                        searchValue={search}
+                        onSearchChange={handleSearchChange}
+                        onSortChange={handleSortChange}
+                        onRoleFilterChange={handleRoleFilterChange}
+                        users={users}
+                        roleFilter={roleFilter}
+                        userCounts={userCounts}
+                    />
+                </div>
+            </section>
+
+            <section className="rounded-[28px] border border-border/60 bg-card/80 p-3 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] sm:p-4">
+                <div className="mb-3 flex flex-col gap-3 rounded-[22px] border border-border/60 bg-background/55 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                            Account List
+                        </p>
+                        <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                            Review account status and open management actions
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background px-3 py-1.5 text-sm text-muted-foreground">
+                        <Search className="h-4 w-4" />
+                        Details, roles, and deletion actions available
+                    </div>
+                </div>
+
+                <UsersTable
+                    users={users}
+                    onViewDetails={handleViewDetails}
+                    onChangeRole={handleChangeRole}
+                    onDelete={handleDelete}
+                />
+            </section>
+
             {!loading && pagination.totalPages > 1 && (
-                <UsersPagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    totalUsers={pagination.totalUsers}
-                    onPageChange={handlePageChange}
-                    onLimitChange={handleLimitChange}
-                    currentLimit={limit}
-                />
+                <section className="rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)] sm:p-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                                Pagination
+                            </p>
+                            <h2 className="mt-1 text-lg font-semibold tracking-tight">
+                                Move across the full user directory
+                            </h2>
+                        </div>
+                        <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+                            Page {pagination.currentPage} of {pagination.totalPages}
+                        </div>
+                    </div>
+
+                    <div className="mt-5">
+                        <UsersPagination
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            totalUsers={pagination.totalUsers}
+                            onPageChange={handlePageChange}
+                            onLimitChange={handleLimitChange}
+                            currentLimit={limit}
+                        />
+                    </div>
+                </section>
             )}
 
-            {/* Detail Dialog */}
             <UserDetailDialog
                 open={detailDialogOpen}
                 onOpenChange={handleDetailDialogClose}
@@ -370,7 +563,6 @@ export default function UsersManagementPage() {
                 }}
             />
 
-            {/* Role Dialog */}
             <UserRoleDialog
                 open={roleDialogOpen}
                 onOpenChange={setRoleDialogOpen}
@@ -380,7 +572,6 @@ export default function UsersManagementPage() {
                 onSuccess={handleRoleUpdateSuccess}
             />
 
-            {/* Create User Dialog */}
             <CreateUserDialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
@@ -388,7 +579,6 @@ export default function UsersManagementPage() {
                 onUserCreated={handleUserCreated}
             />
 
-            {/* Send Welcome Email Dialog */}
             <SendEmailDialog
                 open={emailDialogOpen}
                 onOpenChange={setEmailDialogOpen}
@@ -397,7 +587,6 @@ export default function UsersManagementPage() {
                 onSkip={handleEmailSkipped}
             />
 
-            {/* Delete Confirmation Dialog */}
             <ConfirmationDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
@@ -412,6 +601,134 @@ export default function UsersManagementPage() {
                 cancelText="Cancel"
                 variant="destructive"
             />
+        </div>
+    );
+}
+
+function UsersHeroSkeleton() {
+    return (
+        <section className="rounded-[32px] border border-border/60 bg-card/80 p-6 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.65)] sm:p-8">
+            <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
+                <div className="space-y-5">
+                    <div className="h-8 w-40 animate-pulse rounded-full bg-muted" />
+                    <div className="space-y-3">
+                        <div className="h-12 w-full max-w-xl animate-pulse rounded bg-muted" />
+                        <div className="h-5 w-full max-w-2xl animate-pulse rounded bg-muted" />
+                        <div className="h-5 w-4/5 max-w-xl animate-pulse rounded bg-muted" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="h-24 animate-pulse rounded-[24px] bg-muted" />
+                        <div className="h-24 animate-pulse rounded-[24px] bg-muted" />
+                        <div className="h-24 animate-pulse rounded-[24px] bg-muted" />
+                    </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                    <div className="h-32 animate-pulse rounded-[24px] bg-muted" />
+                    <div className="h-32 animate-pulse rounded-[24px] bg-muted" />
+                    <div className="h-32 animate-pulse rounded-[24px] bg-muted" />
+                </div>
+            </div>
+        </section>
+    );
+}
+
+function MetricSkeleton() {
+    return <div className="h-40 animate-pulse rounded-[24px] border border-border/60 bg-muted" />;
+}
+
+function HeroChip({
+    label,
+    value,
+    tone,
+}: {
+    label: string;
+    value: string;
+    tone: "sky" | "violet" | "emerald";
+}) {
+    const toneClass = {
+        sky: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+        violet: "border-violet-500/20 bg-violet-500/10 text-violet-500",
+        emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+    }[tone];
+
+    return (
+        <div className={cn("rounded-[24px] border p-4 backdrop-blur-sm", toneClass)}>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                {label}
+            </p>
+            <p className="mt-3 text-3xl font-black tracking-tighter">{value}</p>
+        </div>
+    );
+}
+
+function SummaryPanel({
+    icon: Icon,
+    label,
+    value,
+    helper,
+    tone,
+}: {
+    icon: typeof Users;
+    label: string;
+    value: string;
+    helper: string;
+    tone: "sky" | "violet" | "amber";
+}) {
+    const toneClass = {
+        sky: "border-sky-500/20 bg-sky-500/10 text-sky-500",
+        violet: "border-violet-500/20 bg-violet-500/10 text-violet-500",
+        amber: "border-amber-500/20 bg-amber-500/10 text-amber-500",
+    }[tone];
+
+    return (
+        <div className="rounded-[24px] border border-border/60 bg-background/70 p-5 backdrop-blur-sm">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        {label}
+                    </p>
+                    <p className="mt-3 text-3xl font-black tracking-tighter text-foreground">{value}</p>
+                </div>
+                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border", toneClass)}>
+                    <Icon className="h-5 w-5" />
+                </div>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{helper}</p>
+        </div>
+    );
+}
+
+function SnapshotCard({
+    icon: Icon,
+    label,
+    value,
+    helper,
+    tone,
+}: {
+    icon: typeof Users;
+    label: string;
+    value: string;
+    helper: string;
+    tone: "sky" | "violet" | "emerald";
+}) {
+    const toneClass = {
+        sky: "text-sky-500",
+        violet: "text-violet-500",
+        emerald: "text-emerald-500",
+    }[tone];
+
+    return (
+        <div className="rounded-[24px] border border-border/60 bg-card/80 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-between gap-3">
+                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/70", toneClass)}>
+                    <Icon className="h-5 w-5" />
+                </div>
+                <p className="text-3xl font-black tracking-tighter text-foreground">{value}</p>
+            </div>
+            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {label}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{helper}</p>
         </div>
     );
 }
