@@ -303,7 +303,7 @@ export default function HomePage() {
 
                 <DashboardCard
                     eyebrow="Attendance"
-                    title="Your attendance snapshot"
+                    title="Your attendance"
                     actionHref="/attendance"
                     actionLabel="Open attendance"
                 >
