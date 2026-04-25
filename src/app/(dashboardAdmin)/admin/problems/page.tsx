@@ -156,8 +156,7 @@ export default function ProblemsPage() {
                                 Problem Library
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                                Review reusable problems, balance difficulty coverage, and jump into
-                                editing from one cleaner admin view that matches the rest of the dashboard.
+                                Review and manage the complete problem bank, ensuring balanced difficulty coverage and maintaining a high-quality question repository.
                             </p>
                         </div>
 

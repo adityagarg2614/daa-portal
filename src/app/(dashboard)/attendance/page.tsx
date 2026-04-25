@@ -177,9 +177,7 @@ export default function StudentAttendancePage() {
                                     Attendance
                                 </h1>
                                 <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                                    Follow your class participation and assignment engagement with
-                                    a clearer yearly heatmap, faster status reading, and compact
-                                    insights that tell you where you stand immediately.
+                                    Track your class participation and assignment engagement through a clear yearly heatmap and actionable insights.
                                 </p>
                             </div>
 
