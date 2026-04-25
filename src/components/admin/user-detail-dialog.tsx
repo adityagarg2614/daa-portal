@@ -92,7 +92,9 @@ export function UserDetailDialog({
                                         ) : (
                                             <GraduationCap className="mr-1 h-3 w-3" />
                                         )}
-                                        {userData?.role.charAt(0).toUpperCase() + userData?.role.slice(1)}
+                                        {userData?.role
+                                            ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1)
+                                            : "Unknown"}
                                     </Badge>
                                 </>
                             )}

@@ -24,6 +24,7 @@ import {
     X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getIndiaDateKey } from "@/lib/attendance-date";
 
 interface Student {
     _id: string;
@@ -53,7 +54,8 @@ export function AttendanceForm({
 }: AttendanceFormProps) {
     const defaultTitle = initialSession?.title || `Class - ${new Date().toLocaleDateString()}`;
     const defaultDate =
-        initialSession?.date?.split("T")[0] || new Date().toISOString().split("T")[0];
+        (initialSession?.date ? getIndiaDateKey(initialSession.date) : undefined) ||
+        getIndiaDateKey();
     const defaultPresentIds = new Set(
         initialSession?.records
             ?.filter((record) => record.present)
