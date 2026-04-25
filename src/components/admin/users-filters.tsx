@@ -10,15 +10,22 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Search, Download, X, Shield, Users, GraduationCap } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { exportUsersToCSV } from "@/lib/admin/users-utils";
 import { cn } from "@/lib/utils";
 
 interface UsersFiltersProps {
+    searchValue: string;
     onSearchChange: (search: string) => void;
     onSortChange: (sortBy: string, order: string) => void;
     onRoleFilterChange: (role: string) => void;
-    users: any[];
+    users: Array<{
+        name: string | null;
+        email: string | null;
+        role: "admin" | "student";
+        rollNo: string | null;
+        createdAt: string;
+    }>;
     roleFilter: string;
     userCounts?: {
         all: number;
@@ -28,6 +35,7 @@ interface UsersFiltersProps {
 }
 
 export function UsersFilters({
+    searchValue,
     onSearchChange,
     onSortChange,
     onRoleFilterChange,
@@ -35,18 +43,21 @@ export function UsersFilters({
     roleFilter,
     userCounts,
 }: UsersFiltersProps) {
-    const [searchValue, setSearchValue] = useState("");
+    const [localSearchValue, setLocalSearchValue] = useState(searchValue);
     const [sortBy, setSortBy] = useState("createdAt");
     const [order, setOrder] = useState("desc");
 
-    // Debounced search
     useEffect(() => {
-        const timer = setTimeout(() => {
-            onSearchChange(searchValue);
+        if (localSearchValue === searchValue) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            onSearchChange(localSearchValue);
         }, 300);
 
-        return () => clearTimeout(timer);
-    }, [searchValue, onSearchChange]);
+        return () => window.clearTimeout(timer);
+    }, [localSearchValue, onSearchChange, searchValue]);
 
     const handleSortChange = (value: string) => {
         const [field, sortOrder] = value.split("-");
@@ -60,7 +71,7 @@ export function UsersFilters({
     };
 
     const handleClearFilters = () => {
-        setSearchValue("");
+        setLocalSearchValue("");
         setSortBy("createdAt");
         setOrder("desc");
         onSearchChange("");
@@ -116,13 +127,14 @@ export function UsersFilters({
                     <Input
                         type="text"
                         placeholder="Search by name, email, or roll number..."
-                        value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
+                        value={localSearchValue}
+                        onChange={(e) => setLocalSearchValue(e.target.value)}
                         className="pl-9 h-9"
                     />
-                    {searchValue && (
+                    {localSearchValue && (
                         <button
-                            onClick={() => setSearchValue("")}
+                            type="button"
+                            onClick={() => setLocalSearchValue("")}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                             <X className="h-4 w-4" />
@@ -156,7 +168,7 @@ export function UsersFilters({
                     </Button>
 
                     {/* Clear Filters */}
-                    {(searchValue || roleFilter !== "all" || sortBy !== "createdAt") && (
+                    {(localSearchValue || roleFilter !== "all" || sortBy !== "createdAt") && (
                         <Button onClick={handleClearFilters} variant="ghost" size="sm" className="h-9">
                             Clear
                         </Button>

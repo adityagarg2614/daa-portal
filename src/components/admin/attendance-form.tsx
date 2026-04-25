@@ -191,7 +191,7 @@ export function AttendanceForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
                 <div className="space-y-4 rounded-[24px] border border-border/60 bg-card/70 p-5 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                         <div>
@@ -213,7 +213,7 @@ export function AttendanceForm({
                         </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 lg:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="title">Session Title</Label>
                             <Input
@@ -240,7 +240,7 @@ export function AttendanceForm({
                     </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+                <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
                     <FormMetricCard
                         label="Present"
                         value={presentCount}
@@ -317,7 +317,7 @@ export function AttendanceForm({
                     </div>
                 </div>
 
-                <div className="max-h-[60vh] overflow-auto">
+                <div className="overflow-x-auto">
                     <Table>
                         <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur">
                             <TableRow className="border-border/60">
