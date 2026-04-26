@@ -23,5 +23,6 @@ export default async function DashboardLayout({
     <DashboardLayoutClient name={name}>
       {children}
     </DashboardLayoutClient>
+
   );
 }
