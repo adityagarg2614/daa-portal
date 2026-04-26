@@ -1,0 +1,119 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  IMAGE_NAME: daa-portal
+
+jobs:
+  # ─────────────────────────────────────
+  # JOB 1: Test
+  # ─────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          # Skip env validation during CI build
+          SKIP_ENV_VALIDATION: "1"
+          # NEXT_PUBLIC_ vars must be available at build time
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
+      # Future: Add unit/integration tests here
+      # - name: Run tests
+      #   run: npm test
+
+  # ─────────────────────────────────────
+  # JOB 2: Build & Push Docker Image
+  # ─────────────────────────────────────
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # NEXT_PUBLIC_ vars must be baked in at build time (not runtime)
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
+  # ─────────────────────────────────────
+  # JOB 3: Deploy (Phase 3: Docker Compose)
+  # ─────────────────────────────────────
+  deploy-compose:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/apps/daa-portal
+
+            # Pull latest images
+            docker compose -f docker-compose.prod.yml pull
+
+            # Restart app container (zero-downtime)
+            docker compose -f docker-compose.prod.yml up -d --no-deps --wait app
+
+            # Health check (retry up to 30 times)
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:3000/api/health; then
+                echo "Deployment successful!"
+                break
+              fi
+              echo "Waiting for app to start... ($i/30)"
+              sleep 5
+            done
+
+            # Clean up old images
+            docker image prune -f
