@@ -37,25 +37,13 @@ const data = {
       ],
     },
     {
-      title: "Management",
+      title: "Actions",
       url: "#",
       icon: (
         <BotIcon
         />
       ),
       items: [
-        {
-          title: "Users",
-          url: "/admin/users",
-        },
-        {
-          title: "Students",
-          url: "/admin/students",
-        },
-        {
-          title: "Create Admin",
-          url: "/admin/create-admin",
-        },
         {
           title: "Assignments",
           url: "/admin/assignments",
@@ -110,6 +98,8 @@ export function AppSidebarAdmin({ ...props }: React.ComponentProps<typeof Sideba
         items: [
           { title: "Admin Dashboard", url: "/admin" },
           { title: "Manage Users", url: "/admin/users" },
+          { title: "Manage Students", url: "/admin/students" },
+          { title: "Create Admins", url: "/admin/create-admin" },
           { title: "Manage Attendance", url: "/admin/handle-attendance" },
         ],
       },

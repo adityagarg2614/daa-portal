@@ -161,12 +161,10 @@ export default function ResultsPage() {
 
                         <div className="space-y-3">
                             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-                                Assignments Results
+                                Assignment Results
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                                Review your assignment scores, completion quality, and overall
-                                trend in one polished dashboard built to make strengths and weak
-                                spots obvious immediately.
+                                Access detailed evaluation reports for all submitted assignments, track your performance metrics, and identify areas for improvement.
                             </p>
                         </div>
 
