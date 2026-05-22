@@ -28,6 +28,7 @@ interface UserRoleDialogProps {
     userId: string | null;
     userName: string;
     currentRole: "admin" | "student";
+    currentBatch?: "A" | "B" | null;
     onSuccess: () => void;
 }
 
@@ -37,9 +38,11 @@ export function UserRoleDialog({
     userId,
     userName,
     currentRole,
+    currentBatch,
     onSuccess,
 }: UserRoleDialogProps) {
     const [newRole, setNewRole] = useState<"admin" | "student">(currentRole);
+    const [batch, setBatch] = useState<"A" | "B">(currentBatch || "A");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -47,7 +50,14 @@ export function UserRoleDialog({
         if (!userId) return;
 
         if (newRole === currentRole) {
-            setError("New role is the same as current role");
+            if (newRole !== "student" || batch === (currentBatch || "A")) {
+                setError("No access changes to save");
+                return;
+            }
+        }
+
+        if (newRole === "student" && !batch) {
+            setError("Batch is required for students");
             return;
         }
 
@@ -58,7 +68,10 @@ export function UserRoleDialog({
             const response = await fetch(`/api/admin/users/${userId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ role: newRole }),
+                body: JSON.stringify({
+                    role: newRole,
+                    batch: newRole === "student" ? batch : null,
+                }),
             });
 
             const data = await response.json();
@@ -82,6 +95,7 @@ export function UserRoleDialog({
         onOpenChange(open);
         if (!open) {
             setNewRole(currentRole);
+            setBatch(currentBatch || "A");
             setError("");
         }
     };
@@ -92,10 +106,10 @@ export function UserRoleDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <UserCog className="h-5 w-5 text-primary" />
-                        Change User Role
+                        Update User Access
                     </DialogTitle>
                     <DialogDescription>
-                        Update the role for <strong>{userName}</strong>
+                        Update the role and batch settings for <strong>{userName}</strong>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -115,6 +129,24 @@ export function UserRoleDialog({
                             </SelectContent>
                         </Select>
                     </FormField>
+
+                    {newRole === "student" && (
+                        <FormField
+                            label="Student Batch"
+                            required
+                            hint="Assignments published for this batch will be visible to this student."
+                        >
+                            <Select value={batch} onValueChange={(val) => setBatch(val as "A" | "B")}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select batch" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A">Batch A</SelectItem>
+                                    <SelectItem value="B">Batch B</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                    )}
 
                     <div className="rounded-lg border bg-yellow-500/10 p-3 text-sm">
                         <div className="flex gap-2">
@@ -145,7 +177,7 @@ export function UserRoleDialog({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={loading || newRole === currentRole}
+                        disabled={loading}
                     >
                         {loading ? (
                             <>
@@ -153,7 +185,7 @@ export function UserRoleDialog({
                                 Updating...
                             </>
                         ) : (
-                            "Update Role"
+                            "Save Changes"
                         )}
                     </Button>
                 </DialogFooter>

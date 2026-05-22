@@ -33,6 +33,7 @@ interface UserDetail {
     email: string | null;
     role: "admin" | "student";
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     clerkId: string;
     createdAt: string;
     updatedAt: string;
@@ -153,6 +154,15 @@ export function UserDetailDialog({
                                         <div>
                                             <p className="text-xs text-muted-foreground">Roll Number</p>
                                             <p className="font-mono font-medium">{userData.rollNo || "N/A"}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {userData.role === "student" && (
+                                    <div className="flex items-start gap-3 rounded-lg border p-4">
+                                        <Shield className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Batch</p>
+                                            <p className="font-medium">{userData.batch ? `Batch ${userData.batch}` : "N/A"}</p>
                                         </div>
                                     </div>
                                 )}

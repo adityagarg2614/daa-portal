@@ -21,6 +21,7 @@ interface User {
     email: string | null;
     role: "admin" | "student";
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     clerkId: string;
     createdAt: string;
 }
@@ -73,6 +74,12 @@ export function UserRow({ user, onViewDetails, onChangeRole, onDelete }: UserRow
             <TableCell className="hidden md:table-cell">
                 <span className="text-sm font-mono">
                     {user.rollNo || <span className="text-muted-foreground">—</span>}
+                </span>
+            </TableCell>
+
+            <TableCell className="hidden md:table-cell">
+                <span className="text-sm">
+                    {user.role === "student" && user.batch ? `Batch ${user.batch}` : <span className="text-muted-foreground">—</span>}
                 </span>
             </TableCell>
 
