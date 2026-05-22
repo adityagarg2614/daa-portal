@@ -63,8 +63,37 @@ export default async function RootPage() {
         // For students, check onboarding status
         const onboardingComplete = metadata?.onboardingComplete === true;
         const rollNo = metadata?.rollNo as string | undefined;
+        const batch = metadata?.batch as string | undefined;
+        const name = metadata?.name as string | undefined;
+        const dbStudentProfileComplete = Boolean(
+            dbUser?.role === "student" && dbUser?.rollNo && dbUser?.batch
+        );
+        const studentProfileComplete =
+            Boolean(onboardingComplete && rollNo && batch) ||
+            dbStudentProfileComplete;
 
-        if (!dbUser || !onboardingComplete || !rollNo) {
+        if (
+            dbStudentProfileComplete &&
+            (!onboardingComplete || !rollNo || !batch || !name)
+        ) {
+            try {
+                const client = await clerkClient();
+                await client.users.updateUser(userId, {
+                    publicMetadata: {
+                        ...metadata,
+                        name: dbUser?.name || name,
+                        role: "student",
+                        rollNo: dbUser?.rollNo,
+                        batch: dbUser?.batch,
+                        onboardingComplete: true,
+                    },
+                });
+            } catch (err) {
+                console.error("[RootPage] Failed to self-heal student metadata:", err);
+            }
+        }
+
+        if (!dbUser || !studentProfileComplete) {
             return redirect("/onboarding");
         }
 

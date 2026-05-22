@@ -107,6 +107,7 @@ type Assignment = {
     _id: string
     title: string
     description: string
+    batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
     publishAt: string
@@ -1062,6 +1063,11 @@ export default function SingleAssignmentPage() {
                                 <Badge variant="outline" className="rounded-full px-3 py-1">
                                     {assignment.totalMarks} marks
                                 </Badge>
+                                {assignment.batch && (
+                                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                                        Batch {assignment.batch}
+                                    </Badge>
+                                )}
                             </div>
 
                             <div>

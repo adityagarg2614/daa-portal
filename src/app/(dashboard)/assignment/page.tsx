@@ -30,6 +30,7 @@ type Assignment = {
     _id: string
     title: string
     description: string
+    batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
     publishAt: string
