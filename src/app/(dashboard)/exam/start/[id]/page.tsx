@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { 
-    ShieldAlert, 
-    Play, 
-    Clock, 
-    BookOpen, 
-    ShieldCheck, 
+import {
+    ShieldAlert,
+    Play,
+    Clock,
+    BookOpen,
+    ShieldCheck,
     CheckCircle2,
     AlertCircle,
     MonitorSmartphone,
@@ -21,57 +21,96 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 
+type ExamAttempt = {
+    _id: string;
+    status: "pending" | "started" | "submitted" | "expired";
+};
+
+type ExamAssignment = {
+    title: string;
+    description: string;
+    isSebRequired: boolean;
+    dueAt: string;
+};
+
+type ExamStartData = {
+    assignment: ExamAssignment;
+    attempt: ExamAttempt | null;
+};
+
+function resolveSebUrl(template: string, assignmentId: string, origin: string) {
+    return template
+        .replaceAll("{{assignmentId}}", assignmentId)
+        .replaceAll("{{origin}}", origin);
+}
+
 export default function ExamStartPage() {
     const params = useParams();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [starting, setStarting] = useState(false);
-    const [examData, setExamData] = useState<any>(null);
+    const [examData, setExamData] = useState<ExamStartData | null>(null);
+    const assignmentId = typeof params.id === "string" ? params.id : "";
+    const isAlreadyInSeb =
+        typeof navigator !== "undefined" && navigator.userAgent.includes("SEB");
+    const configuredSebLaunchUrl = process.env.NEXT_PUBLIC_SEB_LAUNCH_URL?.trim() || "";
+    const configuredSebDownloadUrl =
+        process.env.NEXT_PUBLIC_SEB_DOWNLOAD_URL?.trim() ||
+        "https://safeexambrowser.org/download_en.html";
+    const browserOrigin = typeof window !== "undefined" ? window.location.origin : "";
+    const resolvedSebLaunchUrl = configuredSebLaunchUrl
+        ? resolveSebUrl(configuredSebLaunchUrl, assignmentId, browserOrigin)
+        : "";
 
     useEffect(() => {
         const fetchExamInfo = async () => {
             try {
-                const res = await fetch(`/api/student/exam/start/${params.id}`);
+                const res = await fetch(`/api/student/exam/start/${assignmentId}`);
                 const data = await res.json();
                 if (data.success) {
                     setExamData(data.data);
                 } else {
                     toast.error(data.message);
                 }
-            } catch (error) {
+            } catch {
                 toast.error("Failed to load exam details");
             } finally {
                 setLoading(false);
             }
         };
+
+        if (!assignmentId) {
+            return;
+        }
+
         fetchExamInfo();
-    }, [params.id]);
+    }, [assignmentId]);
 
     const handleStartExam = async () => {
         setStarting(true);
         try {
-            const res = await fetch(`/api/student/exam/start/${params.id}`, {
+            const res = await fetch(`/api/student/exam/start/${assignmentId}`, {
                 method: "POST",
             });
             const data = await res.json();
             if (data.success) {
                 // If SEB is required, we stay here and show the launch link
                 // If not, we can redirect to the assignment directly
-                if (examData.assignment.isSebRequired) {
+                if (examData?.assignment.isSebRequired) {
                     toast.success("Exam attempt prepared!");
                     // Refresh data to show launch options
-                    const refreshRes = await fetch(`/api/student/exam/start/${params.id}`);
+                    const refreshRes = await fetch(`/api/student/exam/start/${assignmentId}`);
                     const refreshData = await refreshRes.json();
                     if (refreshData.success) {
                         setExamData(refreshData.data);
                     }
                 } else {
-                    router.push(`/assignment/${params.id}`);
+                    router.push(`/assignment/${assignmentId}`);
                 }
             } else {
                 toast.error(data.message);
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to start exam");
         } finally {
             setStarting(false);
@@ -81,7 +120,7 @@ export default function ExamStartPage() {
     if (loading) {
         return (
             <div className="flex flex-1 items-center justify-center p-8">
-                <Skeleton className="h-[500px] w-full max-w-2xl rounded-2xl" />
+                <Skeleton className="h-125 w-full max-w-2xl rounded-2xl" />
             </div>
         );
     }
@@ -171,8 +210,18 @@ export default function ExamStartPage() {
                                 <ShieldCheck className="h-4 w-4" />
                                 <AlertTitle className="font-bold">Attempt Initialized</AlertTitle>
                                 <AlertDescription>
-                                    Your secure session is ready. Please launch the exam in Safe Exam Browser using the button below. 
-                                    If SEB is not installed, download it first.
+                                    Your secure session is ready. Launch the institution&apos;s Safe Exam Browser profile below.
+                                    Students must install SEB first on their own device.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+                        {attempt?.status === "pending" && assignment.isSebRequired && !resolvedSebLaunchUrl && !isAlreadyInSeb && (
+                            <Alert className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle className="font-bold">SEB launch link is not configured yet</AlertTitle>
+                                <AlertDescription>
+                                    Add <code>NEXT_PUBLIC_SEB_LAUNCH_URL</code> in your deployment before students use this flow.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -195,34 +244,31 @@ export default function ExamStartPage() {
                                     className="h-12 font-bold gap-2"
                                     asChild
                                 >
-                                    <a href="https://safeexambrowser.org/download_en.html" target="_blank" rel="noreferrer">
+                                    <a href={configuredSebDownloadUrl} target="_blank" rel="noreferrer">
                                         <Download className="h-5 w-5" />
                                         Download SEB
                                     </a>
                                 </Button>
                                 <Button 
                                     className="h-12 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-lg gap-2"
+                                    disabled={!isAlreadyInSeb && !resolvedSebLaunchUrl}
                                     onClick={() => {
-                                        const isAlreadyInSeb = navigator.userAgent.includes("SEB");
-                                        
                                         if (isAlreadyInSeb) {
-                                            router.push(`/assignment/${params.id}`);
+                                            router.push(`/assignment/${assignmentId}`);
                                         } else {
-                                            // Construct SEB launch link
-                                            const launchUrl = `seb://${window.location.host}/api/student/exam/config/${params.id}`;
-                                            window.location.href = launchUrl;
+                                            window.location.href = resolvedSebLaunchUrl;
                                             toast.info("Opening Safe Exam Browser...");
                                         }
                                     }}
                                 >
                                     <MonitorSmartphone className="h-5 w-5" />
-                                    {navigator.userAgent.includes("SEB") ? "Enter Secure Exam" : "Launch in SEB"}
+                                    {isAlreadyInSeb ? "Enter Secure Exam" : "Open Institution SEB Profile"}
                                 </Button>
                             </div>
                         ) : attempt.status === "started" ? (
                             <Button 
                                 className="w-full h-12 text-lg font-bold shadow-lg" 
-                                onClick={() => router.push(`/assignment/${params.id}`)}
+                                onClick={() => router.push(`/assignment/${assignmentId}`)}
                             >
                                 Resume Exam Attempt
                                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -234,7 +280,7 @@ export default function ExamStartPage() {
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground text-center">
-                            By starting the exam, you agree to the platform's academic integrity policies.
+                            By starting the exam, you agree to the platform&apos;s academic integrity policies.
                         </p>
                     </CardFooter>
                 </Card>
@@ -243,7 +289,7 @@ export default function ExamStartPage() {
     );
 }
 
-function ArrowRight(props: any) {
+function ArrowRight(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             {...props}

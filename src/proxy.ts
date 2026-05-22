@@ -22,10 +22,6 @@ const isOnboardingRoute = createRouteMatcher([
     "/api/onboarding(.*)",
 ]);
 
-const isIgnoredRoute = createRouteMatcher([
-    "/api/inngest(.*)",
-]);
-
 const isAdminRoute = createRouteMatcher([
     "/admin(.*)",
 ]);
@@ -39,11 +35,6 @@ const isStudentRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-    // Let Inngest pass through untouched
-    if (isIgnoredRoute(req)) {
-        return NextResponse.next();
-    }
-
     const { userId, sessionClaims } = await auth();
 
     // Allow public routes

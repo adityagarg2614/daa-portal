@@ -3,7 +3,22 @@
 
 import { prepareCodeForExecution } from "@/lib/code-driver";
 
-const PISTON_API = process.env.PISTON_API_URL;
+function getPistonApiBaseUrl() {
+    const configuredUrl = process.env.PISTON_API_URL?.trim();
+
+    if (configuredUrl) {
+        return configuredUrl.replace(/\/$/, "");
+    }
+
+    if (process.env.VERCEL) {
+        throw new Error(
+            "PISTON_API_URL is required in production. Deploy Piston separately and set its public API URL in Vercel."
+        );
+    }
+
+    return "http://localhost:2000/api/v2";
+}
+
 // Language mapping to Piston language names and versions
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
     cpp: { language: "c++", version: "10.2.0" },
@@ -100,7 +115,7 @@ async function executeWithPiston(
         };
 
 
-        const response = await fetch(`${PISTON_API}/execute`, {
+        const response = await fetch(`${getPistonApiBaseUrl()}/execute`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

@@ -4,6 +4,13 @@ import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
 import mongoose from "mongoose";
 
+function getAllowedSebKeys(envValue?: string) {
+    return (envValue || "")
+        .split(",")
+        .map((key) => key.trim().toLowerCase())
+        .filter(Boolean);
+}
+
 /**
  * Verifies if the current request is coming from Safe Exam Browser.
  *
@@ -16,6 +23,10 @@ import mongoose from "mongoose";
 export async function verifySebSession(assignmentId: string, studentId: string) {
     const headerList = await headers();
     const userAgent = headerList.get("user-agent") || "";
+    const browserExamKey = headerList.get("x-safeexambrowser-browserexamkeyhash") || "";
+    const configKey = headerList.get("x-safeexambrowser-configkeyhash") || "";
+    const allowedBrowserExamKeys = getAllowedSebKeys(process.env.SEB_BROWSER_EXAM_KEYS);
+    const allowedConfigKeys = getAllowedSebKeys(process.env.SEB_CONFIG_KEYS);
 
     console.log(`[SEB] Assignment: ${assignmentId} | UA: ${userAgent.slice(0, 80)}`);
 
@@ -42,6 +53,32 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
     }
 
     console.log("[SEB] PASSED — SEB browser confirmed");
+
+    if (allowedBrowserExamKeys.length > 0) {
+        const normalizedBrowserExamKey = browserExamKey.trim().toLowerCase();
+
+        if (!normalizedBrowserExamKey || !allowedBrowserExamKeys.includes(normalizedBrowserExamKey)) {
+            console.log("[SEB] BLOCKED — Browser Exam Key mismatch");
+            return {
+                success: false,
+                message: "The Safe Exam Browser configuration used on this device is not approved for this exam.",
+                errorCode: "SEB_BROWSER_EXAM_KEY_REQUIRED",
+            };
+        }
+    }
+
+    if (allowedConfigKeys.length > 0) {
+        const normalizedConfigKey = configKey.trim().toLowerCase();
+
+        if (!normalizedConfigKey || !allowedConfigKeys.includes(normalizedConfigKey)) {
+            console.log("[SEB] BLOCKED — Config Key mismatch");
+            return {
+                success: false,
+                message: "The Safe Exam Browser configuration key did not match the institution-approved settings.",
+                errorCode: "SEB_CONFIG_KEY_REQUIRED",
+            };
+        }
+    }
 
     // Check 2: Must have a pending/started ExamAttempt
     const attempt = await ExamAttempt.findOne({
@@ -82,7 +119,7 @@ export async function markAttemptAsStarted(attemptId: string, userAgent: string,
         attempt.startedAt = new Date();
         attempt.sebVerified = true;
         attempt.userAgent = userAgent;
-        attempt.ipAddress = ip;
+        attempt.ipAddress = ip.split(",")[0]?.trim() || ip;
         if (userAgent.toLowerCase().includes("win")) attempt.sebPlatform = "windows";
         else if (userAgent.toLowerCase().includes("mac")) attempt.sebPlatform = "macos";
         else attempt.sebPlatform = "other";

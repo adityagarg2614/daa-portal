@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Built with Next.js 16, React 19, Clerk, MongoDB, Tailwind CSS 4, Inngest, Resend, and a self-hosted Piston code execution service.
+  Built with Next.js 16, React 19, Clerk, MongoDB, Tailwind CSS 4, Resend, and a self-hosted Piston code execution service.
 </p>
 
 <p align="center">
@@ -29,7 +29,6 @@ The project combines:
 - **MongoDB + Mongoose** for application data
 - **Piston** for multi-language code execution
 - **Next.js App Router** for UI and API routes
-- **Inngest** for Clerk-to-database sync jobs
 - **Resend** for welcome email delivery
 
 ---
@@ -63,7 +62,6 @@ The project combines:
 - Role-based student and admin routing
 - Multi-language code execution with Piston
 - MongoDB-backed course, submission, and attendance data
-- Clerk metadata + database sync with Inngest
 - Docker-ready local stack for the app, MongoDB, and Piston
 
 ---
@@ -78,7 +76,6 @@ The project combines:
 | Auth | Clerk |
 | Database | MongoDB, Mongoose |
 | Code Execution | Self-hosted Piston |
-| Background Jobs | Inngest |
 | Email | Resend |
 | Charts and Visuals | Recharts |
 | Editor | CodeMirror 6 |
@@ -124,8 +121,7 @@ flowchart TD
     API --> DB["MongoDB"]
     API --> EXEC["Piston Execution API"]
     API --> MAIL["Resend"]
-    CLERK["Clerk User Events"] --> INNGEST["Inngest Functions"]
-    INNGEST --> DB
+    CLERK["Clerk Auth"] --> DB
 ```
 
 ### Important implementation files
@@ -138,9 +134,6 @@ flowchart TD
 
 - `src/lib/piston.ts`
   Shared code execution and grading integration.
-
-- `src/inngest/functions.ts`
-  Syncs Clerk users into MongoDB and removes deleted users.
 
 - `src/models/*`
   Data models for users, assignments, problems, submissions, attendance, announcements, and email logs.
@@ -202,7 +195,6 @@ daa-portal/
 │   │   ├── (dashboardAdmin)/   # admin-facing routes
 │   │   └── api/                # route handlers
 │   ├── components/             # shared UI and feature components
-│   ├── inngest/                # Inngest client and functions
 │   ├── lib/                    # auth, db, piston, email, helpers
 │   ├── models/                 # Mongoose models
 │   └── proxy.ts                # Clerk route protection
@@ -266,11 +258,15 @@ npm run dev
 
 The app will be available at [http://localhost:3000](http://localhost:3000).
 
-### 4. Optional: start the Inngest dev server
+### Production deployment
 
-```bash
-npm run dev:inngest
-```
+For the real hosted setup, use the runbook at [src/doc/important/VERCEL_DEPLOYMENT_AND_SEB_RUNBOOK.md](/Users/adityagarg/Desktop/daa-portal/src/doc/important/VERCEL_DEPLOYMENT_AND_SEB_RUNBOOK.md).
+The short version is:
+
+- deploy the Next.js app to **Vercel**
+- use **MongoDB Atlas** for the database
+- deploy **Piston** as a separate Docker service outside Vercel
+- host and distribute one institution-approved **SEB** configuration link
 
 ---
 
@@ -334,6 +330,10 @@ make clean
 | `ADMIN_SETUP_SECRET` | Recommended | Secret used by the protected admin setup flow |
 | `RESEND_API_KEY` | Optional | Needed for welcome email sending |
 | `FROM_EMAIL` | Optional | Sender address for outgoing mail |
+| `NEXT_PUBLIC_SEB_LAUNCH_URL` | Recommended for SEB exams | Hosted `.seb` or `sebs://` launch URL used by students |
+| `NEXT_PUBLIC_SEB_DOWNLOAD_URL` | Optional | Download/help URL for Safe Exam Browser |
+| `SEB_BROWSER_EXAM_KEYS` | Optional but recommended | Approved SEB Browser Exam Keys for stronger exam verification |
+| `SEB_CONFIG_KEYS` | Optional | Approved SEB Config Keys for stricter matching |
 
 ---
 
@@ -346,10 +346,6 @@ make clean
 | Platform | `/api/compile`, `/api/health`, `/api/onboarding/complete` |
 | Attendance | `/api/attendance/sync-assignment`, `/api/student/attendance` |
 | Email | `/api/admin/email/welcome` |
-| Events | `/api/inngest` |
-
----
-
 ## Admin Setup Flow
 
 The project includes a protected admin bootstrap process:
@@ -368,7 +364,6 @@ This makes it easier to control admin access in academic deployments without man
 - The app uses **App Router** route groups for student and admin areas.
 - MongoDB connections are cached globally for better development behavior.
 - Clerk role data is reinforced with MongoDB checks in `src/lib/auth.ts`.
-- Inngest is already wired to process Clerk user events.
 - Code execution is intentionally isolated behind `src/lib/piston.ts`.
 - `/api/health` is available for local and container health checks.
 

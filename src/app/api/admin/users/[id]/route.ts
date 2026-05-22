@@ -263,7 +263,7 @@ export async function DELETE(
             }
         }
 
-        // Delete from MongoDB (Inngest webhook will also attempt this, but we do it here for immediate effect)
+        // Delete from MongoDB immediately.
         await User.findByIdAndDelete(userIdParam);
 
         return NextResponse.json(

@@ -30,7 +30,7 @@ export async function GET(
         }
 
         // Check if user already has an attempt
-        let attempt = await ExamAttempt.findOne({
+        const attempt = await ExamAttempt.findOne({
             studentId: user._id,
             assignmentId: assignment._id,
         });
