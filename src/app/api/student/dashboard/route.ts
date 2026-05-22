@@ -1,12 +1,25 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { getAssignmentBatchFilter } from "@/lib/batch";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
 import Attendance from "@/models/Attendance";
 
-export async function GET(request: Request) {
+type AttendanceSessionRecord = {
+    userId: { toString(): string };
+    present: boolean;
+};
+
+type RecentSubmissionRow = {
+    _id: unknown;
+    score?: number;
+    createdAt: Date;
+    assignmentId: { title?: string };
+};
+
+export async function GET() {
     try {
         await connectDB();
         const { userId: clerkId } = await auth();
@@ -21,11 +34,10 @@ export async function GET(request: Request) {
         }
 
         const userId = user._id;
+        const assignmentBatchFilter = getAssignmentBatchFilter(user.batch);
 
         // 1. Fetch Assignments Count
-        const totalAssignments = await Assignment.countDocuments({
-            // status can be 'Active' based on current date
-        });
+        const totalAssignments = await Assignment.countDocuments(assignmentBatchFilter);
 
         // 2. Fetch Completed Assignments
         // An assignment is completed if there is a submission for it by this user
@@ -36,6 +48,7 @@ export async function GET(request: Request) {
         // 3. Fetch Upcoming Assignments (Top 3 active)
         const now = new Date();
         const upcomingAssignments = await Assignment.find({
+            ...assignmentBatchFilter,
             dueAt: { $gt: now },
         }).sort({ dueAt: 1 }).limit(3);
 
@@ -62,7 +75,10 @@ export async function GET(request: Request) {
         
         const totalSessions = attendanceSessions.length;
         const attendedSessions = attendanceSessions.filter(session => 
-            session.records.find((r: any) => r.userId.toString() === userId.toString())?.present
+            session.records.find(
+                (record: AttendanceSessionRecord) =>
+                    record.userId.toString() === userId.toString()
+            )?.present
         ).length;
 
         const attendancePercentage = totalSessions > 0 
@@ -84,11 +100,11 @@ export async function GET(request: Request) {
                     due: a.dueAt,
                     status: new Date(a.publishAt) <= now ? "Active" : "Upcoming"
                 })),
-                recentResults: recentSubmissions.map(s => ({
-                    _id: s._id,
-                    title: (s.assignmentId as any).title,
-                    score: s.score,
-                    submittedAt: s.createdAt
+                recentResults: (recentSubmissions as RecentSubmissionRow[]).map((submission) => ({
+                    _id: submission._id,
+                    title: submission.assignmentId?.title || "Assignment",
+                    score: submission.score,
+                    submittedAt: submission.createdAt
                 })),
                 attendance: {
                     percentage: attendancePercentage

@@ -1,8 +1,10 @@
 import { connectDB } from "@/lib/db";
+import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 
 export async function GET(
     req: Request,
@@ -25,6 +27,21 @@ export async function GET(
         if (!user) {
             return NextResponse.json(
                 { success: false, message: "User not found" },
+                { status: 404 }
+            );
+        }
+
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            return NextResponse.json(
+                { success: false, message: "Assignment not found" },
+                { status: 404 }
+            );
+        }
+
+        if (!isAssignmentAccessibleToStudent(assignment.batch, user.batch)) {
+            return NextResponse.json(
+                { success: false, message: "Assignment not found" },
                 { status: 404 }
             );
         }

@@ -1,11 +1,15 @@
 import { connectDB } from "@/lib/db";
 import Submission from "@/models/Submission";
 import Problem from "@/models/Problem";
+import Assignment from "@/models/Assignment";
+import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { runTestCases } from "@/lib/piston";
 import { ITestResult } from "@/models/Submission";
 import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
 import { headers } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
+import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 
 
 export async function POST(req: Request) {
@@ -30,6 +34,44 @@ export async function POST(req: Request) {
                     message: "assignmentId, problemId, userId, code, and language are required",
                 },
                 { status: 400 }
+            );
+        }
+
+        const { userId: clerkId } = await auth();
+        if (!clerkId) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const dbUser = await User.findOne({ clerkId, role: "student" });
+        if (!dbUser) {
+            return NextResponse.json(
+                { success: false, message: "Student not found" },
+                { status: 404 }
+            );
+        }
+
+        if (dbUser._id.toString() !== userId) {
+            return NextResponse.json(
+                { success: false, message: "Forbidden" },
+                { status: 403 }
+            );
+        }
+
+        const assignment = await Assignment.findById(assignmentId);
+        if (!assignment) {
+            return NextResponse.json(
+                { success: false, message: "Assignment not found" },
+                { status: 404 }
+            );
+        }
+
+        if (!isAssignmentAccessibleToStudent(assignment.batch, dbUser.batch)) {
+            return NextResponse.json(
+                { success: false, message: "This assignment is not available for your batch" },
+                { status: 403 }
             );
         }
 
@@ -74,7 +116,7 @@ export async function POST(req: Request) {
 
         // Run test cases if requested and test cases exist
         if (runTests && problem.testCases && problem.testCases.length > 0) {
-            const testCases = problem.testCases.map((tc: any) => ({
+            const testCases = problem.testCases.map((tc: { input: string; output: string; isHidden?: boolean }) => ({
                 input: tc.input,
                 output: tc.output,
                 isHidden: tc.isHidden

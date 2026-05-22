@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/db";
+import { getAssignmentBatchFilter } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
 import User from "@/models/User";
@@ -27,7 +28,7 @@ export async function GET() {
         }
 
         // 1. Get all assignments
-        const assignments = await Assignment.find().sort({ publishAt: -1 });
+        const assignments = await Assignment.find(getAssignmentBatchFilter(dbUser.batch)).sort({ publishAt: -1 });
 
         // 2. For each assignment, get student's submissions and aggregate results
         const results = await Promise.all(
