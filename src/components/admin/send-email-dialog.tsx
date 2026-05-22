@@ -70,8 +70,10 @@ export function SendEmailDialog({
                 setError(data.message || "Failed to send email");
                 toast.error(data.message || "Failed to send email");
             }
-        } catch (err: any) {
-            setError(err.message || "Failed to send email");
+        } catch (err: unknown) {
+            const errorMessage =
+                err instanceof Error ? err.message : "Failed to send email";
+            setError(errorMessage);
             toast.error("Failed to send email");
         } finally {
             setSending(false);

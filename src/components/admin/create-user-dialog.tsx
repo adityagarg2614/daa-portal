@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -28,7 +27,6 @@ import {
     Check,
     ShieldCheck,
     GraduationCap,
-    KeyRound,
     Mail,
     IdCard,
     Sparkles,
@@ -45,6 +43,7 @@ interface CreateUserDialogProps {
         password: string;
         role: "admin" | "student";
         rollNo?: string;
+        batch?: "A" | "B";
     }) => void;
 }
 
@@ -58,6 +57,7 @@ export function CreateUserDialog({
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<"admin" | "student">("student");
     const [rollNo, setRollNo] = useState("");
+    const [batch, setBatch] = useState<"A" | "B">("A");
     const [password, setPassword] = useState("");
     const [generatePassword, setGeneratePassword] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
@@ -65,6 +65,12 @@ export function CreateUserDialog({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [createdPassword, setCreatedPassword] = useState("");
+    const [createdUserSummary, setCreatedUserSummary] = useState<null | {
+        email: string;
+        role: "admin" | "student";
+        rollNo?: string;
+        batch?: "A" | "B";
+    }>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,6 +111,7 @@ export function CreateUserDialog({
                     email: email.trim().toLowerCase(),
                     role,
                     rollNo: role === "student" ? rollNo.trim() : undefined,
+                    batch: role === "student" ? batch : undefined,
                     password: finalPassword,
                 }),
             });
@@ -112,7 +119,15 @@ export function CreateUserDialog({
             const data = await response.json();
 
             if (data.success) {
+                const userSummary = {
+                    email: email.trim().toLowerCase(),
+                    role,
+                    rollNo: role === "student" ? rollNo.trim() : undefined,
+                    batch: role === "student" ? batch : undefined,
+                } satisfies NonNullable<typeof createdUserSummary>;
+
                 setCreatedPassword(data.data.password);
+                setCreatedUserSummary(userSummary);
                 toast.success(data.message || "User created successfully");
                 onSuccess();
 
@@ -120,10 +135,11 @@ export function CreateUserDialog({
                 if (onUserCreated) {
                     onUserCreated({
                         name: name.trim(),
-                        email: email.trim().toLowerCase(),
+                        email: userSummary.email,
                         password: data.data.password,
-                        role,
-                        rollNo: role === "student" ? rollNo.trim() : undefined,
+                        role: userSummary.role,
+                        rollNo: userSummary.rollNo,
+                        batch: userSummary.batch,
                     });
                 }
 
@@ -132,6 +148,7 @@ export function CreateUserDialog({
                 setEmail("");
                 setRole("student");
                 setRollNo("");
+                setBatch("A");
                 setPassword("");
                 setGeneratePassword(true);
             } else {
@@ -152,10 +169,12 @@ export function CreateUserDialog({
             setEmail("");
             setRole("student");
             setRollNo("");
+            setBatch("A");
             setPassword("");
             setGeneratePassword(true);
             setError("");
             setCreatedPassword("");
+            setCreatedUserSummary(null);
             setCopied(false);
         }
     };
@@ -209,21 +228,34 @@ export function CreateUserDialog({
                                     </div>
                                 </div>
 
-                                <div className="grid gap-4 md:grid-cols-3">
+                                <div className="grid gap-4 md:grid-cols-4">
                                     <SuccessStat
                                         icon={Mail}
                                         label="Account email"
-                                        value={email.trim().toLowerCase()}
+                                        value={createdUserSummary?.email || "N/A"}
                                     />
                                     <SuccessStat
-                                        icon={role === "admin" ? ShieldCheck : GraduationCap}
+                                        icon={createdUserSummary?.role === "admin" ? ShieldCheck : GraduationCap}
                                         label="Assigned role"
-                                        value={role === "admin" ? "Admin" : "Student"}
+                                        value={createdUserSummary?.role === "admin" ? "Admin" : "Student"}
                                     />
                                     <SuccessStat
                                         icon={IdCard}
                                         label="Roll number"
-                                        value={role === "student" ? rollNo.trim() || "Pending" : "Not required"}
+                                        value={
+                                            createdUserSummary?.role === "student"
+                                                ? createdUserSummary.rollNo || "Pending"
+                                                : "Not required"
+                                        }
+                                    />
+                                    <SuccessStat
+                                        icon={GraduationCap}
+                                        label="Batch"
+                                        value={
+                                            createdUserSummary?.role === "student" && createdUserSummary.batch
+                                                ? `Batch ${createdUserSummary.batch}`
+                                                : "Not required"
+                                        }
                                     />
                                 </div>
 
@@ -323,6 +355,20 @@ export function CreateUserDialog({
                                             className="w-full rounded-2xl border border-border/60 bg-card px-3.5 py-2.5 text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                                             required
                                         />
+                                    </FormField>
+                                )}
+
+                                {role === "student" && (
+                                    <FormField label="Batch" required>
+                                        <Select value={batch} onValueChange={(value) => setBatch(value as "A" | "B")}>
+                                            <SelectTrigger className="rounded-2xl border-border/60 bg-card">
+                                                <SelectValue placeholder="Select batch" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="A">Batch A</SelectItem>
+                                                <SelectItem value="B">Batch B</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </FormField>
                                 )}
                             </section>
@@ -470,26 +516,6 @@ function RolePreviewCard({
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">{helper}</p>
                 </div>
             </div>
-        </div>
-    );
-}
-
-function MiniInfoCard({
-    icon: Icon,
-    label,
-    value,
-}: {
-    icon: typeof Mail;
-    label: string;
-    value: string;
-}) {
-    return (
-        <div className="rounded-[22px] border border-border/60 bg-background/70 p-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <Icon className="h-4 w-4" />
-                <p className="text-xs font-semibold uppercase tracking-[0.2em]">{label}</p>
-            </div>
-            <p className="mt-3 text-sm font-medium text-foreground">{value}</p>
         </div>
     );
 }

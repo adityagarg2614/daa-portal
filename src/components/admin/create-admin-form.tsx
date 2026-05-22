@@ -5,25 +5,20 @@ import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { UserPlus, Loader2, CheckCircle2, AlertCircle, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Loader2, CheckCircle2, AlertCircle, Copy, Check } from "lucide-react";
 import { SendEmailDialog } from "./send-email-dialog";
 import { Alert } from "@/components/ui/alert";
+type PendingUserData = {
+    name: string;
+    email: string;
+    password: string;
+    role: "admin" | "student";
+    rollNo?: string;
+};
 
-interface CreateAdminFormProps {
-    onSuccess?: () => void;
-}
-
-export function CreateAdminForm({ onSuccess }: CreateAdminFormProps) {
+export function CreateAdminForm() {
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
-    const [designation, setDesignation] = useState("professor");
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<{ email?: string; name?: string }>({});
     
@@ -31,7 +26,7 @@ export function CreateAdminForm({ onSuccess }: CreateAdminFormProps) {
     const [createdPassword, setCreatedPassword] = useState("");
     const [copied, setCopied] = useState(false);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-    const [pendingUserData, setPendingUserData] = useState<any>(null);
+    const [pendingUserData, setPendingUserData] = useState<PendingUserData | null>(null);
 
     const validateForm = () => {
         const newErrors: { email?: string; name?: string } = {};
@@ -105,10 +100,6 @@ export function CreateAdminForm({ onSuccess }: CreateAdminFormProps) {
                 // Clear form
                 setEmail("");
                 setName("");
-                setDesignation("professor");
-
-                // Callback to parent
-                onSuccess?.();
             } else {
                 toast.error("Failed to create admin", {
                     description: data.message || "Something went wrong",
@@ -227,24 +218,6 @@ export function CreateAdminForm({ onSuccess }: CreateAdminFormProps) {
                                         {errors.name}
                                     </p>
                                 )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium" htmlFor="designation">
-                                    Role Designation
-                                </label>
-                                <Select value={designation} onValueChange={setDesignation} disabled={loading}>
-                                    <SelectTrigger id="designation">
-                                        <SelectValue placeholder="Select designation" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="professor">Professor</SelectItem>
-                                        <SelectItem value="assistant-professor">Assistant Professor</SelectItem>
-                                        <SelectItem value="associate-professor">Associate Professor</SelectItem>
-                                        <SelectItem value="hod">Head of Department</SelectItem>
-                                        <SelectItem value="admin">Admin Staff</SelectItem>
-                                    </SelectContent>
-                                </Select>
                             </div>
 
                             <Button type="submit" disabled={loading} className="w-full">
