@@ -50,27 +50,32 @@ export default clerkMiddleware(async (auth, req) => {
     // Check if user is admin from metadata
     const metadata = (sessionClaims?.metadata as Record<string, unknown>) || {};
     const role = metadata?.role as string | undefined;
+    const metadataEmail = metadata?.email as string | undefined;
     let isAdmin = role === "admin";
+    let dbUser: {
+        clerkId?: string;
+        email?: string;
+        name?: string;
+        role?: string;
+        rollNo?: string;
+        batch?: string;
+        save?: () => Promise<void>;
+    } | null = null;
 
-    // If not admin from metadata, check DB for pending admins
-    if (!isAdmin && userId) {
+    if (userId) {
         try {
-
             const UserModel = (await import("@/models/User")).default;
-
             await connectDB();
 
-            // Check if user exists as admin in DB (including pending admins)
-            const dbUser = await UserModel.findOne({
-
-                // mongoose pipeline to check if user exists as admin in DB (including pending admins)
+            dbUser = await UserModel.findOne({
                 $or: [
                     { clerkId: userId },
-                    { clerkId: "pending_" + (sessionClaims?.metadata as Record<string, any>)?.email },
-                    { email: (sessionClaims?.metadata as Record<string, any>)?.email }
+                    { clerkId: "pending_" + metadataEmail },
+                    { email: metadataEmail }
                 ]
             });
 
+            // If not admin from metadata, check DB for pending admins
             if (dbUser?.role === "admin") {
                 isAdmin = true;
 
@@ -95,8 +100,39 @@ export default clerkMiddleware(async (auth, req) => {
     // Force onboarding if incomplete (but skip for admins)
     const onboardingComplete = (metadata?.onboardingComplete as boolean) === true;
     const rollNo = metadata?.rollNo as string | undefined;
+    const batch = metadata?.batch as string | undefined;
+    const name = metadata?.name as string | undefined;
+    const dbStudentProfileComplete = Boolean(
+        dbUser?.role === "student" && dbUser?.rollNo && dbUser?.batch
+    );
+    const studentProfileComplete =
+        (onboardingComplete && Boolean(rollNo) && Boolean(batch)) ||
+        dbStudentProfileComplete;
 
-    if ((!onboardingComplete || !rollNo) && !isOnboardingRoute(req) && !isAdmin) {
+    if (
+        !isAdmin &&
+        dbStudentProfileComplete &&
+        (!onboardingComplete || !rollNo || !batch || !name)
+    ) {
+        try {
+            const { clerkClient } = await import("@clerk/nextjs/server");
+            const client = await clerkClient();
+            await client.users.updateUser(userId, {
+                publicMetadata: {
+                    ...metadata,
+                    name: dbUser?.name || name,
+                    role: "student",
+                    rollNo: dbUser?.rollNo,
+                    batch: dbUser?.batch,
+                    onboardingComplete: true,
+                },
+            });
+        } catch (error) {
+            console.error("[Middleware] Failed to self-heal student metadata:", error);
+        }
+    }
+
+    if (!studentProfileComplete && !isOnboardingRoute(req) && !isAdmin) {
         return NextResponse.redirect(new URL("/onboarding", req.url));
     }
 
@@ -106,7 +142,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Redirect onboarded users away from onboarding page
-    if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api") && onboardingComplete && rollNo) {
+    if (isOnboardingRoute(req) && !req.nextUrl.pathname.startsWith("/api") && studentProfileComplete) {
         // Double-check with fresh data from Clerk to handle stale session tokens
         // This prevents a loop if the user was recently deleted from the DB but the token still has the old metadata
         try {
@@ -114,7 +150,15 @@ export default clerkMiddleware(async (auth, req) => {
             const client = await clerkClient();
             const freshUser = await client.users.getUser(userId);
 
-            if (freshUser.publicMetadata.onboardingComplete !== true || !freshUser.publicMetadata.rollNo) {
+            if (
+                freshUser.publicMetadata.onboardingComplete !== true ||
+                !freshUser.publicMetadata.rollNo ||
+                !freshUser.publicMetadata.batch
+            ) {
+                if (dbStudentProfileComplete) {
+                    return NextResponse.redirect(new URL("/home", req.url));
+                }
+
                 // Token is stale, the user actually needs to re-onboard
                 return NextResponse.next();
             }
