@@ -31,6 +31,7 @@ interface User {
     email: string | null;
     role: "admin" | "student";
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     clerkId: string;
     createdAt: string;
 }
@@ -41,6 +42,7 @@ interface UserDetail {
     email: string | null;
     role: "admin" | "student";
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     clerkId: string;
     createdAt: string;
     updatedAt: string;
@@ -90,6 +92,7 @@ export default function UsersManagementPage() {
         password: string;
         role: "admin" | "student";
         rollNo?: string;
+        batch?: "A" | "B";
     } | null>(null);
 
     const [userCounts, setUserCounts] = useState({
@@ -268,6 +271,7 @@ export default function UsersManagementPage() {
         password: string;
         role: "admin" | "student";
         rollNo?: string;
+        batch?: "A" | "B";
     }) => {
         setPendingEmailData(userData);
         setEmailDialogOpen(true);
@@ -564,11 +568,13 @@ export default function UsersManagementPage() {
             />
 
             <UserRoleDialog
+                key={selectedUserId || "no-user"}
                 open={roleDialogOpen}
                 onOpenChange={setRoleDialogOpen}
                 userId={selectedUserId}
                 userName={selectedUser?.name || "Unknown User"}
                 currentRole={selectedUser?.role || "student"}
+                currentBatch={selectedUser?.batch || null}
                 onSuccess={handleRoleUpdateSuccess}
             />
 
