@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db";
 import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
 import mongoose from "mongoose";
+import { logger } from "@/lib/logger";
 
 function getAllowedSebKeys(envValue?: string) {
     return (envValue || "")
@@ -28,7 +29,11 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
     const allowedBrowserExamKeys = getAllowedSebKeys(process.env.SEB_BROWSER_EXAM_KEYS);
     const allowedConfigKeys = getAllowedSebKeys(process.env.SEB_CONFIG_KEYS);
 
-    console.log(`[SEB] Assignment: ${assignmentId} | UA: ${userAgent.slice(0, 80)}`);
+    logger.debug("SEB verification started", {
+        assignmentId,
+        studentId,
+        userAgent: userAgent.slice(0, 80),
+    });
 
     await connectDB();
     const assignment = await Assignment.findById(assignmentId);
@@ -44,21 +49,20 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
 
     // Check 1: Must be Safe Exam Browser
     if (!userAgent.includes("SEB/")) {
-        console.log("[SEB] BLOCKED — Not SEB browser");
+        logger.warn("SEB verification blocked: browser mismatch", { assignmentId, studentId });
         return {
             success: false,
             message: "Safe Exam Browser is required to access this assignment.",
             errorCode: "SEB_REQUIRED",
         };
     }
-
-    console.log("[SEB] PASSED — SEB browser confirmed");
+    logger.debug("SEB browser confirmed", { assignmentId, studentId });
 
     if (allowedBrowserExamKeys.length > 0) {
         const normalizedBrowserExamKey = browserExamKey.trim().toLowerCase();
 
         if (!normalizedBrowserExamKey || !allowedBrowserExamKeys.includes(normalizedBrowserExamKey)) {
-            console.log("[SEB] BLOCKED — Browser Exam Key mismatch");
+            logger.warn("SEB verification blocked: browser exam key mismatch", { assignmentId, studentId });
             return {
                 success: false,
                 message: "The Safe Exam Browser configuration used on this device is not approved for this exam.",
@@ -71,7 +75,7 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
         const normalizedConfigKey = configKey.trim().toLowerCase();
 
         if (!normalizedConfigKey || !allowedConfigKeys.includes(normalizedConfigKey)) {
-            console.log("[SEB] BLOCKED — Config Key mismatch");
+            logger.warn("SEB verification blocked: config key mismatch", { assignmentId, studentId });
             return {
                 success: false,
                 message: "The Safe Exam Browser configuration key did not match the institution-approved settings.",
@@ -86,7 +90,11 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
         assignmentId: new mongoose.Types.ObjectId(assignmentId),
     });
 
-    console.log("[SEB] ExamAttempt status:", attempt ? attempt.status : "NONE");
+    logger.debug("SEB exam attempt lookup completed", {
+        assignmentId,
+        studentId,
+        status: attempt ? attempt.status : "NONE",
+    });
 
     if (!attempt) {
         return {
@@ -100,7 +108,7 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
         return { success: false, message: "Assignment already submitted.", errorCode: "ALREADY_SUBMITTED" };
     }
 
-    console.log("[SEB] ALL CHECKS PASSED — Granting access");
+    logger.debug("SEB verification passed", { assignmentId, studentId });
     return { success: true, attempt };
 }
 

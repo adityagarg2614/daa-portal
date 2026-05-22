@@ -1,11 +1,38 @@
 /**
  * Convert student data to CSV format
  */
-export function exportStudentsToCSV(students: any[], filename: string = "students.csv"): void {
+type StudentExportRow = {
+    name?: string | null;
+    email?: string | null;
+    rollNo?: string | null;
+    batch?: string | null;
+    totalSubmissions?: number;
+    totalScore?: number;
+    averageScore?: number;
+    lastActive?: Date | string | null;
+    status?: string | null;
+};
+
+type StudentSubmissionExport = {
+    assignmentTitle?: string | null;
+    problemTitle?: string | null;
+    score?: number | null;
+    status?: string | null;
+    language?: string | null;
+    submittedAt?: Date | string | null;
+    executionTime?: number | null;
+    memoryUsed?: number | null;
+};
+
+export function exportStudentsToCSV(
+    students: StudentExportRow[],
+    filename: string = "students.csv"
+): void {
     const headers = [
         "Name",
         "Email",
         "Roll Number",
+        "Batch",
         "Total Submissions",
         "Total Score",
         "Average Score (%)",
@@ -17,6 +44,7 @@ export function exportStudentsToCSV(students: any[], filename: string = "student
         student.name || "N/A",
         student.email || "N/A",
         student.rollNo || "N/A",
+        student.batch || "N/A",
         student.totalSubmissions,
         student.totalScore,
         student.averageScore,
@@ -62,8 +90,8 @@ export function exportStudentsToCSV(students: any[], filename: string = "student
  * Export single student's detailed submissions to CSV
  */
 export function exportStudentSubmissionsToCSV(
-    student: any,
-    submissions: any[],
+    student: StudentExportRow,
+    submissions: StudentSubmissionExport[],
     filename: string = "student_submissions.csv"
 ): void {
     const headers = [
@@ -93,6 +121,7 @@ export function exportStudentSubmissionsToCSV(
         `Student: ${student.name || "N/A"}`,
         `Email: ${student.email || "N/A"}`,
         `Roll No: ${student.rollNo || "N/A"}`,
+        `Batch: ${student.batch || "N/A"}`,
         "",
     ];
 
@@ -171,7 +200,7 @@ export function getInitials(name: string | null | undefined): string {
 /**
  * Format date for display
  */
-export function formatDate(date: Date | string | null): string {
+export function formatDate(date?: Date | string | null): string {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("en-US", {
         year: "numeric",

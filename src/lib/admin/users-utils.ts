@@ -3,9 +3,18 @@
  * @param users - Array of user objects
  * @param filename - Name of the CSV file
  */
-export function exportUsersToCSV(users: any[], filename: string) {
+type UserExportRow = {
+    name?: string | null;
+    email?: string | null;
+    role?: string | null;
+    rollNo?: string | null;
+    batch?: string | null;
+    createdAt?: string | Date | null;
+};
+
+export function exportUsersToCSV(users: UserExportRow[], filename: string) {
     // Define CSV headers
-    const headers = ["Name", "Email", "Role", "Roll Number", "Created At"];
+    const headers = ["Name", "Email", "Role", "Roll Number", "Batch", "Created At"];
 
     // Convert users to CSV rows
     const rows = users.map((user) => [
@@ -13,6 +22,7 @@ export function exportUsersToCSV(users: any[], filename: string) {
         user.email || "N/A",
         user.role,
         user.rollNo || "N/A",
+        user.batch || "N/A",
         user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A",
     ]);
 
