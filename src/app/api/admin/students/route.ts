@@ -1,10 +1,11 @@
 import { verifyAdmin } from "@/lib/auth";
+import { normalizeBatch } from "@/lib/batch";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -13,17 +14,21 @@ export async function GET(request: Request) {
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
         const search = searchParams.get("search") || "";
+        const batch = normalizeBatch(searchParams.get("batch"));
         const sortBy = searchParams.get("sortBy") || "name";
         const order = searchParams.get("order") || "asc";
 
         // Build search filter
-        const searchFilter: any = {};
+        const searchFilter: Record<string, unknown> = {};
         if (search) {
             searchFilter.$or = [
                 { name: { $regex: search, $options: "i" } },
                 { email: { $regex: search, $options: "i" } },
                 { rollNo: { $regex: search, $options: "i" } },
             ];
+        }
+        if (batch) {
+            searchFilter.batch = batch;
         }
 
         // Build sort object
@@ -93,6 +98,7 @@ export async function GET(request: Request) {
                     name: 1,
                     email: 1,
                     rollNo: 1,
+                    batch: 1,
                     clerkId: 1,
                     totalSubmissions: 1,
                     totalScore: 1,

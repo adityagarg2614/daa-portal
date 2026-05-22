@@ -1,16 +1,31 @@
 import { verifyAdmin } from "@/lib/auth";
+import { getAssignmentBatchFilter, normalizeBatch } from "@/lib/batch";
 import User from "@/models/User";
 import Submission from "@/models/Submission";
 import Assignment from "@/models/Assignment";
-import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
+
+type StudentSubmissionRow = {
+    assignmentId: { toString(): string };
+    score?: number;
+    status: string;
+    language: string;
+    submittedAt?: Date | null;
+    executionTime?: number;
+    memoryUsed?: number;
+};
+
+type StudentScoreRow = {
+    _id: { toString(): string };
+    totalScore: number;
+};
 
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -26,7 +41,7 @@ export async function GET(
         }
 
         // Fetch all submissions for this student with assignment and problem details
-        const submissions = await Submission.aggregate([
+        const submissions: StudentSubmissionRow[] = await Submission.aggregate([
             {
                 $match: { userId: student._id },
             },
@@ -79,16 +94,21 @@ export async function GET(
         const averageScore = totalSubmissions > 0 ? Math.round(totalScore / totalSubmissions) : 0;
 
         // Get unique assignments count
-        const uniqueAssignments = new Set(submissions.map((s: any) => s.assignmentId.toString()));
+        const uniqueAssignments = new Set(submissions.map((submission) => submission.assignmentId.toString()));
         const completedAssignmentsCount = uniqueAssignments.size;
 
         // Get total assignments available
-        const totalAssignments = await Assignment.countDocuments();
+        const totalAssignments = await Assignment.countDocuments(
+            getAssignmentBatchFilter(student.batch)
+        );
 
         // Calculate rank (position of this student based on total score)
-        const studentsWithScores = await User.aggregate([
+        const studentsWithScores: StudentScoreRow[] = await User.aggregate([
             {
-                $match: { role: "student" },
+                $match: {
+                    role: "student",
+                    ...(normalizeBatch(student.batch) ? { batch: normalizeBatch(student.batch) } : {}),
+                },
             },
             {
                 $lookup: {
@@ -114,7 +134,7 @@ export async function GET(
             },
         ]);
 
-        const rank = studentsWithScores.findIndex((s: any) => s._id.toString() === studentId) + 1;
+        const rank = studentsWithScores.findIndex((entry) => entry._id.toString() === studentId) + 1;
 
         // Get last active date
         const lastSubmission = await Submission.findOne({ userId: studentId }).sort({ submittedAt: -1 });
@@ -132,6 +152,7 @@ export async function GET(
                     name: student.name,
                     email: student.email,
                     rollNo: student.rollNo,
+                    batch: student.batch ?? null,
                     clerkId: student.clerkId,
                     createdAt: student.createdAt,
                 },

@@ -1,8 +1,13 @@
 import { verifyAdmin } from "@/lib/auth";
+import { normalizeBatch } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import Submission from "@/models/Submission";
 import { NextResponse } from "next/server";
+
+type ProblemMarksRow = {
+    marks?: number;
+};
 
 export async function GET(
     req: Request,
@@ -87,10 +92,11 @@ export async function GET(
                 },
             },
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const err = error as Error;
         console.error("[API] Fetch Assignment Error:", error);
         return NextResponse.json(
-            { success: false, message: "Failed to fetch assignment: " + error.message },
+            { success: false, message: "Failed to fetch assignment: " + err.message },
             { status: 500 }
         );
     }
@@ -152,6 +158,7 @@ export async function PATCH(
             dueAt,
             problemIds,
             isSebRequired,
+            batch,
         } = body;
 
         const assignment = await Assignment.findById(id);
@@ -169,7 +176,18 @@ export async function PATCH(
         if (problemIds) {
             const problems = await Problem.find({ _id: { $in: problemIds } });
             totalProblems = problems.length;
-            totalMarks = problems.reduce((sum: number, p: any) => sum + (p.marks || 0), 0);
+            totalMarks = problems.reduce(
+                (sum: number, problem: ProblemMarksRow) => sum + (problem.marks || 0),
+                0
+            );
+        }
+
+        const normalizedBatch = batch !== undefined ? normalizeBatch(batch) : undefined;
+        if (batch !== undefined && !normalizedBatch) {
+            return NextResponse.json(
+                { success: false, message: "Valid batch is required" },
+                { status: 400 }
+            );
         }
 
         const updatedAssignment = await Assignment.findByIdAndUpdate(
@@ -177,6 +195,7 @@ export async function PATCH(
             {
                 title: title ?? assignment.title,
                 description: description ?? assignment.description,
+                batch: normalizedBatch ?? assignment.batch,
                 publishAt: publishAt ?? assignment.publishAt,
                 dueAt: dueAt ?? assignment.dueAt,
                 problemIds: problemIds ?? assignment.problemIds,

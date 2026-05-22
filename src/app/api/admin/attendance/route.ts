@@ -1,8 +1,11 @@
 import { connectDB } from "@/lib/db";
 import { verifyAdmin } from "@/lib/auth";
 import Attendance from "@/models/Attendance";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
+
+type AttendanceQuery = {
+    type?: string;
+};
 
 // GET - Fetch attendance sessions with filters
 export async function GET(request: Request) {
@@ -17,7 +20,7 @@ export async function GET(request: Request) {
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "10");
 
-        const query: any = {};
+        const query: AttendanceQuery = {};
         if (type && type !== "all") {
             query.type = type;
         }
@@ -41,10 +44,11 @@ export async function GET(request: Request) {
                 }
             }
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch attendance sessions";
         console.error("Error fetching attendance sessions:", error);
         return NextResponse.json(
-            { success: false, message: error.message || "Failed to fetch attendance sessions" },
+            { success: false, message },
             { status: 500 }
         );
     }
@@ -81,10 +85,11 @@ export async function POST(request: Request) {
             message: "Attendance session created successfully",
             data: session
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to create attendance session";
         console.error("Error creating attendance session:", error);
         return NextResponse.json(
-            { success: false, message: error.message || "Failed to create attendance session" },
+            { success: false, message },
             { status: 500 }
         );
     }

@@ -1,12 +1,13 @@
 import { verifyAdmin } from "@/lib/auth";
+import { normalizeBatch } from "@/lib/batch";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 
 // GET - Fetch all users with pagination and filtering
 export async function GET(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -16,13 +17,17 @@ export async function GET(request: Request) {
         const limit = parseInt(searchParams.get("limit") || "20");
         const search = searchParams.get("search") || "";
         const role = searchParams.get("role") || "all";
+        const batch = normalizeBatch(searchParams.get("batch"));
         const sortBy = searchParams.get("sortBy") || "createdAt";
         const order = searchParams.get("order") || "desc";
 
         // Build filter
-        const filter: any = {};
+        const filter: Record<string, unknown> = {};
         if (role !== "all") {
             filter.role = role;
+        }
+        if (batch) {
+            filter.batch = batch;
         }
         if (search) {
             filter.$or = [
@@ -73,12 +78,13 @@ export async function GET(request: Request) {
 // POST - Create a new user
 export async function POST(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
         const body = await request.json();
         const { email, name, role, rollNo, password } = body;
+        const batch = normalizeBatch(body.batch);
 
         // Validation
         if (!email || !name || !role) {
@@ -124,6 +130,13 @@ export async function POST(request: Request) {
             }
         }
 
+        if (role === "student" && !batch) {
+            return NextResponse.json(
+                { success: false, message: "Batch is required for students" },
+                { status: 400 }
+            );
+        }
+
         // Generate password if not provided
         const userPassword = password || Math.random().toString(36).slice(-8) + "A1!";
 
@@ -139,6 +152,7 @@ export async function POST(request: Request) {
                     role: role,
                     onboardingComplete: true,
                     ...(role === "student" && rollNo ? { rollNo } : {}),
+                    ...(role === "student" && batch ? { batch } : {}),
                 },
             });
 
@@ -149,6 +163,7 @@ export async function POST(request: Request) {
                 name,
                 role,
                 rollNo: role === "student" ? rollNo : null,
+                batch: role === "student" ? batch : null,
             });
 
             return NextResponse.json(
@@ -162,17 +177,29 @@ export async function POST(request: Request) {
                 },
                 { status: 201 }
             );
-        } catch (clerkError: any) {
+        } catch (error: unknown) {
             // Log the full error for debugging
-            console.error("Clerk user creation failed:", JSON.stringify(clerkError, null, 2));
+            console.error("Clerk user creation failed:", JSON.stringify(error, null, 2));
+
+            const clerkError = error as {
+                errors?: Array<{ message?: string; longMessage?: string; code?: string }>;
+                message?: string;
+            };
 
             // Extract error message from Clerk error structure
             let errorMessage = "Failed to create user in authentication provider";
             let isEmailTaken = false;
 
             if (clerkError?.errors && Array.isArray(clerkError.errors)) {
-                errorMessage = clerkError.errors.map((e: any) => e.message || e.longMessage).filter(Boolean).join(", ");
-                isEmailTaken = clerkError.errors.some((e: any) => e.code === "form_identifier_exists" || e.message?.includes("already exists"));
+                errorMessage = clerkError.errors
+                    .map((entry) => entry.message || entry.longMessage)
+                    .filter(Boolean)
+                    .join(", ");
+                isEmailTaken = clerkError.errors.some(
+                    (entry) =>
+                        entry.code === "form_identifier_exists" ||
+                        entry.message?.includes("already exists")
+                );
             } else if (clerkError?.message) {
                 errorMessage = clerkError.message;
                 isEmailTaken = clerkError.message.includes("already exists");
@@ -201,6 +228,7 @@ export async function POST(request: Request) {
                                 name: name || clerkUser.firstName || "Synced User",
                                 role: role,
                                 rollNo: role === "student" ? rollNo : null,
+                                batch: role === "student" ? batch : null,
                             });
 
                             // Update Clerk user (including password if we generated/provided one)
@@ -210,6 +238,7 @@ export async function POST(request: Request) {
                                     ...clerkUser.publicMetadata,
                                     role: role,
                                     onboardingComplete: true,
+                                    ...(role === "student" && batch ? { batch } : {}),
                                 }
                             });
 

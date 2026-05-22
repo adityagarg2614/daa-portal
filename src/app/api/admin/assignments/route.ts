@@ -1,4 +1,5 @@
 import { verifyAdmin } from "@/lib/auth";
+import { normalizeBatch } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
@@ -19,13 +20,16 @@ export async function POST(req: Request) {
             problemIds,
             createdBy,
             isSebRequired,
+            batch,
         } = body;
 
-        if (!title || !description || !publishAt || !dueAt || !problemIds?.length) {
+        const normalizedBatch = normalizeBatch(batch);
+
+        if (!title || !description || !publishAt || !dueAt || !problemIds?.length || !normalizedBatch) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Title, description, publishAt, dueAt and problemIds are required",
+                    message: "Title, description, batch, publishAt, dueAt and problemIds are required",
                 },
                 { status: 400 }
             );
@@ -51,6 +55,7 @@ export async function POST(req: Request) {
         const assignment = await Assignment.create({
             title,
             description,
+            batch: normalizedBatch,
             publishAt,
             dueAt,
             problemIds,
