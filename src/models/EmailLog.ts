@@ -8,7 +8,7 @@ export interface IEmailLog extends Document {
     template: string;
     sentAt?: Date;
     error?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
 }

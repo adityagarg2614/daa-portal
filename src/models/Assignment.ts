@@ -1,10 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { StudentBatch } from "@/lib/batch";
 
 export interface IAssignment extends Document {
     title: string;
     description: string;
     totalProblems: number;
     totalMarks: number;
+    batch?: StudentBatch | null;
     publishAt: Date;
     dueAt: Date;
     createdBy?: string;
@@ -33,6 +35,11 @@ const AssignmentSchema: Schema = new Schema(
         totalMarks: {
             type: Number,
             required: true,
+        },
+        batch: {
+            type: String,
+            enum: ["A", "B"],
+            default: null,
         },
         publishAt: {
             type: Date,

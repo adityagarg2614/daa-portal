@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { StudentBatch } from "@/lib/batch";
 
 export interface IUser extends Document {
     clerkId: string;
@@ -6,6 +7,7 @@ export interface IUser extends Document {
     email?: string;
     rollNo?: string;
     role: "admin" | "student";
+    batch?: StudentBatch | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -34,6 +36,11 @@ const UserSchema = new Schema(
             type: String,
             enum: ["admin", "student"],
             default: "student",
+        },
+        batch: {
+            type: String,
+            enum: ["A", "B"],
+            default: null,
         },
     },
     { timestamps: true }
