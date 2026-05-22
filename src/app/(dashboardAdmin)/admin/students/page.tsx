@@ -5,6 +5,8 @@ import { StudentsTable } from "@/components/admin/students-table";
 import { StudentsFilters } from "@/components/admin/students-filters";
 import { StudentsPagination } from "@/components/admin/students-pagination";
 import { StudentDetailDialog } from "@/components/admin/student-detail-dialog";
+import { StudentBatchDialog } from "@/components/admin/student-batch-dialog";
+import type { StudentDetail } from "@/lib/admin/student-types";
 import {
     Medal,
     Sparkles,
@@ -24,6 +26,7 @@ interface Student {
     name: string | null;
     email: string | null;
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     totalSubmissions: number;
     totalScore: number;
     averageScore: number;
@@ -35,28 +38,6 @@ interface PaginationData {
     totalStudents: number;
     hasNext: boolean;
     hasPrev: boolean;
-}
-
-interface StudentDetail {
-    student: {
-        _id: string;
-        name: string | null;
-        email: string | null;
-        rollNo: string | null;
-        clerkId: string;
-        createdAt: string;
-    };
-    submissions: unknown[];
-    stats: {
-        totalSubmissions: number;
-        totalScore: number;
-        averageScore: number;
-        completedAssignments: number;
-        totalAssignments: number;
-        rank: number;
-        lastActive: string | null;
-        status: string;
-    };
 }
 
 export default function StudentsPage() {
@@ -72,6 +53,8 @@ export default function StudentsPage() {
     const [studentDetail, setStudentDetail] = useState<StudentDetail | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
     const [search, setSearch] = useState("");
     const [sortBy, setSortBy] = useState("name");
@@ -136,6 +119,33 @@ export default function StudentsPage() {
 
     const handleViewDetails = (studentId: string) => {
         void fetchStudentDetail(studentId);
+    };
+
+    const handleChangeBatch = (_studentId: string, student: Student) => {
+        setSelectedStudent(student);
+        setBatchDialogOpen(true);
+    };
+
+    const handleChangeBatchFromDetail = (studentId: string) => {
+        const summaryStudent = students.find((student) => student._id === studentId);
+
+        if (!summaryStudent && studentDetail) {
+            setSelectedStudent({
+                _id: studentDetail.student._id,
+                name: studentDetail.student.name,
+                email: studentDetail.student.email,
+                rollNo: studentDetail.student.rollNo,
+                batch: studentDetail.student.batch,
+                totalSubmissions: studentDetail.stats.totalSubmissions,
+                totalScore: studentDetail.stats.totalScore,
+                averageScore: studentDetail.stats.averageScore,
+            });
+        } else if (summaryStudent) {
+            setSelectedStudent(summaryStudent);
+        }
+
+        setDialogOpen(false);
+        setBatchDialogOpen(true);
     };
 
     const handleExportSubmissions = (studentId: string, studentName: string) => {
@@ -358,6 +368,7 @@ export default function StudentsPage() {
                 <StudentsTable
                     students={students}
                     onViewDetails={handleViewDetails}
+                    onChangeBatch={handleChangeBatch}
                     onExportSubmissions={handleExportSubmissions}
                 />
             </section>
@@ -396,6 +407,22 @@ export default function StudentsPage() {
                 onOpenChange={setDialogOpen}
                 studentData={studentDetail}
                 isLoading={detailLoading}
+                onChangeBatch={handleChangeBatchFromDetail}
+            />
+
+            <StudentBatchDialog
+                key={selectedStudent?._id || "no-student"}
+                open={batchDialogOpen}
+                onOpenChange={setBatchDialogOpen}
+                studentId={selectedStudent?._id || null}
+                studentName={selectedStudent?.name || "Unknown Student"}
+                currentBatch={selectedStudent?.batch || null}
+                onSuccess={() => {
+                    void fetchStudents();
+                    if (studentDetail && selectedStudent?._id === studentDetail.student._id) {
+                        void fetchStudentDetail(studentDetail.student._id);
+                    }
+                }}
             />
         </div>
     );

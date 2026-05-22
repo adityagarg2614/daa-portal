@@ -55,6 +55,7 @@ type AssignmentDetailsResponse = {
     data: {
         title: string
         description: string
+        batch?: "A" | "B" | null
         publishAt: string
         dueAt: string
         problemIds: Array<Pick<Problem, "_id">>
@@ -65,6 +66,7 @@ type AssignmentDetailsResponse = {
 export default function CreateAssignmentPage() {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
+    const [batch, setBatch] = useState<"A" | "B">("A")
     const [publishAt, setPublishAt] = useState("")
     const [dueAt, setDueAt] = useState("")
     const [problems, setProblems] = useState<Problem[]>([])
@@ -82,6 +84,7 @@ export default function CreateAssignmentPage() {
     const [pendingSubmission, setPendingSubmission] = useState<null | {
         title: string
         description: string
+        batch: "A" | "B"
         publishAt: string
         dueAt: string
         problemIds: string[]
@@ -118,6 +121,7 @@ export default function CreateAssignmentPage() {
                 const a = res.data.data
                 setTitle(a.title)
                 setDescription(a.description)
+                setBatch(a.batch || "A")
                 setPublishAt(new Date(a.publishAt).toISOString().slice(0, 16))
                 setDueAt(new Date(a.dueAt).toISOString().slice(0, 16))
                 setSelectedProblemIds(a.problemIds.map((problem) => problem._id))
@@ -224,6 +228,7 @@ export default function CreateAssignmentPage() {
         setPendingSubmission({
             title,
             description,
+            batch,
             publishAt: new Date(publishAt).toISOString(),
             dueAt: new Date(dueAt).toISOString(),
             problemIds: selectedProblemIds,
@@ -250,6 +255,7 @@ export default function CreateAssignmentPage() {
             if (!editId) {
                 setTitle("")
                 setDescription("")
+                setBatch("A")
                 setPublishAt("")
                 setDueAt("")
                 setSelectedProblemIds([])
@@ -336,22 +342,27 @@ export default function CreateAssignmentPage() {
                             </div>
                         </div>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                            <StatusRow
-                                icon={Award}
-                                label="Problem mix"
-                                value={`${insights.easyCount} easy, ${insights.mediumCount} medium, ${insights.hardCount} hard`}
-                            />
-                            <StatusRow
-                                icon={CalendarClock}
-                                label="Publish window"
-                                value={publishAt && dueAt ? "Configured" : "Waiting for dates"}
-                            />
-                            <StatusRow
-                                icon={BookOpen}
-                                label="Brief"
-                                value={description.trim() ? "Instructions added" : "Description still missing"}
-                            />
+                            <div className="mt-5 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                                <StatusRow
+                                    icon={Award}
+                                    label="Problem mix"
+                                    value={`${insights.easyCount} easy, ${insights.mediumCount} medium, ${insights.hardCount} hard`}
+                                />
+                                <StatusRow
+                                    icon={CalendarClock}
+                                    label="Publish window"
+                                    value={publishAt && dueAt ? "Configured" : "Waiting for dates"}
+                                />
+                                <StatusRow
+                                    icon={BookOpen}
+                                    label="Target batch"
+                                    value={`Batch ${batch}`}
+                                />
+                                <StatusRow
+                                    icon={BookOpen}
+                                    label="Brief"
+                                    value={description.trim() ? "Instructions added" : "Description still missing"}
+                                />
                         </div>
                     </div>
                 </div>
@@ -396,6 +407,22 @@ export default function CreateAssignmentPage() {
                                         className="h-11 w-full rounded-2xl border px-3 py-2 text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
                                         required
                                     />
+                                </FormField>
+
+                                <FormField
+                                    label="Batch"
+                                    required
+                                    hint="Only this batch will see the assignment after it is published"
+                                >
+                                    <Select value={batch} onValueChange={(value) => setBatch(value as "A" | "B")}>
+                                        <SelectTrigger className="rounded-2xl border-border/60 bg-card">
+                                            <SelectValue placeholder="Select batch" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="A">Batch A</SelectItem>
+                                            <SelectItem value="B">Batch B</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </FormField>
 
                                 <FormField

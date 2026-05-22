@@ -1,17 +1,12 @@
 "use client";
 
 import { SectionHeader } from "@/components/ui/section-header";
-import { Users, UserPlus, Info } from "lucide-react";
+import { UserPlus, Info } from "lucide-react";
 import { CreateAdminForm } from "@/components/admin/create-admin-form";
 import { AdminsList } from "@/components/admin/admins-list";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateAdminPage() {
-    const handleSuccess = () => {
-        // Optionally refresh the admins list
-        console.log("Admin created successfully");
-    };
-
     return (
         <div className="space-y-6 pb-8">
             {/* Header */}
@@ -69,7 +64,7 @@ export default function CreateAdminPage() {
             {/* Main Content Grid */}
             <div className="grid lg:grid-cols-2 gap-6">
                 {/* Create Admin Form */}
-                <CreateAdminForm onSuccess={handleSuccess} />
+                <CreateAdminForm />
 
                 {/* Admins List */}
                 <AdminsList />

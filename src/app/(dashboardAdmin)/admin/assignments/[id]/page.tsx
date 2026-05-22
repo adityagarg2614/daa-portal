@@ -1,6 +1,6 @@
 'use client';
 
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -18,7 +18,6 @@ import {
     Users,
     TrendingUp,
     Code2,
-    Eye,
     Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +60,7 @@ type Assignment = {
     _id: string;
     title: string;
     description: string;
+    batch?: "A" | "B" | null;
     totalProblems: number;
     totalMarks: number;
     publishAt: string;
@@ -97,7 +97,8 @@ export default function AdminViewAssignmentPage() {
                     const errorMsg = res.data.message || 'Failed to load assignment';
                     setError(errorMsg);
                 }
-            } catch (err: any) {
+            } catch (error: unknown) {
+                const err = error as AxiosError<{ message?: string }>;
                 console.error('[Frontend] Error fetching assignment:', err);
                 const errorMsg = err.response?.data?.message || 'Failed to load assignment';
                 setError(errorMsg);
@@ -136,7 +137,8 @@ export default function AdminViewAssignmentPage() {
             } else {
                 alert(res.data.message || 'Failed to delete assignment');
             }
-        } catch (err: any) {
+        } catch (error: unknown) {
+            const err = error as AxiosError<{ message?: string }>;
             console.error('Error deleting assignment:', err);
             alert(err.response?.data?.message || 'Failed to delete assignment');
         } finally {
@@ -151,7 +153,7 @@ export default function AdminViewAssignmentPage() {
             Expired: { variant: 'destructive' as const, icon: AlertCircle, color: 'text-red-600' },
         };
 
-        const { variant, icon: Icon, color } = config[status];
+        const { variant, icon: Icon } = config[status];
 
         return (
             <Badge variant={variant} className="gap-1">
@@ -257,6 +259,9 @@ export default function AdminViewAssignmentPage() {
                         <FileText className="h-3 w-3" />
                         {assignment.totalProblems} Problems
                     </Badge>
+                    <Badge variant="outline" className="gap-1">
+                        Batch {assignment.batch || "N/A"}
+                    </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{assignment.description}</p>
             </div>
@@ -294,6 +299,12 @@ export default function AdminViewAssignmentPage() {
                         Important Dates
                     </h3>
                     <div className="space-y-4">
+                        <div className="flex items-center justify-between rounded-lg bg-muted p-3">
+                            <span className="text-sm font-medium">Batch</span>
+                            <span className="text-sm text-muted-foreground">
+                                {assignment.batch ? `Batch ${assignment.batch}` : "Legacy / all"}
+                            </span>
+                        </div>
                         <div className="flex items-center justify-between rounded-lg bg-muted p-3">
                             <span className="text-sm font-medium">Publish Date</span>
                             <span className="text-sm text-muted-foreground">

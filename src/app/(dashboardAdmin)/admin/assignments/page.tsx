@@ -33,6 +33,7 @@ type Assignment = {
     _id: string
     title: string
     description: string
+    batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
     publishAt: string
@@ -352,6 +353,9 @@ export default function AdminAssignmentsPage() {
                                                             {assignment.totalMarks} marks
                                                         </Badge>
                                                         <Badge variant="outline" className="rounded-full px-3 py-1">
+                                                            Batch {assignment.batch || "N/A"}
+                                                        </Badge>
+                                                        <Badge variant="outline" className="rounded-full px-3 py-1">
                                                             <BookOpen className="mr-1.5 h-3.5 w-3.5" />
                                                             {assignment.totalProblems} problems
                                                         </Badge>
@@ -389,13 +393,13 @@ export default function AdminAssignmentsPage() {
                                                 />
                                                 <InfoTile
                                                     icon={CheckCircle2}
-                                                    label="Selected Problems"
-                                                    value={String(assignment.problemIds?.length || assignment.totalProblems)}
+                                                    label="Batch"
+                                                    value={assignment.batch ? `Batch ${assignment.batch}` : "Legacy / all"}
                                                 />
                                                 <InfoTile
                                                     icon={FileText}
-                                                    label="Workload"
-                                                    value={`${assignment.totalMarks} marks total`}
+                                                    label="Selected Problems"
+                                                    value={String(assignment.problemIds?.length || assignment.totalProblems)}
                                                 />
                                             </div>
 
