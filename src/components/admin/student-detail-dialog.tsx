@@ -29,39 +29,20 @@ import {
     BookOpen,
     TrendingUp,
     Download,
+    Layers3,
     Medal,
     Clock,
     CheckCircle2,
 } from "lucide-react";
 import { getInitials, getPerformanceBadgeColor, formatDate, exportStudentSubmissionsToCSV } from "@/lib/admin/students-utils";
-
-interface StudentDetail {
-    student: {
-        _id: string;
-        name: string | null;
-        email: string | null;
-        rollNo: string | null;
-        clerkId: string;
-        createdAt: string;
-    };
-    submissions: any[];
-    stats: {
-        totalSubmissions: number;
-        totalScore: number;
-        averageScore: number;
-        completedAssignments: number;
-        totalAssignments: number;
-        rank: number;
-        lastActive: string | null;
-        status: string;
-    };
-}
+import type { StudentDetail } from "@/lib/admin/student-types";
 
 interface StudentDetailDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     studentData: StudentDetail | null;
     isLoading: boolean;
+    onChangeBatch?: (studentId: string) => void;
 }
 
 export function StudentDetailDialog({
@@ -69,6 +50,7 @@ export function StudentDetailDialog({
     onOpenChange,
     studentData,
     isLoading,
+    onChangeBatch,
 }: StudentDetailDialogProps) {
     if (!studentData && !isLoading) return null;
 
@@ -100,6 +82,8 @@ export function StudentDetailDialog({
                                 <DialogDescription className="flex items-center gap-2 mt-1">
                                     <Hash className="h-3 w-3" />
                                     {studentData?.student.rollNo || "N/A"}
+                                    <span className="mx-1">•</span>
+                                    {studentData?.student.batch ? `Batch ${studentData.student.batch}` : "Batch N/A"}
                                 </DialogDescription>
                             </div>
                         </div>
@@ -137,6 +121,34 @@ export function StudentDetailDialog({
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm font-medium">{formatDate(studentData.student.createdAt)}</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                                    <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <CardTitle className="text-xs font-medium text-muted-foreground">Batch</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="text-sm font-medium">
+                                            {studentData.student.batch ? `Batch ${studentData.student.batch}` : "N/A"}
+                                        </p>
+                                        {onChangeBatch && (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 rounded-full px-3"
+                                                onClick={() => onChangeBatch(studentData.student._id)}
+                                            >
+                                                <Layers3 className="mr-1.5 h-3.5 w-3.5" />
+                                                Change
+                                            </Button>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
 
@@ -258,7 +270,7 @@ export function StudentDetailDialog({
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {studentData.submissions.map((sub: any) => (
+                                                {studentData.submissions.map((sub) => (
                                                     <TableRow key={sub._id}>
                                                         <TableCell className="font-medium">
                                                             {sub.assignmentTitle}

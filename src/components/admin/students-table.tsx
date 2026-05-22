@@ -15,6 +15,7 @@ interface Student {
     name: string | null;
     email: string | null;
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     totalSubmissions: number;
     totalScore: number;
     averageScore: number;
@@ -23,10 +24,11 @@ interface Student {
 interface StudentsTableProps {
     students: Student[];
     onViewDetails: (studentId: string) => void;
+    onChangeBatch: (studentId: string, student: Student) => void;
     onExportSubmissions: (studentId: string, studentName: string) => void;
 }
 
-export function StudentsTable({ students, onViewDetails, onExportSubmissions }: StudentsTableProps) {
+export function StudentsTable({ students, onViewDetails, onChangeBatch, onExportSubmissions }: StudentsTableProps) {
     return (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
             <Table>
@@ -34,6 +36,7 @@ export function StudentsTable({ students, onViewDetails, onExportSubmissions }: 
                     <TableRow className="bg-muted/50">
                         <TableHead className="h-12 font-semibold">Student</TableHead>
                         <TableHead className="h-12 font-semibold hidden md:table-cell">Roll Number</TableHead>
+                        <TableHead className="h-12 font-semibold hidden md:table-cell">Batch</TableHead>
                         <TableHead className="h-12 font-semibold hidden lg:table-cell">Email</TableHead>
                         <TableHead className="h-12 font-semibold text-center">Submissions</TableHead>
                         <TableHead className="h-12 font-semibold text-center">Total Score</TableHead>
@@ -44,7 +47,7 @@ export function StudentsTable({ students, onViewDetails, onExportSubmissions }: 
                 <TableBody>
                     {students.length === 0 ? (
                         <TableRow className="hover:bg-transparent">
-                            <TableCell colSpan={7} className="h-32 text-center">
+                            <TableCell colSpan={8} className="h-32 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                     <p className="text-sm">No students found</p>
                                 </div>
@@ -56,6 +59,7 @@ export function StudentsTable({ students, onViewDetails, onExportSubmissions }: 
                                 key={student._id}
                                 student={student}
                                 onViewDetails={onViewDetails}
+                                onChangeBatch={onChangeBatch}
                                 onExportSubmissions={onExportSubmissions}
                             />
                         ))

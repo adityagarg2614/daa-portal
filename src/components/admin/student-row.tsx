@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getInitials, getPerformanceBadgeColor } from "@/lib/admin/students-utils";
-import { MoreHorizontal, Eye, Download, Mail } from "lucide-react";
+import { MoreHorizontal, Eye, Download, Layers3, Mail } from "lucide-react";
 
 interface StudentRowProps {
     student: {
@@ -19,15 +19,20 @@ interface StudentRowProps {
         name: string | null;
         email: string | null;
         rollNo: string | null;
+        batch?: "A" | "B" | null;
         totalSubmissions: number;
         totalScore: number;
         averageScore: number;
     };
     onViewDetails: (studentId: string) => void;
+    onChangeBatch: (
+        studentId: string,
+        student: StudentRowProps["student"]
+    ) => void;
     onExportSubmissions: (studentId: string, studentName: string) => void;
 }
 
-export function StudentRow({ student, onViewDetails, onExportSubmissions }: StudentRowProps) {
+export function StudentRow({ student, onViewDetails, onChangeBatch, onExportSubmissions }: StudentRowProps) {
     const performanceColors = getPerformanceBadgeColor(student.averageScore);
 
     return (
@@ -54,6 +59,19 @@ export function StudentRow({ student, onViewDetails, onExportSubmissions }: Stud
             {/* Roll Number - Hidden on mobile */}
             <TableCell className="p-4 hidden md:table-cell">
                 <span className="font-mono text-sm">{student.rollNo || "N/A"}</span>
+            </TableCell>
+
+            <TableCell className="p-4 hidden md:table-cell">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-full px-3"
+                    onClick={() => onChangeBatch(student._id, student)}
+                >
+                    <Layers3 className="mr-1.5 h-3.5 w-3.5" />
+                    {student.batch ? `Batch ${student.batch}` : "Set batch"}
+                </Button>
             </TableCell>
 
             {/* Email - Hidden on small screens */}
@@ -115,6 +133,10 @@ export function StudentRow({ student, onViewDetails, onExportSubmissions }: Stud
                         <DropdownMenuItem onClick={() => onExportSubmissions(student._id, student.name || "student")} className="gap-2 cursor-pointer">
                             <Download className="h-4 w-4" />
                             Export Submissions
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onChangeBatch(student._id, student)} className="gap-2 cursor-pointer">
+                            <Layers3 className="h-4 w-4" />
+                            Change Batch
                         </DropdownMenuItem>
                         <DropdownMenuItem className="gap-2 cursor-pointer">
                             <Mail className="h-4 w-4" />
