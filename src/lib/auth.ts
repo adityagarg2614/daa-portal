@@ -2,6 +2,15 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import User from "@/models/User";
 import { connectDB } from "./db";
 import { NextResponse } from "next/server";
+import { logger } from "./logger";
+
+type MinimalUserRecord = {
+    clerkId: string;
+    email?: string;
+    name?: string;
+    role: "admin" | "student";
+    save: () => Promise<unknown>;
+};
 
 /**
  * Robust admin verification utility.
@@ -54,7 +63,7 @@ export async function verifyAdmin() {
             ),
         };
     } catch (error) {
-        console.error("[Auth] Verification Error:", error);
+        logger.error("Admin verification failed", error);
         return {
             authorized: false,
             response: NextResponse.json(
@@ -69,8 +78,8 @@ export async function verifyAdmin() {
  * Helper to sync Clerk user data with MongoDB.
  * Handles re-linking by email to prevent duplicate key errors.
  */
-async function syncAdminUser(userId: string, existingUser: any | null) {
-    console.log(`[Auth] Auto-syncing admin user: ${userId}`);
+async function syncAdminUser(userId: string, existingUser: MinimalUserRecord | null) {
+    logger.debug("Auto-syncing admin user", { userId });
     
     if (!existingUser) {
         const client = await clerkClient();
@@ -78,10 +87,10 @@ async function syncAdminUser(userId: string, existingUser: any | null) {
         const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
 
         // Check if user exists with this email but different clerkId
-        let dbUser = email ? await User.findOne({ email }) : null;
+        const dbUser = email ? await User.findOne({ email }) : null;
 
         if (dbUser) {
-            console.log(`[Auth] Re-linking existing user record (${email}) to new Clerk ID: ${userId}`);
+            logger.info("Re-linking existing admin user to Clerk account", { email, userId });
             dbUser.clerkId = userId;
             dbUser.role = "admin";
             await dbUser.save();
