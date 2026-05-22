@@ -16,6 +16,7 @@ interface User {
     email: string | null;
     role: "admin" | "student";
     rollNo: string | null;
+    batch?: "A" | "B" | null;
     clerkId: string;
     createdAt: string;
 }
@@ -37,6 +38,7 @@ export function UsersTable({ users, onViewDetails, onChangeRole, onDelete }: Use
                         <TableHead className="h-12 font-semibold">Email</TableHead>
                         <TableHead className="h-12 font-semibold">Role</TableHead>
                         <TableHead className="h-12 font-semibold hidden md:table-cell">Roll Number</TableHead>
+                        <TableHead className="h-12 font-semibold hidden md:table-cell">Batch</TableHead>
                         <TableHead className="h-12 font-semibold hidden lg:table-cell">Created At</TableHead>
                         <TableHead className="h-12 font-semibold text-right">Actions</TableHead>
                     </TableRow>
@@ -44,7 +46,7 @@ export function UsersTable({ users, onViewDetails, onChangeRole, onDelete }: Use
                 <TableBody>
                     {users.length === 0 ? (
                         <TableRow className="hover:bg-transparent">
-                            <TableCell colSpan={6} className="h-32 text-center">
+                            <TableCell colSpan={7} className="h-32 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                     <p className="text-sm">No users found</p>
                                 </div>
