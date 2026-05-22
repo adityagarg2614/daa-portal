@@ -3,6 +3,7 @@ import Attendance from "@/models/Attendance";
 import Assignment from "@/models/Assignment";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 import User from "@/models/User";
 import { getIndiaDayBounds } from "@/lib/attendance-date";
 
@@ -39,6 +40,10 @@ export async function POST(request: Request) {
         // 2. Get assignment info
         const assignment = await Assignment.findById(assignmentId);
         if (!assignment) {
+            return NextResponse.json({ success: false, message: "Assignment not found" }, { status: 404 });
+        }
+
+        if (!isAssignmentAccessibleToStudent(assignment.batch, dbUser.batch)) {
             return NextResponse.json({ success: false, message: "Assignment not found" }, { status: 404 });
         }
 

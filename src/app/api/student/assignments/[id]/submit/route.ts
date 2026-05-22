@@ -1,7 +1,10 @@
 import { connectDB } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 import Submission from "@/models/Submission";
 import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
+import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { verifySebSession } from "@/lib/seb";
 
@@ -26,12 +29,42 @@ export async function POST(
             );
         }
 
+        const { userId: clerkId } = await auth();
+        if (!clerkId) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const student = await User.findOne({ clerkId, role: "student" });
+        if (!student) {
+            return NextResponse.json(
+                { success: false, message: "Student not found" },
+                { status: 404 }
+            );
+        }
+
+        if (student._id.toString() !== userId) {
+            return NextResponse.json(
+                { success: false, message: "Forbidden" },
+                { status: 403 }
+            );
+        }
+
         // Verify assignment exists
         const assignment = await Assignment.findById(assignmentId);
         if (!assignment) {
             return NextResponse.json(
                 { success: false, message: "Assignment not found" },
                 { status: 404 }
+            );
+        }
+
+        if (!isAssignmentAccessibleToStudent(assignment.batch, student.batch)) {
+            return NextResponse.json(
+                { success: false, message: "This assignment is not available for your batch" },
+                { status: 403 }
             );
         }
 

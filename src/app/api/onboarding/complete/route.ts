@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { normalizeBatch } from "@/lib/batch";
 import { connectDB } from "@/lib/db";
 import UserModel from "@/models/User";
 
@@ -15,6 +16,9 @@ export async function POST(req: Request) {
         const name = String(body.name || "").trim();
         const rollNo = String(body.rollNo || "").trim();
         const isAdmin = Boolean(body.isAdmin);
+        const batch = normalizeBatch(body.batch);
+
+        await connectDB();
 
         if (!name) {
             return NextResponse.json(
@@ -29,7 +33,19 @@ export async function POST(req: Request) {
         const clerkUser = await client.users.getUser(userId);
         const primaryEmail = clerkUser.emailAddresses.find(
             (e) => e.id === clerkUser.primaryEmailAddressId
-        )?.emailAddress ?? "";
+        )?.emailAddress?.toLowerCase() ?? "";
+
+        const existingUser = await UserModel.findOne({
+            $or: [
+                { clerkId: userId },
+                { email: primaryEmail },
+                { clerkId: "pending_" + primaryEmail },
+            ],
+        });
+
+        if (existingUser?.clerkId?.startsWith("pending_")) {
+            existingUser.clerkId = userId;
+        }
 
         let role = "student";
         let validatedRollNo = rollNo;
@@ -39,18 +55,13 @@ export async function POST(req: Request) {
             role = "admin";
 
             // Check if user was pre-registered as admin via /api/admin/setup
-            const existingAdmin = await UserModel.findOne({
-                $or: [
-                    { email: primaryEmail.toLowerCase() },
-                    { clerkId: "pending_" + primaryEmail.toLowerCase() }
-                ]
-            });
+            const existingAdmin = existingUser;
 
             if (existingAdmin && existingAdmin.role === "admin") {
                 // Update the clerkId for pending admin users
                 if (existingAdmin.clerkId.startsWith("pending_")) {
                     existingAdmin.clerkId = userId;
-                    existingAdmin.email = primaryEmail.toLowerCase();
+                    existingAdmin.email = primaryEmail;
                     existingAdmin.name = name;
                     await existingAdmin.save();
                 }
@@ -58,12 +69,33 @@ export async function POST(req: Request) {
                 // Create new admin user if not found (fallback)
                 await UserModel.create({
                     clerkId: userId,
-                    email: primaryEmail.toLowerCase(),
+                    email: primaryEmail,
                     name,
                     role: "admin",
                 });
             }
         } else {
+            if (existingUser?.role === "student" && existingUser.rollNo && existingUser.batch) {
+                existingUser.name = name;
+                existingUser.email = primaryEmail;
+                await existingUser.save();
+
+                await client.users.updateUser(userId, {
+                    publicMetadata: {
+                        name,
+                        role: "student",
+                        rollNo: existingUser.rollNo,
+                        batch: existingUser.batch,
+                        onboardingComplete: true,
+                    },
+                });
+
+                return NextResponse.json({
+                    message: "Onboarding completed",
+                    role: "student",
+                });
+            }
+
             // Student flow - validate roll number
             if (!rollNo) {
                 return NextResponse.json(
@@ -90,6 +122,13 @@ export async function POST(req: Request) {
             }
 
             validatedRollNo = rollNo.toLowerCase();
+
+            if (!batch) {
+                return NextResponse.json(
+                    { message: "Batch is required for students" },
+                    { status: 400 }
+                );
+            }
         }
 
         // 1. Update Clerk Metadata
@@ -99,19 +138,26 @@ export async function POST(req: Request) {
                 name,
                 onboardingComplete: true,
                 role: role,
+                ...(role === "student" && batch ? { batch } : {}),
             },
         });
 
         // 2. Sync to MongoDB
-        await connectDB();
         await UserModel.findOneAndUpdate(
-            { clerkId: userId },
+            {
+                $or: [
+                    { clerkId: userId },
+                    { email: primaryEmail },
+                    { clerkId: "pending_" + primaryEmail },
+                ],
+            },
             {
                 clerkId: userId,
                 name,
                 email: primaryEmail,
                 ...(validatedRollNo && { rollNo: validatedRollNo }),
                 role: role,
+                batch: role === "student" ? batch : null,
             },
             { upsert: true, new: true }
         );

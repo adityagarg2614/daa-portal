@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/db";
+import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
@@ -6,6 +7,7 @@ import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
 import { auth } from "@clerk/nextjs/server";
 import User from "@/models/User";
 import { headers } from "next/headers";
+import { logger } from "@/lib/logger";
 
 export async function GET(
     req: Request,
@@ -22,15 +24,21 @@ export async function GET(
 
         const user = await User.findOne({ clerkId });
         if (!user) {
-            console.error(`[Student API] User not found for clerkId: ${clerkId}`);
+            logger.warn("Student assignment fetch failed: user not found", { clerkId, assignmentId: id });
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
         }
 
-        console.log(`[Student API] Fetching assignment ID: ${id}`);
         const assignment = await Assignment.findById(id).populate({ path: "problemIds", model: Problem });
 
         if (!assignment) {
-            console.error(`[Student API] Assignment not found in DB with ID: ${id}`);
+            logger.warn("Student assignment fetch failed: assignment not found", { clerkId, assignmentId: id });
+            return NextResponse.json(
+                { success: false, message: "Assignment not found" },
+                { status: 404 }
+            );
+        }
+
+        if (!isAssignmentAccessibleToStudent(assignment.batch, user.batch)) {
             return NextResponse.json(
                 { success: false, message: "Assignment not found" },
                 { status: 404 }
@@ -81,6 +89,7 @@ export async function GET(
                 description: assignment.description,
                 totalProblems: assignment.totalProblems,
                 totalMarks: assignment.totalMarks,
+                batch: assignment.batch ?? null,
                 publishAt: assignment.publishAt,
                 dueAt: assignment.dueAt,
                 status: computedStatus,
@@ -88,7 +97,7 @@ export async function GET(
             },
         });
     } catch (error) {
-        console.error("Fetch Single Assignment Error:", error);
+        logger.error("Failed to fetch single student assignment", error);
         return NextResponse.json(
             { success: false, message: "Failed to fetch assignment" },
             { status: 500 }

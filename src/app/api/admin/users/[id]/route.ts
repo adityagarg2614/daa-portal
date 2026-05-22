@@ -1,7 +1,8 @@
 import { verifyAdmin } from "@/lib/auth";
+import { normalizeBatch } from "@/lib/batch";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { clerkClient } from "@clerk/nextjs/server";
 
 // GET - Fetch single user by ID
 export async function GET(
@@ -9,7 +10,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -84,13 +85,15 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response, userId } = await verifyAdmin();
 
         if (!authorized) return response;
 
         const { id: userIdParam } = await params;
         const body = await request.json();
         const { name, role, rollNo } = body;
+        const batchProvided = Object.prototype.hasOwnProperty.call(body, "batch");
+        const batch = batchProvided ? normalizeBatch(body.batch) : undefined;
 
         // Find user
         const user = await User.findById(userIdParam);
@@ -140,19 +143,6 @@ export async function PUT(
                 );
             }
             user.role = role;
-
-            // Update Clerk metadata
-            try {
-                const clerkClientInstance = await clerkClient();
-                await clerkClientInstance.users.updateUser(user.clerkId, {
-                    publicMetadata: {
-                        role,
-                    },
-                });
-            } catch (clerkError) {
-                console.error("Failed to update Clerk metadata:", clerkError);
-                // Continue anyway, MongoDB update is primary
-            }
         }
 
         // Update rollNo (only for students)
@@ -175,18 +165,45 @@ export async function PUT(
                 }
             }
             user.rollNo = rollNo || null;
+        }
 
-            // Update Clerk metadata
-            try {
-                const clerkClientInstance = await clerkClient();
-                await clerkClientInstance.users.updateUser(user.clerkId, {
-                    publicMetadata: {
-                        rollNo: user.rollNo || undefined,
-                    },
-                });
-            } catch (clerkError) {
-                console.error("Failed to update Clerk metadata:", clerkError);
+        const effectiveRole = role ?? user.role;
+
+        if (effectiveRole === "student") {
+            const nextBatch = batchProvided ? batch : normalizeBatch(user.batch);
+
+            if (!nextBatch) {
+                return NextResponse.json(
+                    { success: false, message: "Batch is required for students" },
+                    { status: 400 }
+                );
             }
+
+            user.batch = nextBatch;
+        } else {
+            user.batch = null;
+        }
+
+        try {
+            const clerkClientInstance = await clerkClient();
+            await clerkClientInstance.users.updateUser(user.clerkId, {
+                publicMetadata: {
+                    name: user.name || undefined,
+                    role: user.role,
+                    onboardingComplete: true,
+                    ...(user.role === "student"
+                        ? {
+                            rollNo: user.rollNo || undefined,
+                            batch: user.batch || undefined,
+                        }
+                        : {
+                            rollNo: undefined,
+                            batch: undefined,
+                        }),
+                },
+            });
+        } catch (clerkError) {
+            console.error("Failed to update Clerk metadata:", clerkError);
         }
 
         await user.save();
@@ -214,7 +231,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response, userId } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -252,8 +269,9 @@ export async function DELETE(
         try {
             const clerkClientInstance = await clerkClient();
             await clerkClientInstance.users.deleteUser(user.clerkId);
-        } catch (clerkError: any) {
+        } catch (error: unknown) {
             // If user not found in Clerk, continue with MongoDB deletion
+            const clerkError = error as { status?: number };
             if (clerkError?.status !== 404) {
                 console.error("Failed to delete user from Clerk:", clerkError);
                 return NextResponse.json(
