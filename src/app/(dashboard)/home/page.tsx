@@ -24,6 +24,7 @@ import { format } from "date-fns"
 type DashboardData = {
     stats: {
         totalAssignments: number
+        liveAssignments: number
         pendingAssignments: number
         completedAssignments: number
         averageScore: string | number
@@ -84,6 +85,7 @@ export default function HomePage() {
 
         return {
             totalAssignments: data.stats.totalAssignments,
+            liveAssignments: data.stats.liveAssignments,
             pendingAssignments: data.stats.pendingAssignments,
             completedAssignments: data.stats.completedAssignments,
             averageScore: data.stats.averageScore,
@@ -172,25 +174,28 @@ export default function HomePage() {
                                         {stats?.pendingAssignments || 0}
                                     </span>
                                     <div className="mb-1 rounded-2xl border border-border/60 bg-background/70 px-3 py-2 text-sm text-muted-foreground backdrop-blur">
-                                        pending assignments ready to tackle
+                                        active assignments still waiting on your submission
                                     </div>
                                 </div>
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <HeroChip
-                                    label="Assignments"
-                                    value={String(stats?.totalAssignments || 0)}
+                                    label="Live Now"
+                                    value={String(stats?.liveAssignments || 0)}
+                                    badgeLabel="Open"
                                     tone="slate"
                                 />
                                 <HeroChip
                                     label="Completed"
                                     value={String(stats?.completedAssignments || 0)}
+                                    badgeLabel="Done"
                                     tone="emerald"
                                 />
                                 <HeroChip
                                     label="Attendance"
                                     value={`${stats?.attendance || 0}%`}
+                                    badgeLabel="Track"
                                     tone="sky"
                                 />
                             </div>
@@ -237,16 +242,23 @@ export default function HomePage() {
                 />
                 <SnapshotCard
                     icon={Clock}
-                    label="Pending"
-                    value={String(stats?.pendingAssignments || 0)}
-                    helper="Still waiting on action"
+                    label="Live Now"
+                    value={String(stats?.liveAssignments || 0)}
+                    helper="Published and still open"
                     tone="amber"
                 />
                 <SnapshotCard
                     icon={ClipboardCheck}
+                    label="Pending"
+                    value={String(stats?.pendingAssignments || 0)}
+                    helper="Open assignments you still need to finish"
+                    tone="amber"
+                />
+                <SnapshotCard
+                    icon={CalendarCheck}
                     label="Completed"
                     value={String(stats?.completedAssignments || 0)}
-                    helper="Already finished by you"
+                    helper="Assignments with at least one submission"
                     tone="emerald"
                 />
                 <SnapshotCard
@@ -552,10 +564,12 @@ function QuickLinkCard({
 function HeroChip({
     label,
     value,
+    badgeLabel,
     tone,
 }: {
     label: string
     value: string
+    badgeLabel: string
     tone: "sky" | "emerald" | "slate"
 }) {
     const tones = {
@@ -572,7 +586,7 @@ function HeroChip({
             <div className="mt-2 flex items-center justify-between gap-3">
                 <span className="text-lg font-semibold tracking-tight">{value}</span>
                 <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", tones[tone])}>
-                    Live
+                    {badgeLabel}
                 </span>
             </div>
         </div>

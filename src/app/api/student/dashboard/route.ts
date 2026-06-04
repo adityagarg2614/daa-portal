@@ -19,6 +19,13 @@ type RecentSubmissionRow = {
     assignmentId: { title?: string };
 };
 
+type AssignmentWindowRow = {
+    _id: { toString(): string };
+    title: string;
+    publishAt: Date;
+    dueAt: Date;
+};
+
 export async function GET() {
     try {
         const { userId: clerkId } = await auth();
@@ -36,18 +43,36 @@ export async function GET() {
 
         const userId = user._id;
         const assignmentBatchFilter = getAssignmentBatchFilter(user.batch);
+        const now = new Date();
 
-        // 1. Fetch Assignments Count
+        // 1. Fetch assignment totals and current window
         const totalAssignments = await Assignment.countDocuments(assignmentBatchFilter);
+        const liveAssignments = await Assignment.countDocuments({
+            ...assignmentBatchFilter,
+            publishAt: { $lte: now },
+            dueAt: { $gt: now },
+        });
+
+        const liveAssignmentRows = (await Assignment.find(
+            {
+                ...assignmentBatchFilter,
+                publishAt: { $lte: now },
+                dueAt: { $gt: now },
+            },
+            "_id title publishAt dueAt"
+        ).lean()) as AssignmentWindowRow[];
 
         // 2. Fetch Completed Assignments
         // An assignment is completed if there is a submission for it by this user
         const submissions = await Submission.find({ userId });
         const completedAssignmentIds = [...new Set(submissions.map(s => s.assignmentId.toString()))];
         const completedAssignmentsCount = completedAssignmentIds.length;
+        const completedLiveAssignments = liveAssignmentRows.filter((assignment) =>
+            completedAssignmentIds.includes(assignment._id.toString())
+        ).length;
+        const pendingAssignments = Math.max(0, liveAssignments - completedLiveAssignments);
 
-        // 3. Fetch Upcoming Assignments (Top 3 active)
-        const now = new Date();
+        // 3. Fetch active/upcoming assignments for the dashboard list
         const upcomingAssignments = await Assignment.find({
             ...assignmentBatchFilter,
             dueAt: { $gt: now },
@@ -91,8 +116,9 @@ export async function GET() {
             data: {
                 stats: {
                     totalAssignments,
+                    liveAssignments,
                     completedAssignments: completedAssignmentsCount,
-                    pendingAssignments: Math.max(0, totalAssignments - completedAssignmentsCount),
+                    pendingAssignments,
                     averageScore: `${averageScore}%`,
                 },
                 upcomingAssignments: upcomingAssignments.map(a => ({
