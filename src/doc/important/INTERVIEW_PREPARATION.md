@@ -5,12 +5,14 @@
 Choose the format that fits your resume style:
 
 ### Option A: Impact-Focused
+
 - **Built a production-grade auto-grading platform** for a Design & Analysis of Algorithms course, supporting 500+ students with real-time code execution in C++, Java, Python, and JavaScript using Docker-based sandboxing (Piston API).
 - **Architected a full-stack Next.js 16 application** with TypeScript, MongoDB, and Clerk authentication, implementing role-based dashboards, assignment management, and instant test-case-based grading with detailed feedback.
 - **Designed a CI/CD pipeline with Docker containerization and Kubernetes orchestration**, enabling zero-downtime deployments, horizontal pod autoscaling (HPA), and automated health checks for handling traffic spikes during assignment deadlines.
-- **Integrated background job processing with Inngest** for automated workflows (welcome emails, submission processing) and implemented real-time analytics dashboards with Recharts for admin insights on student performance.
+- **Integrated background job processing with Inngest** for automated workflows (welcome emails, submission processing) and implemented real-time analytics dashboardsmain attendance registermain attendance register with Recharts for admin insights on student performance.
 
 ### Option B: Technical-Focused
+
 - Developed **Algo-Grade DAA Portal**, a Next.js 16 + TypeScript auto-grading platform with MongoDB, Clerk auth, and Docker-based code execution (Piston), supporting multi-language submissions (C++, Java, Python, JS) with instant grading feedback.
 - Implemented **role-based access control** with separate student/admin dashboards, assignment creation workflows, problem management with hidden/visible test cases, and submission tracking with execution time and memory metrics.
 - Containerized the application using **multi-stage Docker builds** (~150MB Alpine-based images) and designed **Kubernetes deployment manifests** with HPA, rolling updates, ConfigMaps/Secrets, and PersistentVolumeClaims for MongoDB stateful workloads.
@@ -21,46 +23,50 @@ Choose the format that fits your resume style:
 ## 🛠️ Tech Stack
 
 ### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 16.2.1 | React framework with App Router |
-| TypeScript | 5.x | Type-safe development |
-| Tailwind CSS | 4.x | Utility-first styling |
-| shadcn/ui | Latest | UI component library |
-| Radix UI | 1.4.3 | Accessible UI primitives |
-| CodeMirror 6 | Latest | Code editor with syntax highlighting |
-| Recharts | 2.15.4 | Data visualization and charts |
-| Motion | 12.38.0 | Animations |
-| next-themes | 0.4.6 | Dark/light mode support |
+
+| Technology   | Version | Purpose                              |
+| ------------ | ------- | ------------------------------------ |
+| Next.js      | 16.2.1  | React framework with App Router      |
+| TypeScript   | 5.x     | Type-safe development                |
+| Tailwind CSS | 4.x     | Utility-first styling                |
+| shadcn/ui    | Latest  | UI component library                 |
+| Radix UI     | 1.4.3   | Accessible UI primitives             |
+| CodeMirror 6 | Latest  | Code editor with syntax highlighting |
+| Recharts     | 2.15.4  | Data visualization and charts        |
+| Motion       | 12.38.0 | Animations                           |
+| next-themes  | 0.4.6   | Dark/light mode support              |
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| MongoDB | 7.1.0 | NoSQL database |
-| Mongoose | 9.3.1 | MongoDB ODM |
-| Clerk | 7.0.6 | Authentication & user management |
-| Inngest | 4.0.4 | Background job processing |
-| Zod | 4.3.6 | Schema validation |
-| Resend | 6.10.0 | Email service (transactional emails) |
-| Svix | 1.89.0 | Webhook handling (Clerk webhooks) |
+
+| Technology | Version | Purpose                              |
+| ---------- | ------- | ------------------------------------ |
+| MongoDB    | 7.1.0   | NoSQL database                       |
+| Mongoose   | 9.3.1   | MongoDB ODM                          |
+| Clerk      | 7.0.6   | Authentication & user management     |
+| Inngest    | 4.0.4   | Background job processing            |
+| Zod        | 4.3.6   | Schema validation                    |
+| Resend     | 6.10.0  | Email service (transactional emails) |
+| Svix       | 1.89.0  | Webhook handling (Clerk webhooks)    |
 
 ### Infrastructure & DevOps
-| Technology | Purpose |
-|------------|---------|
-| Docker | Multi-stage container builds (~150MB Alpine images) |
-| Docker Compose | Multi-container orchestration (App + MongoDB + Piston) |
-| Kubernetes | Container orchestration with HPA, rolling updates, load balancing |
-| GitHub Actions | CI/CD pipeline (test, build, push, deploy) |
-| Docker Hub | Container image registry |
-| Piston | Self-hosted code execution engine (Docker-based) |
+
+| Technology     | Purpose                                                           |
+| -------------- | ----------------------------------------------------------------- |
+| Docker         | Multi-stage container builds (~150MB Alpine images)               |
+| Docker Compose | Multi-container orchestration (App + MongoDB + Piston)            |
+| Kubernetes     | Container orchestration with HPA, rolling updates, load balancing |
+| GitHub Actions | CI/CD pipeline (test, build, push, deploy)                        |
+| Docker Hub     | Container image registry                                          |
+| Piston         | Self-hosted code execution engine (Docker-based)                  |
 
 ### Development Tools
-| Technology | Purpose |
-|------------|---------|
-| ESLint | Code linting |
-| date-fns | Date formatting and manipulation |
-| Axios | HTTP client for API calls |
-| Lucide React | Icon library |
+
+| Technology   | Purpose                          |
+| ------------ | -------------------------------- |
+| ESLint       | Code linting                     |
+| date-fns     | Date formatting and manipulation |
+| Axios        | HTTP client for API calls        |
+| Lucide React | Icon library                     |
 
 ---
 
@@ -69,10 +75,12 @@ Choose the format that fits your resume style:
 ### Category 1: Project Overview & Architecture
 
 #### Q1: What is this project and why did you build it?
+
 **Answer:**
 Algo-Grade DAA Portal is an auto-grading platform for the Design & Analysis of Algorithms course at IIITDMJ. Before this system, professors had to manually grade student code submissions, which took days and was error-prone. I built this to automate the entire grading process — students write and submit code in C++, Java, Python, or JavaScript, and the system runs their code against hidden and visible test cases in a Docker sandbox, giving instant feedback with pass/fail results, execution time, and memory usage. It also has an admin dashboard for professors to create problems, manage assignments, and view analytics.
 
 #### Q2: Can you explain the architecture of your application?
+
 **Answer:**
 The application follows a three-layer architecture:
 
@@ -85,7 +93,9 @@ The application follows a three-layer architecture:
 For production, I containerized the Next.js app using multi-stage Docker builds, orchestrated it with Docker Compose alongside MongoDB and Piston, and designed Kubernetes manifests for autoscaling and high availability.
 
 #### Q3: How does a student submission flow work from start to finish?
+
 **Answer:**
+
 1. The student writes code in the CodeMirror editor and clicks "Submit."
 2. The frontend sends a POST request to `/api/student/submissions` with the code and language.
 3. The backend fetches the problem's test cases from MongoDB.
@@ -99,14 +109,17 @@ For production, I containerized the Next.js app using multi-stage Docker builds,
 ### Category 2: Technical Deep Dive
 
 #### Q4: Why did you choose Next.js 16 with App Router over a traditional React SPA?
+
 **Answer:**
 Next.js App Router gives us server-side rendering and API routes in a single framework. For this project, it meant:
+
 - **API routes** — I could build the entire backend (submission handling, code compilation, admin CRUD) as serverless functions within the same codebase, no separate backend needed.
 - **Server components** — Dashboard pages can fetch data on the server, reducing client-side JavaScript and improving initial load time.
 - **File-based routing** — Each page is just a file in the `app/` directory, making the project structure intuitive.
 - **Middleware** — The `proxy.ts` file lets me intercept every request, check the user's role from Clerk, and redirect unauthorized users before the page even loads.
 
 #### Q5: How does authentication and role-based access work?
+
 **Answer:**
 I use Clerk for authentication. When a user signs in, Clerk creates a session and attaches a JWT to every request. In the middleware (`proxy.ts`), I:
 
@@ -118,6 +131,7 @@ I use Clerk for authentication. When a user signs in, Clerk creates a session an
 For admin setup, I created a special `/setup-admin` page protected by a secret key (`ADMIN_SETUP_SECRET`). When an admin is created through this flow, their status is marked as "pending" until they sign in with Clerk, at which point the middleware links their Clerk ID to the admin record in MongoDB.
 
 #### Q6: How did you handle code execution safely? What prevents a student from running malicious code?
+
 **Answer:**
 Code execution is handled by **Piston**, which is a self-hosted code execution engine that runs inside Docker containers. When a student submits code:
 
@@ -129,6 +143,7 @@ Code execution is handled by **Piston**, which is a self-hosted code execution e
 This means even if a student submits something like `rm -rf /` or an infinite loop, it only affects the isolated container, which gets destroyed immediately after. The Docker `--privileged` flag is used at the Piston level to manage namespaces, but individual executions are still sandboxed.
 
 #### Q7: What database models did you design and why?
+
 **Answer:**
 I designed five core MongoDB models:
 
@@ -145,8 +160,10 @@ I designed five core MongoDB models:
 The key design decision was **embedding test cases inside Problems** rather than a separate collection, because test cases are always accessed together with the problem and never independently. This reduces the number of database queries.
 
 #### Q8: How does the auto-grading system calculate scores?
+
 **Answer:**
 Each problem has a total marks value (e.g., 10 marks). When a submission is evaluated:
+
 1. The code is run against all test cases (both hidden and visible).
 2. Each test case carries equal weight. If a problem has 5 test cases and 10 marks, each test is worth 2 marks.
 3. The score is calculated as: `(passedTests / totalTests) * totalMarks`.
@@ -157,6 +174,7 @@ Each problem has a total marks value (e.g., 10 marks). When a submission is eval
 ### Category 3: Production & DevOps
 
 #### Q9: How did you containerize the application?
+
 **Answer:**
 I used a **4-stage multi-stage Dockerfile** to keep the production image as small as possible (~150MB):
 
@@ -168,6 +186,7 @@ I used a **4-stage multi-stage Dockerfile** to keep the production image as smal
 The `next.config.ts` is configured with `output: "standalone"` so the build output includes everything needed to run the app without Node.js development dependencies.
 
 #### Q10: How does Docker Compose orchestrate your services?
+
 **Answer:**
 The `docker-compose.yml` file manages three services:
 
@@ -182,6 +201,7 @@ All three services connect via a **custom bridge network**, so they resolve each
 I also configured **log rotation** (max 10MB per file, 3 files) to prevent disk exhaustion, and **resource limits** so no single container can consume all host resources.
 
 #### Q11: How does your CI/CD pipeline work?
+
 **Answer:**
 The CI/CD pipeline is built with GitHub Actions and has three jobs:
 
@@ -194,6 +214,7 @@ The CI/CD pipeline is built with GitHub Actions and has three jobs:
 The branch strategy is: `develop` for feature integration (test only), `main` for production-ready code (test → build → deploy), and `feature/*` for individual features.
 
 #### Q12: How would Kubernetes improve your deployment?
+
 **Answer:**
 Kubernetes adds capabilities that Docker Compose cannot provide:
 
@@ -210,6 +231,7 @@ Kubernetes adds capabilities that Docker Compose cannot provide:
 For a course with 500+ students and overlapping assignment deadlines, Kubernetes ensures the platform stays responsive without manual intervention.
 
 #### Q13: How do you handle environment variables and secrets in production?
+
 **Answer:**
 In development, environment variables are in `.env.local`. In production:
 
@@ -226,6 +248,7 @@ All configuration is externalized — no hardcoded values in source code. Even t
 ### Category 4: Challenges & Problem Solving
 
 #### Q14: What was the most challenging part of this project?
+
 **Answer:**
 The most challenging part was building a reliable auto-grading system that handles edge cases gracefully. Specifically:
 
@@ -238,6 +261,7 @@ The most challenging part was building a reliable auto-grading system that handl
 4. **Admin setup bootstrap problem** — The first admin needs to exist before anyone can manage the platform, but the admin creation flow itself requires an admin to approve it. I solved this with a secret-key-protected `/setup-admin` endpoint that creates a "pending" admin record, which gets activated when the user signs in with Clerk.
 
 #### Q15: How do you handle errors and edge cases in your API routes?
+
 **Answer:**
 Every API route follows a consistent pattern:
 
@@ -256,6 +280,7 @@ Every API route follows a consistent pattern:
 This layered approach ensures that errors are caught at the right level and users get actionable feedback, not stack traces.
 
 #### Q16: How would you scale this application to 5,000+ students?
+
 **Answer:**
 At that scale, several changes would be needed:
 
@@ -276,7 +301,9 @@ At that scale, several changes would be needed:
 ### Category 5: Features & Future Plans
 
 #### Q17: What features are you most proud of?
+
 **Answer:**
+
 1. **The auto-grading engine** — It takes student code, runs it against multiple test cases in a Docker sandbox, calculates scores, and returns detailed feedback — all in under 5 seconds. The entire flow from submission to results is automated and reliable.
 
 2. **Role-based dashboards** — Students and admins see completely different interfaces, but both are built from the same codebase. The middleware handles all access control, so there's no accidental data leakage.
@@ -286,7 +313,9 @@ At that scale, several changes would be needed:
 4. **Admin analytics** — Recharts-powered dashboards showing submission rates, average scores, problem difficulty distribution, and student progress. Professors can instantly see which problems students are struggling with.
 
 #### Q18: What features would you add next?
+
 **Answer:**
+
 1. **Plagiarism detection** — Compare submissions across students using code similarity algorithms (e.g., MOSS or token-based comparison) to detect copied solutions.
 
 2. **Leaderboards** — Gamify the experience with per-assignment and overall course leaderboards based on scores and submission speed.
@@ -302,10 +331,12 @@ At that scale, several changes would be needed:
 ### Category 6: Behavioral
 
 #### Q19: What did you learn from building this project?
+
 **Answer:**
 Technically, I learned how to design a full-stack application from scratch — not just the frontend or backend in isolation, but how they connect, how authentication flows work, how to handle errors gracefully, and how to deploy to production.
 
 Specifically:
+
 - **Container orchestration** — I went from running `docker run` manually to designing Kubernetes manifests with HPA, rolling updates, and persistent storage.
 - **Security** — Running untrusted student code taught me about sandboxing, resource limits, and why you never execute code directly on your server.
 - **CI/CD** — Building the GitHub Actions pipeline taught me the importance of automated testing, image versioning, and zero-downtime deployments.
@@ -314,7 +345,9 @@ Specifically:
 Beyond technical skills, I learned to **prioritize**. I could have spent weeks building a perfect code editor, but the core value was auto-grading. I focused on that first, then iterated on UI/UX.
 
 #### Q20: If you could start over, what would you do differently?
+
 **Answer:**
+
 1. **Write tests from day one** — I added validation and error handling, but I didn't write unit or integration tests early on. Having tests would have caught several bugs during the admin setup flow and submission handling.
 
 2. **Use an ORM/ODM earlier** — I used Mongoose, which is good, but I didn't leverage all its features (middleware, virtuals, plugins) from the start. I ended up rewriting some logic that Mongoose could have handled.
@@ -327,22 +360,22 @@ Beyond technical skills, I learned to **prioritize**. I could have spent weeks b
 
 ## 🎯 Quick Reference: Key Numbers
 
-| Metric | Value |
-|--------|-------|
-| Total API routes | 20+ |
-| Database models | 5 (User, Problem, Assignment, Submission, Announcement) |
-| Supported languages | 4 (C++, Java, Python, JavaScript) |
-| Docker image size | ~150MB (Alpine-based) |
-| CI/CD pipeline jobs | 3 (Test, Build, Deploy) |
-| Kubernetes HPA target | 2-5+ pods based on CPU/memory |
-| MongoDB collections | 5 |
-| UI components (shadcn) | 55+ |
+| Metric                 | Value                                                   |
+| ---------------------- | ------------------------------------------------------- |
+| Total API routes       | 20+                                                     |
+| Database models        | 5 (User, Problem, Assignment, Submission, Announcement) |
+| Supported languages    | 4 (C++, Java, Python, JavaScript)                       |
+| Docker image size      | ~150MB (Alpine-based)                                   |
+| CI/CD pipeline jobs    | 3 (Test, Build, Deploy)                                 |
+| Kubernetes HPA target  | 2-5+ pods based on CPU/memory                           |
+| MongoDB collections    | 5                                                       |
+| UI components (shadcn) | 55+                                                     |
 
 ---
 
 ## 💡 Tips for the Interview
 
-1. **Start with the problem** — Always explain *why* you built something before *how*. Interviewers care about impact, not just technology.
+1. **Start with the problem** — Always explain _why_ you built something before _how_. Interviewers care about impact, not just technology.
 
 2. **Use diagrams** — If asked about architecture, draw the 3-layer diagram (Client → App → Data). It shows you understand system design.
 
