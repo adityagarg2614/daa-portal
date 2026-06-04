@@ -22,6 +22,8 @@ export default function ExamFinishedPage() {
     const score = searchParams.get("score");
     const maxScore = searchParams.get("maxScore");
     const title = searchParams.get("title") || "Assignment";
+    const reviewMode = searchParams.get("review") || "after-deadline";
+    const reviewAvailableNow = reviewMode === "immediate";
 
     return (
         <div className="flex flex-1 flex-col items-center justify-center p-8 bg-muted/30">
@@ -60,16 +62,29 @@ export default function ExamFinishedPage() {
                             <div className="p-4 rounded-xl bg-muted/50 border flex flex-col items-center gap-2">
                                 <Award className="h-5 w-5 text-blue-600" />
                                 <span className="text-xs font-bold text-muted-foreground uppercase">Review</span>
-                                <span className="text-sm font-semibold">Available Later</span>
+                                <span className="text-sm font-semibold">
+                                    {reviewAvailableNow ? "Available Now" : "After Deadline"}
+                                </span>
                             </div>
                         </div>
 
                          <div className="text-sm text-muted-foreground italic">
-                            "Great work! Your effort is being evaluated by the system. You can view detailed feedback on your dashboard once the results are finalized."
+                            {reviewAvailableNow
+                                ? "\"Great work! Your final assignment result is now available on the results page.\""
+                                : "\"Great work! Your assignment result will appear on the results page once the deadline has passed.\""}
                         </div>
                     </CardContent>
 
                     <CardFooter className="flex flex-col gap-4 p-8 pt-4">
+                        {reviewAvailableNow && (
+                            <Button
+                                className="w-full h-12 text-lg font-bold shadow-lg gap-2"
+                                onClick={() => router.push("/results")}
+                            >
+                                <Trophy className="h-5 w-5" />
+                                View Results
+                            </Button>
+                        )}
                         <Button 
                             variant="destructive"
                             className="w-full h-12 text-lg font-bold shadow-lg gap-2" 

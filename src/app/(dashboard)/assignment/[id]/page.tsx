@@ -110,6 +110,7 @@ type Assignment = {
     batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
+    isSebRequired?: boolean
     publishAt: string
     dueAt: string
     status: "Upcoming" | "Active" | "Expired"
@@ -739,7 +740,8 @@ export default function SingleAssignmentPage() {
             })
 
             setSubmitAssignmentDialogOpen(false)
-            router.push(`/exam/finished?score=${response.data.totalScore}&maxScore=${response.data.maxScore}&title=${encodeURIComponent(assignment.title)}`)
+            const reviewMode = assignment.isSebRequired ? "immediate" : "after-deadline"
+            router.push(`/exam/finished?score=${response.data.totalScore}&maxScore=${response.data.maxScore}&title=${encodeURIComponent(assignment.title)}&review=${reviewMode}`)
         } catch (error) {
             console.error("Final submission error:", error)
             toast.error("Failed to submit assignment", {

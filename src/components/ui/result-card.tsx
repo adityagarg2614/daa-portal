@@ -194,7 +194,7 @@ function MetricTile({
                     {value}
                 </span>
                 <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", toneClass[tone])}>
-                    Live
+                    Released
                 </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{hint}</p>

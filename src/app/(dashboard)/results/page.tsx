@@ -155,7 +155,7 @@ export default function ResultsPage() {
                             </Badge>
                             <Badge variant="outline" className="rounded-full px-3 py-1">
                                 <Target className="mr-1.5 h-3.5 w-3.5" />
-                                Evaluated assignments only
+                                Released assignment results only
                             </Badge>
                         </div>
 
@@ -164,7 +164,7 @@ export default function ResultsPage() {
                                 Assignment Results
                             </h1>
                             <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                                Access detailed evaluation reports for all submitted assignments, track your performance metrics, and identify areas for improvement.
+                                SEB-protected assignments appear here right after final submission. Regular assignments unlock here after their deadline passes.
                             </p>
                         </div>
 
@@ -329,7 +329,7 @@ export default function ResultsPage() {
                 ) : (
                     <EmptyState
                         title="No results found"
-                        description="Try a different search or filter. Your evaluated assignment results will appear here."
+                        description="Try a different search or filter. Protected assignments appear after final submit, while regular assignments appear after the deadline."
                         className="rounded-[28px] border-border/60 bg-card/70 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.45)]"
                     />
                 )}
@@ -361,7 +361,7 @@ function HeroChip({
             <div className="mt-2 flex items-center justify-between">
                 <span className="text-lg font-semibold tracking-tight">{value}</span>
                 <span className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", tones[tone])}>
-                    Live
+                    Released
                 </span>
             </div>
         </div>
