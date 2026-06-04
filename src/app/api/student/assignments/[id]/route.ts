@@ -5,9 +5,9 @@ import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
 import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
 import { auth } from "@clerk/nextjs/server";
-import User from "@/models/User";
 import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function GET(
     req: Request,
@@ -22,7 +22,7 @@ export async function GET(
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await User.findOne({ clerkId });
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             logger.warn("Student assignment fetch failed: user not found", { clerkId, assignmentId: id });
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });

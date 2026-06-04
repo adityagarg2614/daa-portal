@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/db";
 import { isAssignmentAccessibleToStudent } from "@/lib/batch";
-import User from "@/models/User";
 import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function GET(
     request: Request,
@@ -18,7 +18,7 @@ export async function GET(
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await User.findOne({ clerkId });
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
         }
@@ -71,7 +71,7 @@ export async function POST(
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await User.findOne({ clerkId });
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
         }

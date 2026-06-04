@@ -1,10 +1,10 @@
 import { connectDB } from "@/lib/db";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { isAssignmentAccessibleToStudent } from "@/lib/batch";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function GET(
     req: Request,
@@ -23,7 +23,7 @@ export async function GET(
             );
         }
 
-        const user = await User.findOne({ clerkId });
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json(
                 { success: false, message: "User not found" },

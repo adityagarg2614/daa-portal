@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getAssignmentBatchFilter } from "@/lib/batch";
 import { connectDB } from "@/lib/db";
-import User from "@/models/User";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
 import Attendance from "@/models/Attendance";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 type AttendanceSessionRecord = {
     userId: { toString(): string };
@@ -21,14 +21,15 @@ type RecentSubmissionRow = {
 
 export async function GET() {
     try {
-        await connectDB();
         const { userId: clerkId } = await auth();
 
         if (!clerkId) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await User.findOne({ clerkId });
+        await connectDB();
+
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
         }

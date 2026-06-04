@@ -4,11 +4,10 @@ import { auth } from "@clerk/nextjs/server";
 import { getAssignmentBatchFilter } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
-import User from "@/models/User";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function GET() {
     try {
-        await connectDB();
         const { userId: clerkId } = await auth();
 
         if (!clerkId) {
@@ -18,7 +17,9 @@ export async function GET() {
             );
         }
 
-        const user = await User.findOne({ clerkId, role: "student" });
+        await connectDB();
+
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json(
                 { success: false, message: "Student not found" },

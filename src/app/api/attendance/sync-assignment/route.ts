@@ -4,8 +4,8 @@ import Assignment from "@/models/Assignment";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { isAssignmentAccessibleToStudent } from "@/lib/batch";
-import User from "@/models/User";
 import { getIndiaDayBounds } from "@/lib/attendance-date";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 type AttendanceRecord = {
     userId: {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         }
 
         // 1. Get dB user
-        const dbUser = await User.findOne({ clerkId });
+        const { user: dbUser } = await resolveCurrentUser({ role: "student" });
         if (!dbUser || dbUser.role !== "student") {
             return NextResponse.json({ success: true, message: "Only student views are tracked" });
         }

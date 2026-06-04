@@ -2,7 +2,6 @@ import { connectDB } from "@/lib/db";
 import Submission from "@/models/Submission";
 import Problem from "@/models/Problem";
 import Assignment from "@/models/Assignment";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { runTestCases } from "@/lib/piston";
 import { ITestResult } from "@/models/Submission";
@@ -10,6 +9,7 @@ import { verifySebSession, markAttemptAsStarted } from "@/lib/seb";
 import { headers } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { isAssignmentAccessibleToStudent } from "@/lib/batch";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 
 export async function POST(req: Request) {
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const dbUser = await User.findOne({ clerkId, role: "student" });
+        const { user: dbUser } = await resolveCurrentUser({ role: "student" });
         if (!dbUser) {
             return NextResponse.json(
                 { success: false, message: "Student not found" },

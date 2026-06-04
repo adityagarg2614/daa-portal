@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import Attendance from "@/models/Attendance";
-import User from "@/models/User";
 import { connectDB } from "@/lib/db";
 import { getIndiaDateKey } from "@/lib/attendance-date";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 type AttendanceRecord = {
     userId: {
@@ -21,7 +21,7 @@ export async function GET() {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const user = await User.findOne({ clerkId });
+        const { user } = await resolveCurrentUser({ role: "student" });
         if (!user) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
         }

@@ -4,9 +4,9 @@ import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 import Submission from "@/models/Submission";
 import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { verifySebSession } from "@/lib/seb";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function POST(
     req: Request,
@@ -37,7 +37,7 @@ export async function POST(
             );
         }
 
-        const student = await User.findOne({ clerkId, role: "student" });
+        const { user: student } = await resolveCurrentUser({ role: "student" });
         if (!student) {
             return NextResponse.json(
                 { success: false, message: "Student not found" },

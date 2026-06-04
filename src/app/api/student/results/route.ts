@@ -2,24 +2,24 @@ import { connectDB } from "@/lib/db";
 import { getAssignmentBatchFilter } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Submission from "@/models/Submission";
-import User from "@/models/User";
-import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { format } from "date-fns";
+import { auth } from "@clerk/nextjs/server";
+import { resolveCurrentUser } from "@/lib/current-user";
 
 export async function GET() {
     try {
-        await connectDB();
-
-        const user = await currentUser();
-        if (!user) {
+        const { userId: clerkId } = await auth();
+        if (!clerkId) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        const dbUser = await User.findOne({ clerkId: user.id });
+        await connectDB();
+
+        const { user: dbUser } = await resolveCurrentUser({ role: "student" });
         if (!dbUser) {
             return NextResponse.json(
                 { success: false, message: "User not found in database" },
