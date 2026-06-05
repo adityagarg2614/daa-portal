@@ -331,6 +331,7 @@ make clean
 | `RESEND_API_KEY` | Optional | Needed for welcome email sending |
 | `FROM_EMAIL` | Optional | Sender address for outgoing mail |
 | `NEXT_PUBLIC_SEB_LAUNCH_URL` | Recommended for SEB exams | Hosted `.seb` or `sebs://` launch URL used by students |
+| `NEXT_PUBLIC_SEB_PROFILE_PATH` | Optional | Public path to the hosted `.seb` file when using same-origin fallback |
 | `NEXT_PUBLIC_SEB_DOWNLOAD_URL` | Optional | Download/help URL for Safe Exam Browser |
 | `SEB_BROWSER_EXAM_KEYS` | Optional but recommended | Approved SEB Browser Exam Keys for stronger exam verification |
 | `SEB_CONFIG_KEYS` | Optional | Approved SEB Config Keys for stricter matching |

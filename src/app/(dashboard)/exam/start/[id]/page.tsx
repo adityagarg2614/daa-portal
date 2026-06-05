@@ -38,7 +38,7 @@ type ExamStartData = {
     attempt: ExamAttempt | null;
 };
 
-const DEFAULT_SEB_PROFILE_PATH = "/seb/algo-grade.seb";
+const DEFAULT_SEB_PROFILE_PATH = process.env.NEXT_PUBLIC_SEB_PROFILE_PATH?.trim() || "/seb/algo-grade.seb";
 
 function fillSebTemplate(template: string, assignmentId: string, origin: string) {
     return template

@@ -91,6 +91,7 @@ Set:
 
 ```env
 NEXT_PUBLIC_SEB_LAUNCH_URL=sebs://your-domain.com/seb/algo-grade.seb?assignmentId={{assignmentId}}
+NEXT_PUBLIC_SEB_PROFILE_PATH=/seb/algo-grade.seb
 NEXT_PUBLIC_SEB_DOWNLOAD_URL=https://safeexambrowser.org/download_en.html
 ```
 
@@ -99,6 +100,7 @@ Notes:
 - The UI replaces `{{assignmentId}}` with the live assignment ID.
 - The UI also supports `{{origin}}` if you want to reuse the same variable across environments.
 - Your hosted `.seb` file should point students back to the Vercel domain for sign-in / exam entry.
+- If local launch works but production opens a blank SEB window, the `.seb` file itself is usually still configured with `http://localhost:3000` as its Start URL. Re-export a production `.seb` file with your Vercel domain and host that file in `public/seb`.
 
 ## 8. Recommended SEB security level
 
