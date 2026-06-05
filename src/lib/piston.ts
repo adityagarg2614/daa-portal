@@ -16,15 +16,15 @@ function getPistonApiBaseUrl() {
         );
     }
 
-    return "http://localhost:2000/api/v2";
+    return "http://127.0.0.1:2000/api/v2";
 }
 
-// Language mapping to Piston language names and versions
+// Use semver ranges so self-hosted Piston runtime installs do not need exact patch matches.
 const LANGUAGE_MAP: Record<string, { language: string; version: string }> = {
-    cpp: { language: "c++", version: "10.2.0" },
-    java: { language: "java", version: "15.0.2" },
-    python: { language: "python", version: "3.10.0" },
-    javascript: { language: "javascript", version: "18.15.0" },
+    cpp: { language: "c++", version: "10.x" },
+    java: { language: "java", version: "15.x" },
+    python: { language: "python", version: "3.x" },
+    javascript: { language: "javascript", version: "18.x" },
 };
 
 
