@@ -9,6 +9,27 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: nextConfigDir,
   },
+  async headers() {
+    return [
+      {
+        source: "/seb/:path*",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/seb",
+          },
+          {
+            key: "Content-Disposition",
+            value: "inline",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

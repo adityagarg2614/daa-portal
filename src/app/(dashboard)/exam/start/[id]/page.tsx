@@ -38,10 +38,77 @@ type ExamStartData = {
     attempt: ExamAttempt | null;
 };
 
-function resolveSebUrl(template: string, assignmentId: string, origin: string) {
+const DEFAULT_SEB_PROFILE_PATH = "/seb/algo-grade.seb";
+
+function fillSebTemplate(template: string, assignmentId: string, origin: string) {
     return template
         .replaceAll("{{assignmentId}}", assignmentId)
         .replaceAll("{{origin}}", origin);
+}
+
+function isLoopbackHost(hostname: string) {
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
+function buildSebProtocolUrl(url: URL) {
+    const sebProtocol = url.protocol === "https:" ? "sebs:" : "seb:";
+
+    return `${sebProtocol}//${url.host}${url.pathname}${url.search}${url.hash}`;
+}
+
+function buildDefaultSebLaunchUrl(origin: string) {
+    if (!origin) {
+        return "";
+    }
+
+    return buildSebProtocolUrl(new URL(DEFAULT_SEB_PROFILE_PATH, origin));
+}
+
+function resolveSebLaunchUrl(template: string, assignmentId: string, origin: string) {
+    const fallbackUrl = buildDefaultSebLaunchUrl(origin);
+
+    if (!template) {
+        return fallbackUrl;
+    }
+
+    const resolvedTemplate = fillSebTemplate(template, assignmentId, origin);
+
+    if (!origin) {
+        return resolvedTemplate;
+    }
+
+    if (resolvedTemplate.startsWith("/")) {
+        return buildSebProtocolUrl(new URL(resolvedTemplate, origin));
+    }
+
+    try {
+        const resolvedUrl = new URL(resolvedTemplate);
+        const currentUrl = new URL(origin);
+
+        if (
+            isLoopbackHost(resolvedUrl.hostname) &&
+            !isLoopbackHost(currentUrl.hostname)
+        ) {
+            return fallbackUrl;
+        }
+
+        if (resolvedUrl.protocol === "http:" || resolvedUrl.protocol === "https:") {
+            return buildSebProtocolUrl(resolvedUrl);
+        }
+
+        if (
+            resolvedUrl.protocol === "sebs:" &&
+            currentUrl.protocol === "http:" &&
+            resolvedUrl.host === currentUrl.host
+        ) {
+            resolvedUrl.protocol = "seb:";
+            return resolvedUrl.toString();
+        }
+
+        return resolvedUrl.toString();
+    } catch {
+        return fallbackUrl || resolvedTemplate;
+    }
 }
 
 export default function ExamStartPage() {
@@ -58,9 +125,11 @@ export default function ExamStartPage() {
         process.env.NEXT_PUBLIC_SEB_DOWNLOAD_URL?.trim() ||
         "https://safeexambrowser.org/download_en.html";
     const browserOrigin = typeof window !== "undefined" ? window.location.origin : "";
-    const resolvedSebLaunchUrl = configuredSebLaunchUrl
-        ? resolveSebUrl(configuredSebLaunchUrl, assignmentId, browserOrigin)
-        : "";
+    const resolvedSebLaunchUrl = resolveSebLaunchUrl(
+        configuredSebLaunchUrl,
+        assignmentId,
+        browserOrigin
+    );
 
     useEffect(() => {
         const fetchExamInfo = async () => {
