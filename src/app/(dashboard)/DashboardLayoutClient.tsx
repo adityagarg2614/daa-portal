@@ -16,7 +16,8 @@ export default function DashboardLayoutClient({
   rollNo?: string;
 }) {
   const pathname = usePathname();
-  const isFocusedWorkspace = /^\/assignment\/[^/]+$/.test(pathname);
+  const isFocusedWorkspace =
+    /^\/assignment\/[^/]+$/.test(pathname) || /^\/quiz\/[^/]+$/.test(pathname);
 
   return (
     <SidebarProvider>

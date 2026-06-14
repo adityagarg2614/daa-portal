@@ -78,11 +78,25 @@ export default function AdminDashboardHomePage() {
             tone: "emerald",
         },
         {
+            title: "Create Quiz",
+            description: "Build a timed quiz with MCQ and one-word questions",
+            icon: Sparkles,
+            href: "/admin/quizzes/create",
+            tone: "violet",
+        },
+        {
             title: "View Assignments",
             description: "Review live, upcoming, and expired assignments",
             icon: Library,
             href: "/admin/assignments",
             tone: "amber",
+        },
+        {
+            title: "View Quizzes",
+            description: "Monitor secure and standard quiz release windows",
+            icon: BriefcaseBusiness,
+            href: "/admin/quizzes",
+            tone: "sky",
         },
         {
             title: "Manage Students",

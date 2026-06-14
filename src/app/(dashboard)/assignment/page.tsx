@@ -22,6 +22,10 @@ import {
     AssignmentsDashboardSkeleton,
     StatsCardSkeleton,
 } from "@/components/ui/skeleton"
+import {
+    getProgrammingLanguageLabel,
+    ProgrammingLanguage,
+} from "@/lib/programming-language"
 import { cn } from "@/lib/utils"
 
 type AssignmentStatus = "Active" | "Upcoming" | "Completed" | "Expired"
@@ -30,6 +34,7 @@ type Assignment = {
     _id: string
     title: string
     description: string
+    language?: ProgrammingLanguage | null
     batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
@@ -65,7 +70,8 @@ export default function AssignmentPage() {
             const query = search.toLowerCase()
             const matchesSearch =
                 assignment.title.toLowerCase().includes(query) ||
-                assignment.description.toLowerCase().includes(query)
+                assignment.description.toLowerCase().includes(query) ||
+                getProgrammingLanguageLabel(assignment.language).toLowerCase().includes(query)
 
             const matchesTab = activeTab === "All" ? true : assignment.status === activeTab
 

@@ -27,12 +27,14 @@ import {
     AssignmentCardSkeleton,
     StatsCardSkeleton,
 } from "@/components/ui/skeleton"
+import { getProgrammingLanguageLabel, ProgrammingLanguage } from "@/lib/programming-language"
 import { cn } from "@/lib/utils"
 
 type Assignment = {
     _id: string
     title: string
     description: string
+    language?: ProgrammingLanguage | null
     batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
@@ -101,6 +103,7 @@ export default function AdminAssignmentsPage() {
             const matchesSearch =
                 assignment.title.toLowerCase().includes(query) ||
                 assignment.description.toLowerCase().includes(query) ||
+                getProgrammingLanguageLabel(assignment.language).toLowerCase().includes(query) ||
                 assignment.problemIds?.some((problem) =>
                     problem.title.toLowerCase().includes(query)
                 )
@@ -352,6 +355,11 @@ export default function AdminAssignmentsPage() {
                                                             <Award className="mr-1.5 h-3.5 w-3.5" />
                                                             {assignment.totalMarks} marks
                                                         </Badge>
+                                                        {assignment.language && (
+                                                            <Badge variant="outline" className="rounded-full px-3 py-1">
+                                                                {getProgrammingLanguageLabel(assignment.language)}
+                                                            </Badge>
+                                                        )}
                                                         <Badge variant="outline" className="rounded-full px-3 py-1">
                                                             Batch {assignment.batch || "N/A"}
                                                         </Badge>

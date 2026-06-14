@@ -77,6 +77,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import {
+    getProgrammingLanguageLabel,
+    ProgrammingLanguage,
+} from "@/lib/programming-language"
 import { cn } from "@/lib/utils"
 
 type Example = {
@@ -107,6 +111,7 @@ type Assignment = {
     _id: string
     title: string
     description: string
+    language?: ProgrammingLanguage | null
     batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
@@ -120,7 +125,7 @@ type Assignment = {
 type SubmissionState = {
     [problemId: string]: {
         code: string
-        language: string
+        language: ProgrammingLanguage
         loading: boolean
         loadingAction?: "running" | "submitting"
         message: string
@@ -138,7 +143,7 @@ type Submission = {
     problemId: string
     userId: string
     code: string
-    language: string
+    language: ProgrammingLanguage
     status: "Attempted" | "Submitted" | "Evaluated"
     score?: number
     submittedAt?: string
@@ -164,6 +169,13 @@ const FALLBACK_STARTER_CODE = {
     java: "public class Main {\n    public static void main(String[] args) {\n        // Write your Java code here\n    }\n}",
     python: "def main():\n    # Write your Python code here\n    pass\n\nif __name__ == '__main__':\n    main()",
     javascript: "function main() {\n    // Write your JavaScript code here\n}\n\nmain();",
+}
+
+function getStarterCodeForLanguage(
+    problem: Problem,
+    language: ProgrammingLanguage
+) {
+    return problem.starterCode?.[language] || FALLBACK_STARTER_CODE[language]
 }
 
 function formatDate(dateString: string) {
@@ -222,8 +234,10 @@ export default function SingleAssignmentPage() {
         try {
             const submissionPromises = currentAssignment.problems.map((problem) => {
                 const problemState = currentState[problem._id]
-                const codeToSubmit = problemState?.code || problem.starterCode?.cpp || ""
-                const languageToSubmit = problemState?.language || "cpp"
+                const languageToSubmit =
+                    currentAssignment.language || problemState?.language || "cpp"
+                const codeToSubmit =
+                    problemState?.code || getStarterCodeForLanguage(problem, languageToSubmit)
 
                 if (!codeToSubmit || !languageToSubmit) {
                     return Promise.resolve(null)
@@ -363,16 +377,25 @@ export default function SingleAssignmentPage() {
                         (submission) => submission.problemId === problem._id
                     )
 
-                    const savedLanguage = existingSubmission?.language || "cpp"
-                    const starterForSavedLanguage =
-                        problem.starterCode?.[savedLanguage as keyof typeof problem.starterCode] ||
-                        FALLBACK_STARTER_CODE[savedLanguage as keyof typeof FALLBACK_STARTER_CODE]
+                    const assignmentLanguage = fetchedAssignment.language || null
+                    const savedLanguage =
+                        assignmentLanguage || existingSubmission?.language || "cpp"
+                    const canReuseSavedSubmission =
+                        !assignmentLanguage || existingSubmission?.language === assignmentLanguage
+                    const starterForSavedLanguage = getStarterCodeForLanguage(problem, savedLanguage)
 
                     initialState[problem._id] = {
-                        code: existingSubmission?.code || starterForSavedLanguage,
+                        code:
+                            existingSubmission?.code && canReuseSavedSubmission
+                                ? existingSubmission.code
+                                : starterForSavedLanguage,
                         language: savedLanguage,
                         loading: false,
-                        message: existingSubmission ? "Loaded your latest saved submission" : "",
+                        message: existingSubmission
+                            ? canReuseSavedSubmission
+                                ? "Loaded your latest saved submission"
+                                : `This assignment now uses ${getProgrammingLanguageLabel(savedLanguage)}. The starter template has been restored.`
+                            : "",
                     };
                 });
                 setSubmissionState(initialState);
@@ -460,12 +483,12 @@ export default function SingleAssignmentPage() {
         }
     }
 
-    const handleInputChange = (problemId: string, field: "code" | "language", value: string) => {
+    const handleInputChange = (problemId: string, value: string) => {
         setSubmissionState((prev) => ({
             ...prev,
             [problemId]: {
                 ...prev[problemId],
-                [field]: value,
+                code: value,
             },
         }))
     }
@@ -480,14 +503,19 @@ export default function SingleAssignmentPage() {
             javascript?: string
         }
     ) => {
+        if (assignment?.language) {
+            return
+        }
+
+        const nextLanguage = language as ProgrammingLanguage
         setSubmissionState((prev) => ({
             ...prev,
             [problemId]: {
                 ...prev[problemId],
-                language,
+                language: nextLanguage,
                 code:
-                    starterCode?.[language as keyof typeof starterCode] ||
-                    FALLBACK_STARTER_CODE[language as keyof typeof FALLBACK_STARTER_CODE],
+                    starterCode?.[nextLanguage as keyof typeof starterCode] ||
+                    FALLBACK_STARTER_CODE[nextLanguage],
                 message: "",
                 messageType: undefined,
                 compilationError: undefined,
@@ -506,10 +534,10 @@ export default function SingleAssignmentPage() {
             javascript?: string
         }
     ) => {
-        const language = submissionState[problemId]?.language || "cpp"
+        const language = assignment?.language || submissionState[problemId]?.language || "cpp"
         const code =
             starterCode?.[language as keyof typeof starterCode] ||
-            FALLBACK_STARTER_CODE[language as keyof typeof FALLBACK_STARTER_CODE]
+            FALLBACK_STARTER_CODE[language]
 
         setSubmissionState((prev) => ({
             ...prev,
@@ -570,6 +598,7 @@ export default function SingleAssignmentPage() {
             const response = await axios.post("/api/compile", {
                 code: current.code,
                 language: current.language,
+                assignmentId: assignment?._id,
                 problemId,
             })
 
@@ -1065,6 +1094,11 @@ export default function SingleAssignmentPage() {
                                 <Badge variant="outline" className="rounded-full px-3 py-1">
                                     {assignment.totalMarks} marks
                                 </Badge>
+                                {assignment.language && (
+                                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                                        {getProgrammingLanguageLabel(assignment.language)}
+                                    </Badge>
+                                )}
                                 {assignment.batch && (
                                     <Badge variant="outline" className="rounded-full px-3 py-1">
                                         Batch {assignment.batch}
@@ -1322,21 +1356,33 @@ export default function SingleAssignmentPage() {
                     <div className="border-b border-border/60 p-4 sm:p-5">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-wrap items-center gap-2">
-                                <Select
-                                    value={activeSubmission?.language || "cpp"}
-                                    onValueChange={(lang) => handleLanguageChange(activeProblem._id, lang, activeProblem.starterCode)}
-                                >
-                                    <SelectTrigger className="h-11 w-[170px] rounded-2xl gap-2">
-                                        <Code2 className="h-4 w-4" />
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="cpp">C++</SelectItem>
-                                        <SelectItem value="java">Java</SelectItem>
-                                        <SelectItem value="python">Python</SelectItem>
-                                        <SelectItem value="javascript">JavaScript</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {assignment.language ? (
+                                    <div className="flex h-11 items-center gap-3 rounded-2xl border border-border/60 bg-background/55 px-4">
+                                        <Code2 className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">
+                                            {getProgrammingLanguageLabel(assignment.language)}
+                                        </span>
+                                        <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px]">
+                                            Locked
+                                        </Badge>
+                                    </div>
+                                ) : (
+                                    <Select
+                                        value={activeSubmission?.language || "cpp"}
+                                        onValueChange={(lang) => handleLanguageChange(activeProblem._id, lang, activeProblem.starterCode)}
+                                    >
+                                        <SelectTrigger className="h-11 w-[170px] rounded-2xl gap-2">
+                                            <Code2 className="h-4 w-4" />
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="cpp">C++</SelectItem>
+                                            <SelectItem value="java">Java</SelectItem>
+                                            <SelectItem value="python">Python</SelectItem>
+                                            <SelectItem value="javascript">JavaScript</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
                                 <Badge variant="outline" className="h-11 rounded-full px-4">
                                     <Clock className="mr-1.5 h-3.5 w-3.5" />
                                     {timeRemaining}
@@ -1385,9 +1431,9 @@ export default function SingleAssignmentPage() {
                     <div className="p-4 sm:p-5">
                         <div>
                             <CodeEditor
-                                language={activeSubmission?.language || "cpp"}
+                                language={activeSubmission?.language || assignment.language || "cpp"}
                                 value={activeSubmission?.code || ""}
-                                onChange={(value) => handleInputChange(activeProblem._id, "code", value)}
+                                onChange={(value) => handleInputChange(activeProblem._id, value)}
                             />
                         </div>
 
