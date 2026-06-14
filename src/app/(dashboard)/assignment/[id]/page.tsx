@@ -36,13 +36,6 @@ import { Alert } from "@/components/ui/alert"
 import { ExampleCard } from "@/components/ui/example-card"
 import { Progress } from "@/components/ui/progress"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
     Card,
     CardContent,
     CardHeader,
@@ -225,6 +218,7 @@ export default function SingleAssignmentPage() {
         : 0
     const activeProblem = assignment?.problems?.[safeActiveProblemIndex] || null
     const activeSubmission = activeProblem ? submissionState[activeProblem._id] : undefined
+    const lockedLanguage = assignment?.language || activeSubmission?.language || "cpp"
 
     const handleAutoSubmitMemo = useCallback(async (currentAssignment: Assignment, currentUserId: string, currentState: SubmissionState) => {
         if (autoSubmitting) return
@@ -491,38 +485,6 @@ export default function SingleAssignmentPage() {
                 code: value,
             },
         }))
-    }
-
-    const handleLanguageChange = (
-        problemId: string,
-        language: string,
-        starterCode?: {
-            cpp?: string
-            java?: string
-            python?: string
-            javascript?: string
-        }
-    ) => {
-        if (assignment?.language) {
-            return
-        }
-
-        const nextLanguage = language as ProgrammingLanguage
-        setSubmissionState((prev) => ({
-            ...prev,
-            [problemId]: {
-                ...prev[problemId],
-                language: nextLanguage,
-                code:
-                    starterCode?.[nextLanguage as keyof typeof starterCode] ||
-                    FALLBACK_STARTER_CODE[nextLanguage],
-                message: "",
-                messageType: undefined,
-                compilationError: undefined,
-                testResults: undefined,
-            },
-        }))
-        setBottomTab("console")
     }
 
     const handleResetCode = (
@@ -1356,33 +1318,15 @@ export default function SingleAssignmentPage() {
                     <div className="border-b border-border/60 p-4 sm:p-5">
                         <div className="flex flex-col gap-3">
                             <div className="flex flex-wrap items-center gap-2">
-                                {assignment.language ? (
-                                    <div className="flex h-11 items-center gap-3 rounded-2xl border border-border/60 bg-background/55 px-4">
-                                        <Code2 className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm font-medium">
-                                            {getProgrammingLanguageLabel(assignment.language)}
-                                        </span>
-                                        <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px]">
-                                            Locked
-                                        </Badge>
-                                    </div>
-                                ) : (
-                                    <Select
-                                        value={activeSubmission?.language || "cpp"}
-                                        onValueChange={(lang) => handleLanguageChange(activeProblem._id, lang, activeProblem.starterCode)}
-                                    >
-                                        <SelectTrigger className="h-11 w-[170px] rounded-2xl gap-2">
-                                            <Code2 className="h-4 w-4" />
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="cpp">C++</SelectItem>
-                                            <SelectItem value="java">Java</SelectItem>
-                                            <SelectItem value="python">Python</SelectItem>
-                                            <SelectItem value="javascript">JavaScript</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                )}
+                                <div className="flex h-11 items-center gap-3 rounded-2xl border border-border/60 bg-background/55 px-4">
+                                    <Code2 className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">
+                                        {getProgrammingLanguageLabel(lockedLanguage)}
+                                    </span>
+                                    <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-[11px]">
+                                        Locked
+                                    </Badge>
+                                </div>
                                 <Badge variant="outline" className="h-11 rounded-full px-4">
                                     <Clock className="mr-1.5 h-3.5 w-3.5" />
                                     {timeRemaining}
@@ -1431,7 +1375,7 @@ export default function SingleAssignmentPage() {
                     <div className="p-4 sm:p-5">
                         <div>
                             <CodeEditor
-                                language={activeSubmission?.language || assignment.language || "cpp"}
+                                language={lockedLanguage}
                                 value={activeSubmission?.code || ""}
                                 onChange={(value) => handleInputChange(activeProblem._id, value)}
                             />

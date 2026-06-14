@@ -88,7 +88,17 @@ export async function POST(req: Request) {
         }
 
         const assignmentLanguage = normalizeProgrammingLanguage(assignment.language);
-        if (assignmentLanguage && normalizedLanguage !== assignmentLanguage) {
+        if (!assignmentLanguage) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "This assignment language is not configured yet. Please contact your admin.",
+                },
+                { status: 400 }
+            );
+        }
+
+        if (normalizedLanguage !== assignmentLanguage) {
             return NextResponse.json(
                 {
                     success: false,
@@ -149,7 +159,7 @@ export async function POST(req: Request) {
             // Call Piston directly (no HTTP self-fetch)
             const compileResult = await runTestCases(
                 code, 
-                normalizedLanguage,
+                assignmentLanguage,
                 testCases, 
                 problem.timeLimit || 2000, 
                 problem.memoryLimit || 128000
@@ -229,7 +239,7 @@ export async function POST(req: Request) {
             problemId,
             userId,
             code,
-            language: normalizedLanguage,
+            language: assignmentLanguage,
             status: "Evaluated",
             submittedAt: new Date(),
             score: allTestsPassed ? problem.marks : 0,

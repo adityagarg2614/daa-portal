@@ -62,7 +62,17 @@ export async function POST(req: Request) {
             const assignment = await Assignment.findById(assignmentId).select("language");
             const assignmentLanguage = normalizeProgrammingLanguage(assignment?.language);
 
-            if (assignmentLanguage && normalizedLanguage !== assignmentLanguage) {
+            if (!assignmentLanguage) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "This assignment language is not configured yet. Please contact your admin.",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            if (normalizedLanguage !== assignmentLanguage) {
                 return NextResponse.json(
                     {
                         success: false,
