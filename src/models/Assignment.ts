@@ -1,9 +1,14 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { StudentBatch } from "@/lib/batch";
+import {
+    PROGRAMMING_LANGUAGES,
+    ProgrammingLanguage,
+} from "@/lib/programming-language";
 
 export interface IAssignment extends Document {
     title: string;
     description: string;
+    language?: ProgrammingLanguage | null;
     totalProblems: number;
     totalMarks: number;
     batch?: StudentBatch | null;
@@ -27,6 +32,11 @@ const AssignmentSchema: Schema = new Schema(
             type: String,
             required: true,
             trim: true,
+        },
+        language: {
+            type: String,
+            enum: PROGRAMMING_LANGUAGES,
+            default: null,
         },
         totalProblems: {
             type: Number,

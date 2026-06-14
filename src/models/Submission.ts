@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { PROGRAMMING_LANGUAGES } from "@/lib/programming-language";
 
 export interface ITestResult {
     testCaseIndex: number;
@@ -51,6 +52,7 @@ const SubmissionSchema: Schema = new Schema(
         language: {
             type: String,
             required: true,
+            enum: PROGRAMMING_LANGUAGES,
             default: "cpp",
         },
         status: {
