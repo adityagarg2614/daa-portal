@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { TerminalSquareIcon, BotIcon, BookOpenIcon, Sparkles, Megaphone } from "lucide-react"
+import { TerminalSquareIcon, BotIcon, Sparkles, Megaphone } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -47,6 +47,10 @@ const data = {
         {
           title: "Assignments",
           url: "/assignment",
+        },
+        {
+          title: "Quizzes",
+          url: "/quiz",
         },
         {
           title: "My Submissions",
@@ -81,7 +85,7 @@ const data = {
 
 }
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, isLoaded } = useUser()
+  const { user } = useUser()
 
   const metadata = user?.publicMetadata as Record<string, unknown>;
   const role = (metadata?.role as string) || "student";
