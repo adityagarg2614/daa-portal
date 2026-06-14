@@ -1,5 +1,6 @@
 import { verifyAdmin } from "@/lib/auth";
 import { normalizeBatch } from "@/lib/batch";
+import { normalizeProgrammingLanguage } from "@/lib/programming-language";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import Submission from "@/models/Submission";
@@ -154,6 +155,7 @@ export async function PATCH(
         const {
             title,
             description,
+            language,
             publishAt,
             dueAt,
             problemIds,
@@ -166,6 +168,26 @@ export async function PATCH(
             return NextResponse.json(
                 { success: false, message: "Assignment not found" },
                 { status: 404 }
+            );
+        }
+
+        if (
+            publishAt !== undefined &&
+            dueAt !== undefined &&
+            new Date(publishAt) >= new Date(dueAt)
+        ) {
+            return NextResponse.json(
+                { success: false, message: "Due date must be later than the publish date" },
+                { status: 400 }
+            );
+        }
+
+        const nextPublishAt = publishAt ?? assignment.publishAt;
+        const nextDueAt = dueAt ?? assignment.dueAt;
+        if (new Date(nextPublishAt) >= new Date(nextDueAt)) {
+            return NextResponse.json(
+                { success: false, message: "Due date must be later than the publish date" },
+                { status: 400 }
             );
         }
 
@@ -190,14 +212,24 @@ export async function PATCH(
             );
         }
 
+        const normalizedLanguage =
+            language !== undefined ? normalizeProgrammingLanguage(language) : undefined;
+        if (language !== undefined && !normalizedLanguage) {
+            return NextResponse.json(
+                { success: false, message: "Valid assignment language is required" },
+                { status: 400 }
+            );
+        }
+
         const updatedAssignment = await Assignment.findByIdAndUpdate(
             id,
             {
                 title: title ?? assignment.title,
                 description: description ?? assignment.description,
+                language: normalizedLanguage ?? assignment.language ?? null,
                 batch: normalizedBatch ?? assignment.batch,
-                publishAt: publishAt ?? assignment.publishAt,
-                dueAt: dueAt ?? assignment.dueAt,
+                publishAt: nextPublishAt,
+                dueAt: nextDueAt,
                 problemIds: problemIds ?? assignment.problemIds,
                 totalProblems,
                 totalMarks,

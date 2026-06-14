@@ -39,6 +39,11 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import {
+    getProgrammingLanguageLabel,
+    PROGRAMMING_LANGUAGES,
+    ProgrammingLanguage,
+} from "@/lib/programming-language"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
 
@@ -55,6 +60,7 @@ type AssignmentDetailsResponse = {
     data: {
         title: string
         description: string
+        language?: ProgrammingLanguage | null
         batch?: "A" | "B" | null
         publishAt: string
         dueAt: string
@@ -66,6 +72,7 @@ type AssignmentDetailsResponse = {
 export default function CreateAssignmentPage() {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
+    const [language, setLanguage] = useState<ProgrammingLanguage>("cpp")
     const [batch, setBatch] = useState<"A" | "B">("A")
     const [publishAt, setPublishAt] = useState("")
     const [dueAt, setDueAt] = useState("")
@@ -84,6 +91,7 @@ export default function CreateAssignmentPage() {
     const [pendingSubmission, setPendingSubmission] = useState<null | {
         title: string
         description: string
+        language: ProgrammingLanguage
         batch: "A" | "B"
         publishAt: string
         dueAt: string
@@ -121,6 +129,7 @@ export default function CreateAssignmentPage() {
                 const a = res.data.data
                 setTitle(a.title)
                 setDescription(a.description)
+                setLanguage(a.language || "cpp")
                 setBatch(a.batch || "A")
                 setPublishAt(new Date(a.publishAt).toISOString().slice(0, 16))
                 setDueAt(new Date(a.dueAt).toISOString().slice(0, 16))
@@ -219,6 +228,12 @@ export default function CreateAssignmentPage() {
             return
         }
 
+        if (new Date(publishAt) >= new Date(dueAt)) {
+            setMessage("Due date must be later than the publish date")
+            setMessageType("destructive")
+            return
+        }
+
         if (selectedProblemIds.length === 0) {
             setMessage("Please select at least one problem")
             setMessageType("destructive")
@@ -228,6 +243,7 @@ export default function CreateAssignmentPage() {
         setPendingSubmission({
             title,
             description,
+            language,
             batch,
             publishAt: new Date(publishAt).toISOString(),
             dueAt: new Date(dueAt).toISOString(),
@@ -255,6 +271,7 @@ export default function CreateAssignmentPage() {
             if (!editId) {
                 setTitle("")
                 setDescription("")
+                setLanguage("cpp")
                 setBatch("A")
                 setPublishAt("")
                 setDueAt("")
@@ -355,6 +372,11 @@ export default function CreateAssignmentPage() {
                                 />
                                 <StatusRow
                                     icon={BookOpen}
+                                    label="Submission language"
+                                    value={getProgrammingLanguageLabel(language)}
+                                />
+                                <StatusRow
+                                    icon={BookOpen}
                                     label="Target batch"
                                     value={`Batch ${batch}`}
                                 />
@@ -421,6 +443,28 @@ export default function CreateAssignmentPage() {
                                         <SelectContent>
                                             <SelectItem value="A">Batch A</SelectItem>
                                             <SelectItem value="B">Batch B</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormField>
+
+                                <FormField
+                                    label="Language"
+                                    required
+                                    hint="Students will only be able to run and submit code in this language"
+                                >
+                                    <Select
+                                        value={language}
+                                        onValueChange={(value) => setLanguage(value as ProgrammingLanguage)}
+                                    >
+                                        <SelectTrigger className="rounded-2xl border-border/60 bg-card">
+                                            <SelectValue placeholder="Select language" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PROGRAMMING_LANGUAGES.map((languageOption) => (
+                                                <SelectItem key={languageOption} value={languageOption}>
+                                                    {getProgrammingLanguageLabel(languageOption)}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </FormField>
@@ -551,15 +595,13 @@ export default function CreateAssignmentPage() {
 
                                 <div className="rounded-[24px] border border-border/60 bg-background/65 p-4">
                                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                                        Publish window
+                                        Submission language
                                     </p>
                                     <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                                        {publishAt && dueAt ? "Configured" : "Pending setup"}
+                                        {getProgrammingLanguageLabel(language)}
                                     </p>
                                     <p className="mt-2 text-sm text-muted-foreground">
-                                        {publishAt && dueAt
-                                            ? "Both publish and due dates are set."
-                                            : "Add both dates to make the assignment ready."}
+                                        Every selected problem will be solved and submitted in this language only.
                                     </p>
                                 </div>
 

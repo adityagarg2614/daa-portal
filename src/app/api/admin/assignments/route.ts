@@ -1,5 +1,6 @@
 import { verifyAdmin } from "@/lib/auth";
 import { normalizeBatch } from "@/lib/batch";
+import { normalizeProgrammingLanguage } from "@/lib/programming-language";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import { NextResponse } from "next/server";
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
         const {
             title,
             description,
+            language,
             publishAt,
             dueAt,
             problemIds,
@@ -24,12 +26,31 @@ export async function POST(req: Request) {
         } = body;
 
         const normalizedBatch = normalizeBatch(batch);
+        const normalizedLanguage = normalizeProgrammingLanguage(language);
 
-        if (!title || !description || !publishAt || !dueAt || !problemIds?.length || !normalizedBatch) {
+        if (
+            !title ||
+            !description ||
+            !normalizedLanguage ||
+            !publishAt ||
+            !dueAt ||
+            !problemIds?.length ||
+            !normalizedBatch
+        ) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Title, description, batch, publishAt, dueAt and problemIds are required",
+                    message: "Title, description, language, batch, publishAt, dueAt and problemIds are required",
+                },
+                { status: 400 }
+            );
+        }
+
+        if (new Date(publishAt) >= new Date(dueAt)) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Due date must be later than the publish date",
                 },
                 { status: 400 }
             );
@@ -55,6 +76,7 @@ export async function POST(req: Request) {
         const assignment = await Assignment.create({
             title,
             description,
+            language: normalizedLanguage,
             batch: normalizedBatch,
             publishAt,
             dueAt,

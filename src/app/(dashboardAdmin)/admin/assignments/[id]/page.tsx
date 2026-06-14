@@ -24,6 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatsCard } from '@/components/ui/stats-card';
+import { getProgrammingLanguageLabel, ProgrammingLanguage } from '@/lib/programming-language';
 import { cn } from '@/lib/utils';
 
 type Problem = {
@@ -60,6 +61,7 @@ type Assignment = {
     _id: string;
     title: string;
     description: string;
+    language?: ProgrammingLanguage | null;
     batch?: "A" | "B" | null;
     totalProblems: number;
     totalMarks: number;
@@ -259,6 +261,12 @@ export default function AdminViewAssignmentPage() {
                         <FileText className="h-3 w-3" />
                         {assignment.totalProblems} Problems
                     </Badge>
+                    {assignment.language && (
+                        <Badge variant="outline" className="gap-1">
+                            <Code2 className="h-3 w-3" />
+                            {getProgrammingLanguageLabel(assignment.language)}
+                        </Badge>
+                    )}
                     <Badge variant="outline" className="gap-1">
                         Batch {assignment.batch || "N/A"}
                     </Badge>
@@ -303,6 +311,12 @@ export default function AdminViewAssignmentPage() {
                             <span className="text-sm font-medium">Batch</span>
                             <span className="text-sm text-muted-foreground">
                                 {assignment.batch ? `Batch ${assignment.batch}` : "Legacy / all"}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between rounded-lg bg-muted p-3">
+                            <span className="text-sm font-medium">Language</span>
+                            <span className="text-sm text-muted-foreground">
+                                {getProgrammingLanguageLabel(assignment.language)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between rounded-lg bg-muted p-3">
