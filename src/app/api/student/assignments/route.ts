@@ -5,6 +5,7 @@ import { getAssignmentBatchFilter } from "@/lib/batch";
 import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
 import { resolveCurrentUser } from "@/lib/current-user";
+import { normalizeProgrammingLanguage } from "@/lib/programming-language";
 
 export async function GET() {
     try {
@@ -46,6 +47,7 @@ export async function GET() {
                 _id: assignment._id,
                 title: assignment.title,
                 description: assignment.description,
+                language: normalizeProgrammingLanguage(assignment.language),
                 totalProblems: assignment.totalProblems,
                 totalMarks: assignment.totalMarks,
                 batch: assignment.batch ?? null,

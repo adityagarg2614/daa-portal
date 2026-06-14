@@ -10,6 +10,10 @@ import { headers } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
 import { isAssignmentAccessibleToStudent } from "@/lib/batch";
 import { resolveCurrentUser } from "@/lib/current-user";
+import {
+    getProgrammingLanguageLabel,
+    normalizeProgrammingLanguage,
+} from "@/lib/programming-language";
 
 
 export async function POST(req: Request) {
@@ -33,6 +37,14 @@ export async function POST(req: Request) {
                     success: false,
                     message: "assignmentId, problemId, userId, code, and language are required",
                 },
+                { status: 400 }
+            );
+        }
+
+        const normalizedLanguage = normalizeProgrammingLanguage(language);
+        if (!normalizedLanguage) {
+            return NextResponse.json(
+                { success: false, message: "Unsupported programming language" },
                 { status: 400 }
             );
         }
@@ -72,6 +84,17 @@ export async function POST(req: Request) {
             return NextResponse.json(
                 { success: false, message: "This assignment is not available for your batch" },
                 { status: 403 }
+            );
+        }
+
+        const assignmentLanguage = normalizeProgrammingLanguage(assignment.language);
+        if (assignmentLanguage && normalizedLanguage !== assignmentLanguage) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: `This assignment only accepts ${getProgrammingLanguageLabel(assignmentLanguage)} submissions`,
+                },
+                { status: 400 }
             );
         }
 
@@ -126,7 +149,7 @@ export async function POST(req: Request) {
             // Call Piston directly (no HTTP self-fetch)
             const compileResult = await runTestCases(
                 code, 
-                language, 
+                normalizedLanguage,
                 testCases, 
                 problem.timeLimit || 2000, 
                 problem.memoryLimit || 128000
@@ -206,7 +229,7 @@ export async function POST(req: Request) {
             problemId,
             userId,
             code,
-            language,
+            language: normalizedLanguage,
             status: "Evaluated",
             submittedAt: new Date(),
             score: allTestsPassed ? problem.marks : 0,

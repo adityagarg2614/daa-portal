@@ -8,6 +8,7 @@ import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { logger } from "@/lib/logger";
 import { resolveCurrentUser } from "@/lib/current-user";
+import { normalizeProgrammingLanguage } from "@/lib/programming-language";
 
 export async function GET(
     req: Request,
@@ -87,6 +88,7 @@ export async function GET(
                 _id: assignment._id,
                 title: assignment.title,
                 description: assignment.description,
+                language: normalizeProgrammingLanguage(assignment.language),
                 totalProblems: assignment.totalProblems,
                 totalMarks: assignment.totalMarks,
                 batch: assignment.batch ?? null,
