@@ -2,6 +2,8 @@ import { headers } from "next/headers";
 import { connectDB } from "@/lib/db";
 import Assignment from "@/models/Assignment";
 import ExamAttempt from "@/models/ExamAttempt";
+import Quiz from "@/models/Quiz";
+import QuizAttempt from "@/models/QuizAttempt";
 import mongoose from "mongoose";
 import { logger } from "@/lib/logger";
 
@@ -112,6 +114,98 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
     return { success: true, attempt };
 }
 
+export async function verifyQuizSebSession(quizId: string, studentId: string) {
+    const headerList = await headers();
+    const userAgent = headerList.get("user-agent") || "";
+    const browserExamKey = headerList.get("x-safeexambrowser-browserexamkeyhash") || "";
+    const configKey = headerList.get("x-safeexambrowser-configkeyhash") || "";
+    const allowedBrowserExamKeys = getAllowedSebKeys(process.env.SEB_BROWSER_EXAM_KEYS);
+    const allowedConfigKeys = getAllowedSebKeys(process.env.SEB_CONFIG_KEYS);
+
+    logger.debug("Quiz SEB verification started", {
+        quizId,
+        studentId,
+        userAgent: userAgent.slice(0, 80),
+    });
+
+    await connectDB();
+    const quiz = await Quiz.findById(quizId);
+
+    if (!quiz) {
+        return { success: false, message: "Quiz not found" };
+    }
+
+    if (!quiz.isSebRequired) {
+        return { success: true, bypassed: true };
+    }
+
+    if (!userAgent.includes("SEB/")) {
+        logger.warn("Quiz SEB verification blocked: browser mismatch", { quizId, studentId });
+        return {
+            success: false,
+            message: "Safe Exam Browser is required to access this quiz.",
+            errorCode: "SEB_REQUIRED",
+        };
+    }
+
+    if (allowedBrowserExamKeys.length > 0) {
+        const normalizedBrowserExamKey = browserExamKey.trim().toLowerCase();
+
+        if (!normalizedBrowserExamKey || !allowedBrowserExamKeys.includes(normalizedBrowserExamKey)) {
+            logger.warn("Quiz SEB verification blocked: browser exam key mismatch", { quizId, studentId });
+            return {
+                success: false,
+                message: "The Safe Exam Browser configuration used on this device is not approved for this quiz.",
+                errorCode: "SEB_BROWSER_EXAM_KEY_REQUIRED",
+            };
+        }
+    }
+
+    if (allowedConfigKeys.length > 0) {
+        const normalizedConfigKey = configKey.trim().toLowerCase();
+
+        if (!normalizedConfigKey || !allowedConfigKeys.includes(normalizedConfigKey)) {
+            logger.warn("Quiz SEB verification blocked: config key mismatch", { quizId, studentId });
+            return {
+                success: false,
+                message: "The Safe Exam Browser configuration key did not match the institution-approved settings.",
+                errorCode: "SEB_CONFIG_KEY_REQUIRED",
+            };
+        }
+    }
+
+    const attempt = await QuizAttempt.findOne({
+        studentId: new mongoose.Types.ObjectId(studentId),
+        quizId: new mongoose.Types.ObjectId(quizId),
+    });
+
+    logger.debug("Quiz SEB attempt lookup completed", {
+        quizId,
+        studentId,
+        status: attempt ? attempt.status : "NONE",
+    });
+
+    if (!attempt) {
+        return {
+            success: false,
+            message: "No active quiz attempt found. Please start via the portal.",
+            errorCode: "ATTEMPT_REQUIRED",
+        };
+    }
+
+    if (attempt.status === "submitted") {
+        return {
+            success: false,
+            message: "Quiz already submitted.",
+            errorCode: "ALREADY_SUBMITTED",
+            attempt,
+        };
+    }
+
+    logger.debug("Quiz SEB verification passed", { quizId, studentId });
+    return { success: true, attempt };
+}
+
 /**
  * Marks an attempt as started (transitions from "pending" → "started").
  * Called after SEB verification passes on the first visit.
@@ -119,6 +213,27 @@ export async function verifySebSession(assignmentId: string, studentId: string) 
 export async function markAttemptAsStarted(attemptId: string, userAgent: string, ip: string) {
     await connectDB();
     const attempt = await ExamAttempt.findById(attemptId);
+
+    if (!attempt) return null;
+
+    if (attempt.status === "pending") {
+        attempt.status = "started";
+        attempt.startedAt = new Date();
+        attempt.sebVerified = true;
+        attempt.userAgent = userAgent;
+        attempt.ipAddress = ip.split(",")[0]?.trim() || ip;
+        if (userAgent.toLowerCase().includes("win")) attempt.sebPlatform = "windows";
+        else if (userAgent.toLowerCase().includes("mac")) attempt.sebPlatform = "macos";
+        else attempt.sebPlatform = "other";
+        await attempt.save();
+    }
+
+    return attempt;
+}
+
+export async function markQuizAttemptAsStarted(attemptId: string, userAgent: string, ip: string) {
+    await connectDB();
+    const attempt = await QuizAttempt.findById(attemptId);
 
     if (!attempt) return null;
 
