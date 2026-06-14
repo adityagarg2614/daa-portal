@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
 import { executeCode, runTestCases, getLanguageConfig, TestCase } from "@/lib/piston";
 import { connectDB } from "@/lib/db";
+import Assignment from "@/models/Assignment";
 import Problem from "@/models/Problem";
+import {
+    getProgrammingLanguageLabel,
+    normalizeProgrammingLanguage,
+} from "@/lib/programming-language";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { code, language, testCases: providedTestCases, stdin, problemId } = body;
+        const {
+            code,
+            language,
+            testCases: providedTestCases,
+            stdin,
+            problemId,
+            assignmentId,
+        } = body;
 
         if (!code || !language) {
             return NextResponse.json(
@@ -18,7 +30,18 @@ export async function POST(req: Request) {
             );
         }
 
-        const langConfig = getLanguageConfig(language);
+        const normalizedLanguage = normalizeProgrammingLanguage(language);
+        if (!normalizedLanguage) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Unsupported programming language",
+                },
+                { status: 400 }
+            );
+        }
+
+        const langConfig = getLanguageConfig(normalizedLanguage);
         if (!langConfig) {
             return NextResponse.json(
                 {
@@ -34,6 +57,21 @@ export async function POST(req: Request) {
         let testCasesToRun: TestCase[] = Array.isArray(providedTestCases) ? providedTestCases : [];
         let timeLimit = 2000;
         let memoryLimit = 128000;
+
+        if (assignmentId) {
+            const assignment = await Assignment.findById(assignmentId).select("language");
+            const assignmentLanguage = normalizeProgrammingLanguage(assignment?.language);
+
+            if (assignmentLanguage && normalizedLanguage !== assignmentLanguage) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `This assignment only allows ${getProgrammingLanguageLabel(assignmentLanguage)}`,
+                    },
+                    { status: 400 }
+                );
+            }
+        }
 
         // If problemId is provided, fetch non-hidden test cases and constraints
         if (problemId) {
@@ -56,7 +94,7 @@ export async function POST(req: Request) {
 
         // If test cases are available, run them
         if (testCasesToRun.length > 0) {
-            const result = await runTestCases(code, language, testCasesToRun, timeLimit, memoryLimit);
+            const result = await runTestCases(code, normalizedLanguage, testCasesToRun, timeLimit, memoryLimit);
 
             if (result.compilationError) {
                 return NextResponse.json(
@@ -83,7 +121,7 @@ export async function POST(req: Request) {
         }
 
         // Otherwise, just execute the code with stdin (Manual Test mode)
-        const result = await executeCode(code, language, stdin || "", timeLimit, memoryLimit);
+        const result = await executeCode(code, normalizedLanguage, stdin || "", timeLimit, memoryLimit);
 
         if (!result.success && result.stderr) {
             return NextResponse.json(
