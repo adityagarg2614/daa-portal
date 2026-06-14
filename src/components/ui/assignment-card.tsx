@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { getProgrammingLanguageLabel, ProgrammingLanguage } from "@/lib/programming-language"
 import {
     AlertCircle,
     ArrowRight,
@@ -15,6 +16,7 @@ interface Assignment {
     _id: string
     title: string
     description: string
+    language?: ProgrammingLanguage | null
     batch?: "A" | "B" | null
     totalProblems: number
     totalMarks: number
@@ -73,6 +75,11 @@ export function AssignmentCard({
                                     <BookOpen className="mr-1.5 h-3.5 w-3.5" />
                                     {assignment.totalProblems} problems
                                 </Badge>
+                                {assignment.language && (
+                                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                                        {getProgrammingLanguageLabel(assignment.language)}
+                                    </Badge>
+                                )}
                                 {assignment.batch && (
                                     <Badge variant="outline" className="rounded-full px-3 py-1">
                                         Batch {assignment.batch}

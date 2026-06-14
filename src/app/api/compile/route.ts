@@ -83,8 +83,8 @@ export async function POST(req: Request) {
                 // Only run non-hidden test cases for the general "compile/run" endpoint
                 if (testCasesToRun.length === 0) {
                     testCasesToRun = (problem.testCases || [])
-                        .filter((tc: any) => !tc.isHidden)
-                        .map((tc: any) => ({
+                        .filter((tc: { input: string; output: string; isHidden?: boolean }) => !tc.isHidden)
+                        .map((tc: { input: string; output: string }) => ({
                             input: tc.input,
                             output: tc.output
                         }));
