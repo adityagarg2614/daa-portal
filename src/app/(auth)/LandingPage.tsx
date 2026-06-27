@@ -145,7 +145,7 @@ export default function LandingPage() {
                         <div className={styles.heroCopy}>
                             <motion.div variants={fadeUp} className={styles.eyebrow}>
                                 <span className={styles.eyebrowDot} />
-                                Built for algorithm courses that need clarity, speed, and scale
+                                Built for algorithm courses that need clarity, speed, and scale!
                             </motion.div>
 
                             <motion.h1 variants={fadeUp} className={styles.heroTitle}>

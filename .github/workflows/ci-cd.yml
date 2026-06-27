@@ -64,7 +64,6 @@ jobs:
           host: ${{ secrets.AWS_APP_HOST }}
           username: ${{ secrets.AWS_APP_USER }}
           key: ${{ secrets.AWS_APP_SSH_KEY }}
-          script_stop: true
           command_timeout: 30m
           script: |
             set -euo pipefail
