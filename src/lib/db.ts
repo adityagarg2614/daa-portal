@@ -2,12 +2,6 @@ import mongoose from "mongoose";
 import { logger } from "./logger";
 //library of mongoDb ODM (Object data modelling)
 
-const MONGODB_URI = process.env.MONGODB_URI!; // ! is used to tell the compiler that the variable is not null
-
-if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable");
-}
-
 // caching to prevent multiple connections
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -28,6 +22,12 @@ if (!global.mongoose) {
 }
 
 export async function connectDB() {
+  const MONGODB_URI = process.env.MONGODB_URI?.trim();
+
+  if (!MONGODB_URI) {
+    throw new Error("Please define the MONGODB_URI environment variable");
+  }
+
   // if mongoose is already connected, return it
   if (cached.conn) {
     return cached.conn;
