@@ -48,6 +48,7 @@ jobs:
         run: npm run build
         env:
           SKIP_ENV_VALIDATION: "1"
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
   deploy:
