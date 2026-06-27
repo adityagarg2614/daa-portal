@@ -3,9 +3,23 @@ import { connectDB } from "@/lib/db";
 import EmailLog from "@/models/EmailLog";
 import { generateWelcomeEmailHTML } from "@/lib/email-templates/welcome-email";
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmail = process.env.FROM_EMAIL || "onboarding@resend.dev";
+
+let resendClient: Resend | null = null;
+
+function getResendClient() {
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+
+    if (!apiKey) {
+        throw new Error("Please define the RESEND_API_KEY environment variable");
+    }
+
+    if (!resendClient) {
+        resendClient = new Resend(apiKey);
+    }
+
+    return resendClient;
+}
 
 interface SendWelcomeEmailParams {
     to: string;
@@ -25,6 +39,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<
 
     try {
         await connectDB();
+        const resend = getResendClient();
 
         // Create email log entry
         const emailLog = await EmailLog.create({
