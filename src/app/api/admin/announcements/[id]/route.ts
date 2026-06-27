@@ -1,6 +1,5 @@
 import { verifyAdmin } from "@/lib/auth";
 import Announcement from "@/models/Announcement";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 
 // GET - Fetch single announcement by ID
@@ -9,7 +8,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -44,13 +43,13 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
         const { id: announcementId } = await params;
         const body = await request.json();
-        const { title, content, type, priority, publishAt, expiresAt, isActive } = body;
+        const { title, content, type, priority, isActive } = body;
 
         // Find announcement
         const announcement = await Announcement.findById(announcementId);
@@ -134,7 +133,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -171,7 +170,7 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 

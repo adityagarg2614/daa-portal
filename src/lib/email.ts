@@ -79,8 +79,9 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<
             success: true,
             emailId: data?.id,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error sending welcome email:", error);
+        const message = error instanceof Error ? error.message : "Failed to send email";
 
         // Try to update log as failed if we have an ID
         try {
@@ -88,7 +89,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<
                 { to, status: "pending" },
                 {
                     status: "failed",
-                    error: error.message || "Unknown error",
+                    error: message,
                 },
                 { sort: { createdAt: -1 } }
             );
@@ -98,7 +99,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<
 
         return {
             success: false,
-            error: error.message || "Failed to send email",
+            error: message,
         };
     }
 }

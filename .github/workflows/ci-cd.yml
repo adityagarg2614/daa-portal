@@ -2,29 +2,38 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: daa-portal-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  IMAGE_NAME: daa-portal
+  NODE_VERSION: "20"
+  APP_DIR: /home/ubuntu/daa-portal
+  APP_IMAGE: daa-portal-app
+  APP_CONTAINER: daa-portal
+  APP_PORT: "3000"
 
 jobs:
-  # ─────────────────────────────────────
-  # JOB 1: Test
-  # ─────────────────────────────────────
   test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -32,88 +41,78 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
         env:
-          # Skip env validation during CI build
           SKIP_ENV_VALIDATION: "1"
-          # NEXT_PUBLIC_ vars must be available at build time
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
-      # Future: Add unit/integration tests here
-      # - name: Run tests
-      #   run: npm test
-
-  # ─────────────────────────────────────
-  # JOB 2: Build & Push Docker Image
-  # ─────────────────────────────────────
-  build-and-push:
+  deploy:
+    name: Deploy to AWS EC2
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Deploy app server over SSH
+        uses: appleboy/ssh-action@v1.2.5
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # NEXT_PUBLIC_ vars must be baked in at build time (not runtime)
-          build-args: |
-            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-
-  # ─────────────────────────────────────
-  # JOB 3: Deploy (Phase 3: Docker Compose)
-  # ─────────────────────────────────────
-  deploy-compose:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.AWS_APP_HOST }}
+          username: ${{ secrets.AWS_APP_USER }}
+          key: ${{ secrets.AWS_APP_SSH_KEY }}
+          script_stop: true
+          command_timeout: 30m
           script: |
-            cd /opt/apps/daa-portal
+            set -euo pipefail
 
-            # Pull latest images
-            docker compose -f docker-compose.prod.yml pull
+            cd "${{ env.APP_DIR }}"
 
-            # Restart app container (zero-downtime)
-            docker compose -f docker-compose.prod.yml up -d --no-deps --wait app
+            echo "Pulling latest main branch..."
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
 
-            # Health check (retry up to 30 times)
-            for i in $(seq 1 30); do
-              if curl -sf http://localhost:3000/api/health; then
-                echo "Deployment successful!"
-                break
+            echo "Checking required production env file..."
+            test -f .env.production
+
+            echo "Verifying Piston is reachable from app server..."
+            PISTON_API_URL="$(grep -E '^PISTON_API_URL=' .env.production | cut -d '=' -f2-)"
+            test -n "$PISTON_API_URL"
+            curl -fsS "${PISTON_API_URL%/}/runtimes" >/dev/null
+
+            echo "Building Docker image..."
+            sudo docker build \
+              --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}' \
+              -t "${{ env.APP_IMAGE }}:${{ github.sha }}" \
+              -t "${{ env.APP_IMAGE }}:latest" \
+              .
+
+            echo "Replacing running container..."
+            sudo docker rm -f "${{ env.APP_CONTAINER }}" >/dev/null 2>&1 || true
+            sudo docker run -d \
+              --name "${{ env.APP_CONTAINER }}" \
+              --restart unless-stopped \
+              -p "${{ env.APP_PORT }}:${{ env.APP_PORT }}" \
+              --env-file .env.production \
+              "${{ env.APP_IMAGE }}:${{ github.sha }}"
+
+            echo "Waiting for health check..."
+            for attempt in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:${{ env.APP_PORT }}/api/health" >/dev/null; then
+                echo "Deployment successful."
+                sudo docker image prune -f
+                exit 0
               fi
-              echo "Waiting for app to start... ($i/30)"
+
+              echo "App not healthy yet. Attempt ${attempt}/30..."
+              sudo docker logs --tail 20 "${{ env.APP_CONTAINER }}" || true
               sleep 5
             done
 
-            # Clean up old images
-            docker image prune -f
+            echo "Deployment failed: app did not become healthy."
+            sudo docker ps -a
+            sudo docker logs --tail 100 "${{ env.APP_CONTAINER }}" || true
+            exit 1

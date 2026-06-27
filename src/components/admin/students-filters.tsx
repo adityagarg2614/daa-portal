@@ -13,10 +13,12 @@ import { Search, Download, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { exportStudentsToCSV } from "@/lib/admin/students-utils";
 
+type StudentExportRows = Parameters<typeof exportStudentsToCSV>[0];
+
 interface StudentsFiltersProps {
     onSearchChange: (search: string) => void;
     onSortChange: (sortBy: string, order: string) => void;
-    students: any[];
+    students: StudentExportRows;
 }
 
 export function StudentsFilters({

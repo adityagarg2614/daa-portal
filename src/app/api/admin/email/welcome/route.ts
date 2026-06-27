@@ -1,5 +1,4 @@
 import { verifyAdmin } from "@/lib/auth";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
 import { sendWelcomeEmail } from "@/lib/email";
 
@@ -11,7 +10,7 @@ import { sendWelcomeEmail } from "@/lib/email";
  */
 export async function POST(request: Request) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -69,12 +68,12 @@ export async function POST(request: Request) {
                 { status: 500 }
             );
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error in welcome email endpoint:", error);
         return NextResponse.json(
             {
                 success: false,
-                message: error.message || "Failed to send welcome email",
+                message: error instanceof Error ? error.message : "Failed to send welcome email",
             },
             { status: 500 }
         );

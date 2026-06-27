@@ -17,7 +17,6 @@ import UserModel from "@/models/User";
 export async function POST(req: Request) {
     try {
         let isAdmin = false;
-        let userId: string | null = null;
 
         // Method 1: Check for admin session (from dashboard)
         try {
@@ -27,10 +26,9 @@ export async function POST(req: Request) {
                 const dbUser = await UserModel.findOne({ clerkId: authUserId });
                 if (dbUser?.role === "admin") {
                     isAdmin = true;
-                    userId = authUserId;
                 }
             }
-        } catch (err) {
+        } catch {
             // Auth might fail if no session, that's okay - try secret method
         }
 

@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 export default function ExamFinishedPage() {
@@ -106,7 +105,7 @@ export default function ExamFinishedPage() {
                             Return to Portal Dashboard
                         </Button>
                         <p className="text-[10px] text-muted-foreground">
-                            If the 'Exit' button doesn't work, please use the SEB taskbar or Ctrl+Q / Cmd+Q.
+                            If the &apos;Exit&apos; button doesn&apos;t work, please use the SEB taskbar or Ctrl+Q / Cmd+Q.
                         </p>
                     </CardFooter>
                 </Card>

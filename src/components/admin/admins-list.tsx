@@ -19,10 +19,6 @@ export function AdminsList() {
     const [admins, setAdmins] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchAdmins();
-    }, []);
-
     const fetchAdmins = async () => {
         try {
             // We'll create a simple endpoint for this or reuse students endpoint with filter
@@ -31,7 +27,7 @@ export function AdminsList() {
 
             if (data.success) {
                 // Filter only admins from the results
-                const adminUsers = data.data.students.filter((s: any) => s.role === "admin");
+                const adminUsers = data.data.students.filter((student: AdminUser) => student.role === "admin");
                 setAdmins(adminUsers);
             }
         } catch (error) {
@@ -40,6 +36,10 @@ export function AdminsList() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        queueMicrotask(() => void fetchAdmins());
+    }, []);
 
     if (loading) {
         return (

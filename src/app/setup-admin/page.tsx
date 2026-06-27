@@ -154,7 +154,7 @@ export default function AdminSetupPage() {
                                         Logged in as: {user.emailAddresses[0]?.emailAddress}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        After creating the admin, you'll be redirected to onboarding.
+                                        After creating the admin, you&apos;ll be redirected to onboarding.
                                     </p>
                                 </div>
                             </div>
@@ -213,7 +213,7 @@ export default function AdminSetupPage() {
                             <div>
                                 <p className="font-medium">Step 3: Login as admin</p>
                                 <p className="text-sm text-muted-foreground">
-                                    Sign in with the email you just registered. You'll be redirected to the admin dashboard.
+                                    Sign in with the email you just registered. You&apos;ll be redirected to the admin dashboard.
                                 </p>
                             </div>
                         </div>

@@ -4,6 +4,11 @@ import Attendance from "@/models/Attendance";
 import User from "@/models/User";
 import { NextResponse } from "next/server";
 
+type AttendanceRecordLike = {
+    userId: { toString(): string };
+    present: boolean;
+};
+
 // GET - Calculate per-student attendance statistics
 export async function GET() {
     try {
@@ -28,7 +33,7 @@ export async function GET() {
 
             sessions.forEach(session => {
                 const isPresent = session.records.some(
-                    (rec: any) => rec.userId.toString() === studentIdStr && rec.present
+                    (rec: AttendanceRecordLike) => rec.userId.toString() === studentIdStr && rec.present
                 );
 
                 if (session.type === "class") {
@@ -63,10 +68,13 @@ export async function GET() {
 
         // Filter and sort optionally if needed (can be done client-side)
         return NextResponse.json({ success: true, data: summary });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error generating attendance summary:", error);
         return NextResponse.json(
-            { success: false, message: error.message || "Failed to generate summary" },
+            {
+                success: false,
+                message: error instanceof Error ? error.message : "Failed to generate summary",
+            },
             { status: 500 }
         );
     }

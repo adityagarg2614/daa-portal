@@ -1,7 +1,26 @@
 import { verifyAdmin } from "@/lib/auth";
 import Problem from "@/models/Problem";
-import User from "@/models/User";
 import { NextResponse } from "next/server";
+
+type ProblemExampleInput = {
+    input?: string;
+    output?: string;
+    explanation?: string;
+};
+
+type ProblemTestCaseInput = {
+    input?: string;
+    output?: string;
+    isHidden?: boolean;
+};
+
+function hasRunnableExample(example: ProblemExampleInput): example is Required<Pick<ProblemExampleInput, "input" | "output">> & ProblemExampleInput {
+    return Boolean(example.input?.trim() && example.output?.trim());
+}
+
+function hasRunnableTestCase(testCase: ProblemTestCaseInput): testCase is Required<Pick<ProblemTestCaseInput, "input" | "output">> & ProblemTestCaseInput {
+    return Boolean(testCase.input?.trim() && testCase.output?.trim());
+}
 
 // Helper function to capitalize difficulty values
 function capitalizeDifficulty(difficulty: string): string {
@@ -19,7 +38,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -53,7 +72,7 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
@@ -166,8 +185,8 @@ export async function PUT(
                 );
             }
             problem.examples = examples
-                .filter((ex: any) => ex.input?.trim() && ex.output?.trim())
-                .map((ex: any) => ({
+                .filter(hasRunnableExample)
+                .map((ex) => ({
                     input: ex.input.trim(),
                     output: ex.output.trim(),
                     explanation: ex.explanation?.trim() || "",
@@ -182,8 +201,8 @@ export async function PUT(
                 );
             }
             problem.testCases = testCases
-                .filter((tc: any) => tc.input?.trim() && tc.output?.trim())
-                .map((tc: any) => ({
+                .filter(hasRunnableTestCase)
+                .map((tc) => ({
                     input: tc.input.trim(),
                     output: tc.output.trim(),
                     isHidden: tc.isHidden !== undefined ? tc.isHidden : true,
@@ -224,7 +243,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { authorized, response, userId, dbUser } = await verifyAdmin();
+        const { authorized, response } = await verifyAdmin();
 
         if (!authorized) return response;
 
