@@ -46,6 +46,7 @@ import {
 } from "@/lib/programming-language"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 
 type Problem = {
     _id: string
@@ -99,6 +100,18 @@ export default function CreateAssignmentPage() {
         isSebRequired: boolean
     }>(null)
 
+    const showError = (errorMessage: string) => {
+        setMessage(errorMessage)
+        setMessageType("destructive")
+        toast.error(errorMessage)
+    }
+
+    const showSuccess = (successMessage: string) => {
+        setMessage(successMessage)
+        setMessageType("success")
+        toast.success(successMessage)
+    }
+
     useEffect(() => {
         const fetchProblems = async () => {
             try {
@@ -106,8 +119,7 @@ export default function CreateAssignmentPage() {
                 setProblems(res.data.problems || [])
             } catch (error) {
                 console.error("Error fetching problems:", error)
-                setMessage("Failed to load problems")
-                setMessageType("destructive")
+                showError("Failed to load problems")
             } finally {
                 setLoadingProblems(false)
             }
@@ -223,20 +235,17 @@ export default function CreateAssignmentPage() {
         setMessage("")
 
         if (!title || !description || !publishAt || !dueAt) {
-            setMessage("Please fill all assignment details")
-            setMessageType("destructive")
+            showError("Please fill all assignment details")
             return
         }
 
         if (new Date(publishAt) >= new Date(dueAt)) {
-            setMessage("Due date must be later than the publish date")
-            setMessageType("destructive")
+            showError("Due date must be later than the publish date")
             return
         }
 
         if (selectedProblemIds.length === 0) {
-            setMessage("Please select at least one problem")
-            setMessageType("destructive")
+            showError("Please select at least one problem")
             return
         }
 
@@ -265,8 +274,7 @@ export default function CreateAssignmentPage() {
                 ? await axios.patch(`/api/admin/assignments/${editId}`, pendingSubmission)
                 : await axios.post("/api/admin/assignments", pendingSubmission)
 
-            setMessage(res.data.message || (editId ? "Assignment updated successfully" : "Assignment created successfully"))
-            setMessageType("success")
+            showSuccess(res.data.message || (editId ? "Assignment updated successfully" : "Assignment created successfully"))
 
             if (!editId) {
                 setTitle("")
@@ -287,11 +295,10 @@ export default function CreateAssignmentPage() {
                     : editId
                         ? "Failed to update assignment"
                         : "Failed to create assignment"
-            setMessage(
+            showError(
                 errorMessage ||
                 (editId ? "Failed to update assignment" : "Failed to create assignment")
             )
-            setMessageType("destructive")
         } finally {
             setSubmitting(false)
         }
