@@ -175,7 +175,7 @@ export default function LandingPage() {
                             <motion.div variants={fadeUp} className={styles.metricStrip}>
                                 <Metric label="Assignment flow" value="Structured" />
                                 <Metric label="Feedback loop" value="Immediate" />
-                                <Metric label="Admin control" value="Centralized" />
+
                             </motion.div>
                         </div>
 
