@@ -85,6 +85,16 @@ export interface CompileAndTestResult {
     message?: string;
 }
 
+function normalizeJudgeOutput(output: string) {
+    return output
+        .replace(/\r\n/g, "\n")
+        .replace(/\s+/g, " ")
+        .replace(/\s*,\s*/g, ",")
+        .replace(/\[\s+/g, "[")
+        .replace(/\s+\]/g, "]")
+        .trim();
+}
+
 /**
  * Get language configuration for Piston
  */
@@ -247,6 +257,19 @@ export async function runTestCases(
         };
     }
 
+    if (testCases.length === 0) {
+        return {
+            success: false,
+            allPassed: false,
+            totalTests: 0,
+            passedTests: 0,
+            results: [],
+            executionTime: 0,
+            memoryUsed: 0,
+            message: "No test cases are configured for this problem.",
+        };
+    }
+
     // First, do a quick compile check with the first test case input
     try {
         const firstResult = await executeCode(code, language, testCases[0]?.input || "", timeLimit, memoryLimit);
@@ -295,14 +318,8 @@ export async function runTestCases(
             const errorMsg = execution.stderr;
 
             // Normalize whitespace for comparison
-            const normalizedActual = actualOutput
-                .replace(/\r\n/g, "\n")
-                .replace(/\s+/g, " ")
-                .trim();
-            const normalizedExpected = testCase.output
-                .replace(/\r\n/g, "\n")
-                .replace(/\s+/g, " ")
-                .trim();
+            const normalizedActual = normalizeJudgeOutput(actualOutput);
+            const normalizedExpected = normalizeJudgeOutput(testCase.output);
             const passed = normalizedActual === normalizedExpected && !errorMsg;
 
             testResults.push({

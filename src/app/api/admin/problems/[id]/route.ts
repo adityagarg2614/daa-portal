@@ -200,13 +200,22 @@ export async function PUT(
                     { status: 400 }
                 );
             }
-            problem.testCases = testCases
+            const normalizedTestCases = testCases
                 .filter(hasRunnableTestCase)
                 .map((tc) => ({
                     input: tc.input.trim(),
                     output: tc.output.trim(),
                     isHidden: tc.isHidden !== undefined ? tc.isHidden : true,
                 }));
+
+            if (normalizedTestCases.length === 0) {
+                return NextResponse.json(
+                    { success: false, message: "At least one test case with input and expected output is required" },
+                    { status: 400 }
+                );
+            }
+
+            problem.testCases = normalizedTestCases;
         }
 
         if (starterCode !== undefined) {

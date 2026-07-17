@@ -12,6 +12,26 @@ function capitalizeDifficulty(difficulty: string): string {
     return "Easy"; // Default fallback
 }
 
+type ProblemTestCaseInput = {
+    input?: string;
+    output?: string;
+    isHidden?: boolean;
+};
+
+function normalizeTestCases(testCases: unknown) {
+    if (!Array.isArray(testCases)) {
+        return [];
+    }
+
+    return testCases
+        .filter((tc: ProblemTestCaseInput) => tc.input?.trim() && tc.output?.trim())
+        .map((tc: ProblemTestCaseInput) => ({
+            input: tc.input!.trim(),
+            output: tc.output!.trim(),
+            isHidden: tc.isHidden !== undefined ? tc.isHidden : true,
+        }));
+}
+
 
 export async function POST(req: Request) {
     try {
@@ -41,6 +61,14 @@ export async function POST(req: Request) {
             );
         }
 
+        const normalizedTestCases = normalizeTestCases(testCases);
+        if (normalizedTestCases.length === 0) {
+            return NextResponse.json(
+                { success: false, message: "At least one test case with input and expected output is required" },
+                { status: 400 }
+            );
+        }
+
         const existingProblem = await Problem.findOne({ slug });
         if (existingProblem) {
             return NextResponse.json(
@@ -65,7 +93,7 @@ export async function POST(req: Request) {
             },
 
             examples: examples || [],
-            testCases: testCases || [],
+            testCases: normalizedTestCases,
             createdBy: createdBy || null,
         });
 

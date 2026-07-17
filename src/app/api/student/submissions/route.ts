@@ -147,14 +147,40 @@ export async function POST(req: Request) {
         let passedTests = 0;
         let totalTests = 0;
 
+        if (runTests && (!problem.testCases || problem.testCases.length === 0)) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "No test cases are configured for this problem. Please ask the admin to add test cases before submitting.",
+                    testResults: [],
+                    passedTests: 0,
+                    totalTests: 0,
+                },
+                { status: 400 }
+            );
+        }
+
         // Run test cases if requested and test cases exist
         if (runTests && problem.testCases && problem.testCases.length > 0) {
-            const testCases = problem.testCases.map((tc: { input: string; output: string; isHidden?: boolean }) => ({
+            const testCases: Array<{ input: string; output: string; isHidden?: boolean }> = problem.testCases.map((tc: { input: string; output: string; isHidden?: boolean }) => ({
                 input: tc.input,
                 output: tc.output,
                 isHidden: tc.isHidden
             }));
 
+            const missingInputIndex = testCases.findIndex((testCase) => !testCase.input.trim());
+            if (missingInputIndex !== -1) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Problem test case ${missingInputIndex + 1} is missing input. Please ask the admin to update this problem.`,
+                        testResults: [],
+                        passedTests: 0,
+                        totalTests: testCases.length,
+                    },
+                    { status: 400 }
+                );
+            }
 
             // Call Piston directly (no HTTP self-fetch)
             const compileResult = await runTestCases(
